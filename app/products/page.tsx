@@ -47,7 +47,6 @@ type Category = {
 };
 
 // Create a client wrapper component for FilterPanel
-'use client'
 function FilterWrapper({ categories }: { categories: Category[] }) {
   const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
 
