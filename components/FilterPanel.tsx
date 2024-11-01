@@ -1,43 +1,47 @@
 import React from 'react';
 import Switch from '@/components/ui/switch';
+import { motion } from 'framer-motion';
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 interface FilterPanelProps {
-  categories: Array<{ id: string; name: string; slug: string }>;
+  categories: Category[];
   selectedCategories: string[];
   onCategoryToggle: (category: string) => void;
 }
 
 const FilterPanel: React.FC<FilterPanelProps> = ({ categories, selectedCategories, onCategoryToggle }) => {
-  // Filter out the category with the name "ALL"
-  const filteredCategories = categories.filter(category => category.name.toLowerCase() !== 'all');
+  const filteredCategories = categories.filter(category => 
+    category.name.toLowerCase() !== 'all'
+  );
 
   return (
-    <div className="relative w-64 mr-8 rounded-lg shadow-lg overflow-hidden">
-      {/* Background image container */}
+    <motion.div 
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="relative w-64 mr-8 rounded-lg shadow-lg overflow-hidden"
+    >
       <div 
-        className="absolute inset-0 z-0" 
-        style={{
-          backgroundImage: "url('/footer-bg.webp')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'top',
-        }}
+        className="absolute inset-0 z-0 bg-cover bg-top"
+        style={{ backgroundImage: "url('/footer-bg.webp')" }}
       />
       
-      {/* Improved gradient overlay with smaller border space */}
-      <div 
-        className="relative z-10 m-[5px] p-5 rounded-lg"
-        style={{
-          background: 'linear-gradient(145deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)',
-          backdropFilter: 'blur(8px)',
-          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-        }}
+      <motion.div 
+        className="relative z-10 m-[5px] p-5 rounded-lg bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-md"
       >
         <h3 className="text-lg font-lato font-semibold mb-4 text-white">
           Filter by Category
         </h3>
-        {filteredCategories.map((category) => (
-          <div 
+        {filteredCategories.map((category, index) => (
+          <motion.div 
             key={category.id} 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
             className="flex items-center justify-between mb-3 p-2 rounded-md hover:bg-white/10 transition-all duration-200 cursor-pointer"
             onClick={() => onCategoryToggle(category.name)}
           >
@@ -52,10 +56,10 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ categories, selectedCategorie
               checked={selectedCategories.includes(category.name.toLowerCase())}
               onCheckedChange={() => onCategoryToggle(category.name)}
             />
-          </div>
+          </motion.div>
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

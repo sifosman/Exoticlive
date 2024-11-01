@@ -9,6 +9,9 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+import { Truck } from 'lucide-react';
+import { Lato } from 'next/font/google';
 
 declare global {
   interface Window {
@@ -25,6 +28,13 @@ const styles = {
   `
 };
 
+interface OrderLineItem {
+  product_id: string;
+  quantity: number;
+  name: string;
+  total: string;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart } = useCart();
@@ -32,6 +42,7 @@ export default function CheckoutPage() {
   const [paymentError, setPaymentError] = useState('');
   const [showBankingDetails, setShowBankingDetails] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // State variables for shipping information
   const [firstName, setFirstName] = useState('');
@@ -110,48 +121,60 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     setPaymentError('');
 
-    if (paymentMethod === 'yoco') {
-      const yoco = new window.YocoSDK({
-        publicKey: 'sk_live_9a8da319PKJ9r9Rd94e4ce7aa44d'
-      });
+    try {
+      if (paymentMethod === 'yoco') {
+        const yoco = new window.YocoSDK({
+          publicKey: 'sk_live_9a8da319PKJ9r9Rd94e4ce7aa44d'
+        });
 
-      yoco.showPopup({
-        amountInCents: Math.round(total * 100),
-        currency: 'ZAR',
-        name: 'Exotic Shoes',
-        description: 'Order payment',
-        callback: async function (result: any) {
-          if (result.error) {
-            setPaymentError(result.error.message);
-          } else {
-            try {
-              const response = await fetch('/api/payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  token: result.id,
-                  amountInCents: Math.round(total * 100),
-                  currency: 'ZAR'
-                })
-              });
-
-              const data = await response.json();
-
-              if (data.success) {
-                await createWooCommerceOrder('Yoco Payment Gateway');
-              } else {
-                setPaymentError('Payment failed. Please try again.');
-              }
-            } catch (error) {
-              setPaymentError('An error occurred. Please try again.');
+        yoco.showPopup({
+          amountInCents: Math.round(total * 100),
+          currency: 'ZAR',
+          name: 'Exotic Shoes',
+          description: 'Order payment',
+          callback: async function (result: any) {
+            if (result.error) {
+              setPaymentError(result.error.message);
+            } else {
+              await handleYocoPayment(result);
             }
           }
-        }
+        });
+      } else if (paymentMethod === 'bank_transfer') {
+        await createWooCommerceOrder('Bank Transfer');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      setPaymentError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleYocoPayment = async (result: any) => {
+    try {
+      const response = await fetch('/api/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: result.id,
+          amountInCents: Math.round(total * 100),
+          currency: 'ZAR'
+        })
       });
-    } else if (paymentMethod === 'bank_transfer') {
-      await createWooCommerceOrder('Bank Transfer');
+
+      const data = await response.json();
+
+      if (data.success) {
+        await createWooCommerceOrder('Yoco Payment Gateway');
+      } else {
+        setPaymentError('Payment failed. Please try again.');
+      }
+    } catch (error) {
+      setPaymentError('An error occurred processing payment. Please try again.');
     }
   };
 
@@ -207,9 +230,9 @@ export default function CheckoutPage() {
                 <RadioGroupItem value="yoco" id="yoco" />
                 <Label htmlFor="yoco">Yoco Payment Gateway</Label>
                 <img 
-                src="/yoco-logo.jpg" 
+                src="/yoco-logo.png" 
                 alt="Yoco" 
-                className="h-6 w-auto object-contain"
+                className="h-4 w-auto object-contain"
               />
               </div>
              
@@ -283,16 +306,36 @@ export default function CheckoutPage() {
           <Button 
             type="submit" 
             className="w-full mt-8 bg-black hover:bg-[#809A48] backdrop-blur-sm text-white border border-white/50 font-lato text-lg py-6"
+            disabled={isLoading}
           >
-            Place Order
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Place Order'
+            )}
           </Button>
           {paymentError && <p className="text-red-500 mt-2 font-lato">{paymentError}</p>}
-          <div className="mt-8">
+          <div className="mt-8 relative overflow-hidden">
             <img 
               src="/checkout-banner.webp" 
               alt="Checkout Banner" 
               className="w-full h-auto rounded-lg"
             />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-black/10 backdrop-blur-[2px] rounded-lg"></div>
+            
+            <div className="absolute inset-0 flex items-center justify-center px-8">
+              <div className="flex items-center space-x-6">
+                <Truck className="w-12 h-12 text-white opacity-90" strokeWidth={1.5} />
+                <span className={`text-white text-xl md:text-2xl lg:text-3xl tracking-wider leading-relaxed border-l border-white/20 pl-6`}>
+                  Serving 1000s of <br /> loyal customers
+                  <br />
+                  all over the country
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </form>

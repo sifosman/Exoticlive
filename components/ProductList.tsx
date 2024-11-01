@@ -188,8 +188,8 @@ const ProductList = () => {
           } />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"> {/* Updated grid */}
-          {filteredProducts.slice(0, displayedProducts).map((product: any) => (
-            <ProductCard key={product.id} product={product} />
+          {filteredProducts.slice(0, displayedProducts).map((product: any, index: number) => (
+            <ProductCard key={product.id} product={product} index={index} />
           ))}
         </div>
         {displayedProducts < filteredProducts.length && (

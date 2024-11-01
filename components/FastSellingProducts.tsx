@@ -1,46 +1,12 @@
 "use client";
 
-import { useQuery, gql } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import ProductCard from './ProductCard';
 import { ProductCardSkeleton } from './ui/LoadingSkeleton';
-
-const GET_PRODUCTS = gql`
-  query GetProducts($first: Int!) {
-    products(first: $first) {
-      nodes {
-        ... on SimpleProduct {
-          id
-          slug
-          name
-          price
-          regularPrice
-          salePrice
-          onSale
-          averageRating
-          image {
-            sourceUrl
-          }
-        }
-        ... on VariableProduct {
-          id
-          slug
-          name
-          price
-          regularPrice
-          salePrice
-          onSale
-          averageRating
-          image {
-            sourceUrl
-          }
-        }
-      }
-    }
-  }
-`;
+import { GET_PRODUCT } from '../graphql/queries';
 
 const FastSellingProducts = () => {
-  const { loading, error, data } = useQuery(GET_PRODUCTS, {
+  const { loading, error, data } = useQuery(GET_PRODUCT, {
     variables: { first: 20 },
   });
 
@@ -71,8 +37,8 @@ const FastSellingProducts = () => {
         Fast Selling Products
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {randomProducts.map((product: any) => (
-          <ProductCard key={product.id} product={product} />
+        {randomProducts.map((product: any, index: number) => (
+          <ProductCard key={product.id} product={product} index={index} />
         ))}
       </div>
     </section>

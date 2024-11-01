@@ -1,12 +1,18 @@
 import { gql } from '@apollo/client';
-import { getClient } from '@/lib/apollo-client';
+import { getApolloClient } from '@/lib/apollo-client';
 import ProductContent from '@/components/ProductContent';
 import { notFound } from 'next/navigation';
+
+
+// Add revalidation time (in seconds)
+export const revalidate = 3600; // Revalidate every hour
 
 const GET_PRODUCT = gql`
   query GetProduct($slug: ID!) {
     product(id: $slug, idType: SLUG) {
       id
+      databaseId
+      slug
       name
       description
       shortDescription
@@ -18,19 +24,22 @@ const GET_PRODUCT = gql`
         price
         regularPrice
         salePrice
-        # Remove categories if not available
+        stockStatus
       }
       ... on VariableProduct {
         price
         regularPrice
         salePrice
+        stockStatus
         variations {
           nodes {
             id
+            databaseId
             name
             price
             regularPrice
             salePrice
+            stockStatus
             attributes {
               nodes {
                 name
@@ -39,7 +48,6 @@ const GET_PRODUCT = gql`
             }
           }
         }
-        # Remove categories if not available
       }
       image {
         sourceUrl
@@ -61,9 +69,10 @@ const GET_PRODUCT = gql`
   }
 `;
 
+// Reduced initial static generation for better performance
 const GET_ALL_PRODUCT_SLUGS = gql`
   query GetAllProductSlugs {
-    products(first: 1000) {
+    products(first: 50, where: { status: "publish" }) {
       nodes {
         slug
       }
@@ -73,9 +82,8 @@ const GET_ALL_PRODUCT_SLUGS = gql`
 
 export async function generateStaticParams() {
   try {
-    const { data } = await getClient().query({ 
-      query: GET_ALL_PRODUCT_SLUGS,
-      fetchPolicy: 'no-cache' // Ensure fresh data during build
+    const { data } = await getApolloClient().query({ 
+      query: GET_ALL_PRODUCT_SLUGS
     });
 
     if (!data?.products?.nodes) {
@@ -94,26 +102,40 @@ export async function generateStaticParams() {
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   try {
-    const { data } = await getClient().query({
+    console.log('Attempting to fetch product with slug:', params.slug);
+    
+    const { data, error } = await getApolloClient().query({
       query: GET_PRODUCT,
       variables: { slug: params.slug },
-      fetchPolicy: 'no-cache' // Ensure fresh data during build
     });
 
-    if (!data?.product) {
-      notFound();
+    if (error) {
+      console.error('GraphQL Error:', error);
+      throw error;
     }
+
+    if (!data?.product) {
+      console.log(`Product not found for slug: ${params.slug}`);
+      return notFound();
+    }
+
+    console.log('Product found:', {
+      id: data.product.id,
+      name: data.product.name,
+      status: data.product.status
+    });
 
     return (
       <div className="container mx-auto px-4 py-8">
         <ProductContent product={data.product} />
+        
       </div>
     );
   } catch (error) {
     console.error(`Error fetching product ${params.slug}:`, error);
-    notFound();
+    throw error;
   }
 }
+// Enable dynamic paths
+export const dynamicParams = true;
 
-// Add this to handle 404 cases
-export const dynamicParams = false; // Ensure only pre-rendered pages are served

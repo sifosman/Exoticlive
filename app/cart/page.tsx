@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Lato } from 'next/font/google';
+import { useState } from 'react';
 
 // Import the Lato font
 const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
@@ -13,6 +14,7 @@ const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity } = useCart();
   const router = useRouter();
+  const [imageError, setImageError] = useState<{ [key: string]: boolean }>({});
 
   const total = cart.reduce((sum, item) => {
     const price = item.price;
@@ -38,15 +40,14 @@ export default function CartPage() {
             {cart.map((item) => (
               <div key={item.id} className="flex items-center border-b py-4">
                 <Image
-                  src={item.image}
+                  src={imageError[item.id] ? '/product-placeholder.webp' : item.image}
                   alt={item.name}
                   width={80}
                   height={80}
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   style={{ width: '20%', height: 'auto', padding: '20px' }}
-                  onError={(e) => {
-                    console.error('Image failed to load:', e.currentTarget.src);
-                    e.currentTarget.src = '/path/to/fallback-image.png';
+                  onError={() => {
+                    setImageError(prev => ({ ...prev, [item.id]: true }));
                   }}
                 />
                 <div className="flex-grow">

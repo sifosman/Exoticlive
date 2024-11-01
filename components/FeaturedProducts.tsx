@@ -3,44 +3,10 @@
 import { useQuery, gql } from '@apollo/client';
 import ProductCard from './ProductCard';
 import { ProductCardSkeleton } from './ui/LoadingSkeleton';
-
-const GET_RANDOM_PRODUCTS = gql`
-  query GetRandomProducts($first: Int!) {
-    products(first: $first) {
-      nodes {
-        ... on SimpleProduct {
-          id
-          slug
-          name
-          price
-          regularPrice
-          salePrice
-          onSale
-          averageRating
-          image {
-            sourceUrl
-          }
-        }
-        ... on VariableProduct {
-          id
-          slug
-          name
-          price
-          regularPrice
-          salePrice
-          onSale
-          averageRating
-          image {
-            sourceUrl
-          }
-        }
-      }
-    }
-  }
-`;
+import { GET_PRODUCT } from '../graphql/queries';
 
 const FeaturedProducts = () => {
-  const { loading, error, data } = useQuery(GET_RANDOM_PRODUCTS, {
+  const { loading, error, data } = useQuery(GET_PRODUCT, {
     variables: { first: 20 },
   });
 
@@ -71,8 +37,8 @@ const FeaturedProducts = () => {
         Featured Products
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {randomFeaturedProducts.map((product: any) => (
-          <ProductCard key={product.id} product={product} />
+        {randomFeaturedProducts.map((product: any, index: number) => (
+          <ProductCard key={product.id} product={product} index={index} />
         ))}
       </div>
     </section>

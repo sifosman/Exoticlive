@@ -21,32 +21,17 @@ import SearchIcon from '@mui/icons-material/Search';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useQuery, gql } from '@apollo/client';
+import { PRODUCT_FIELDS } from '../graphql/fragments';
 
 const SEARCH_PRODUCTS = gql`
   query SearchProducts($search: String!) {
     products(where: { search: $search }, first: 10) {
       nodes {
-        ... on SimpleProduct {
-          id
-          slug
-          name
-          price
-          image {
-            sourceUrl
-          }
-        }
-        ... on VariableProduct {
-          id
-          slug
-          name
-          price
-          image {
-            sourceUrl
-          }
-        }
+        ...ProductFields
       }
     }
   }
+  ${PRODUCT_FIELDS}
 `;
 
 interface ProductSearchProps {

@@ -10,26 +10,43 @@ import {
   Chip, 
   Box 
 } from '@mui/material'
+import { Product } from '@/@types/graphql';
 
 interface ProductCardProps {
-  product: {
-    id: string
-    variationId: string
-    slug: string
-    name: string
-    price: string
-    image: {
-      sourceUrl: string
-    }
+  product: Product & {
+    variationId?: string;
     categories?: {
       nodes?: {
-        slug: string
-      }[]
-    }
-  }
+        slug: string;
+      }[];
+    };
+    __typename?: 'SimpleProduct' | 'VariableProduct';
+  };
+  index: number;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+const formatPrice = (price: string | null | undefined, productName?: string, productType?: string) => {
+  if (!price) {
+    if (productName?.includes('Variable') || productType === 'VariableProduct') {
+      return 'Price varies';
+    }
+    console.warn(`No price found for product: ${productName || 'Unknown'}`);
+    return 'Price not available';
+  }
+  const normalizedPrice = price.replace(/[^0-9.,]/g, '').replace(',', '.');
+  const numPrice = parseFloat(normalizedPrice);
+  return `R${numPrice.toFixed(2)}`;
+};
+
+export default function ProductCard({ product, index }: ProductCardProps) {
+  console.log('Product Price Data:', {
+    name: product.name,
+    price: product.price,
+    regularPrice: product.regularPrice,
+    salePrice: product.salePrice,
+    type: product.__typename
+  });
+
   if (!product) {
     console.error("Product is undefined or null")
     return null
@@ -64,22 +81,23 @@ export default function ProductCard({ product }: ProductCardProps) {
       <Link href={`/product/${product.slug}`} style={{ textDecoration: 'none' }}>
         <Box 
           sx={{ 
-            position: 'relative', 
-            paddingTop: '100%',
-            '&:hover img': {
-              transform: 'scale(1.05)'
-            }
+            position: 'relative',
+            width: '100%',
+            height: 'auto',
+            aspectRatio: '1/1',
+            overflow: 'hidden'
           }}
         >
           <Image
-            src={imageUrl}
-            alt={product.name}
+            src={product.image?.sourceUrl || 'https://www.exoticshoes.co.za/wp-content/uploads/2021/09/cropped-logo11.png'}
+            alt={product.name || 'Product Image'}
             fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-            style={{ 
+            style={{
               objectFit: 'contain',
-              transition: 'transform 0.3s'
+              transition: 'transform 0.3s ease'
             }}
+            priority={index < 4}
+            loading={index < 4 ? "eager" : "lazy"}
           />
         </Box>
       </Link>
@@ -115,7 +133,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             fontFamily: 'Nunito Sans, sans-serif'
           }}
         >
-          {product.price}
+          {product.__typename === 'SimpleProduct' 
+            ? formatPrice(product.price, product.name, product.__typename)
+            : formatPrice(product.regularPrice || product.price, product.name, product.__typename)}
         </Typography>
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>

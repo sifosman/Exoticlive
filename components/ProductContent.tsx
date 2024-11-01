@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/lib/cartContext';
@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'; // For gallery navigation
 import { motion, AnimatePresence } from 'framer-motion'; // For animations
 import RelatedProducts from './RelatedProducts';
+import { Lock, CheckCircle } from 'lucide-react';
 
 interface ProductContentProps {
   product: {
@@ -64,7 +65,7 @@ interface ProductContentProps {
   );
 }
 
-const ProductContent: React.FC<ProductContentProps> = ({ product }) => {
+const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
   if (!product) {
     return <div>Loading...</div>;
   }
@@ -85,8 +86,8 @@ const ProductContent: React.FC<ProductContentProps> = ({ product }) => {
   };
 
   const formatPrice = (price: string | null | undefined) => {
-    if (!price) return 'N/A';
-    const normalizedPrice = price.replace('R', '').replace(',', '.').trim();
+    if (!price) return 'Select Option For Price';
+    const normalizedPrice = price.replace(/[^0-9.,]/g, '').replace(',', '.');
     const numPrice = parseFloat(normalizedPrice);
     return isNaN(numPrice) ? 'N/A' : `R${numPrice.toFixed(2)}`;
   };
@@ -115,16 +116,14 @@ const ProductContent: React.FC<ProductContentProps> = ({ product }) => {
   const handleAddToCart = () => {
     console.log('Add to cart clicked');
     
-    // For simple products
-    const normalizedPrice = product.price?.replace('R', '').replace(',', '.').trim() || '0';
+    const selectedVariation = getSelectedVariation();
+    // Get price from selected variation if it exists, otherwise use product price
+    const priceToUse = selectedVariation 
+      ? selectedVariation.salePrice || selectedVariation.regularPrice
+      : product.price;
+      
+    const normalizedPrice = priceToUse?.replace('R', '').replace(',', '.').trim() || '0';
     const price = parseFloat(normalizedPrice);
-    console.log('Product data:', {
-      id: product.id,
-      name: product.name,
-      price,
-      quantity,
-      image: product.image?.sourceUrl
-    });
 
     try {
       addToCart({
@@ -133,7 +132,8 @@ const ProductContent: React.FC<ProductContentProps> = ({ product }) => {
         price: price,
         quantity: quantity,
         image: product.image?.sourceUrl || '/placeholder.jpg',
-        variationId: product.id,
+        variationId: selectedVariation?.id || product.id,
+        variationName: selectedVariation?.name
       });
 
       toast({
@@ -295,7 +295,13 @@ const ProductContent: React.FC<ProductContentProps> = ({ product }) => {
         >
           <h1 className="text-3xl font-lato font-bold text-gray-800">{product.name}</h1>
           <p className="text-2xl font-montserrat font-bold text-primary">
-            {formatPrice(product.price || product.regularPrice || '')}
+            {formatPrice(
+              getSelectedVariation()?.salePrice || 
+              getSelectedVariation()?.regularPrice || 
+              product.salePrice || 
+              product.regularPrice || 
+              product.price
+            )}
           </p>
           <div dangerouslySetInnerHTML={{ __html: product.description }} className="prose prose-sm max-w-none" />
 
@@ -405,6 +411,21 @@ const ProductContent: React.FC<ProductContentProps> = ({ product }) => {
             </Button>
           </motion.div>
 
+          {/* Updated version with glass effect and background image */}
+          <div className="mt-6 bg-[url('/payment-methods.webp')] bg-cover p-6 rounded-lg text-white relative">
+            {/* Glass effect overlay */}
+            <div className="absolute inset-0 bg-white/10 backdrop-blur-sm rounded-lg"></div>
+            
+            {/* Content */}
+            <div className="relative z-10 flex items-center justify-center space-x-4">
+              <Lock className="w-5 h-5 text-white" />
+              <span className="text-white font-medium">
+                Trusted Supplier for over 15 Years
+              </span>
+              <CheckCircle className="w-5 h-5 text-white stroke-2" />
+            </div>
+          </div>
+
           {/* Additional Information */}
           {product.additionalInformation && (
             <div className="mt-8 p-4 bg-gray-50 rounded-lg">
@@ -418,6 +439,6 @@ const ProductContent: React.FC<ProductContentProps> = ({ product }) => {
       <RelatedProducts />
     </div>
   );
-};
+});
 
 export default ProductContent;
