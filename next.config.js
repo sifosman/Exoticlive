@@ -14,9 +14,6 @@ const nextConfig = {
     ],
   },
   trailingSlash: true,
-  experimental: {
-    runtime: 'edge',
-  },
   async headers() {
     return [
       {
@@ -39,17 +36,15 @@ const nextConfig = {
       },
     ];
   },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        stream: require.resolve('stream-browserify'),
-        crypto: require.resolve('crypto-browserify'),
-        http: require.resolve('stream-http'),
-        https: require.resolve('https-browserify'),
-        os: require.resolve('os-browserify/browser'),
-        url: require.resolve('url'),
-      }
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      stream: false,
+      crypto: false,
+      http: false,
+      https: false,
+      os: false,
+      url: false,
     }
     return config
   },
