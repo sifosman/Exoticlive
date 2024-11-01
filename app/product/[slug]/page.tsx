@@ -91,9 +91,13 @@ export async function generateStaticParams() {
       return [];
     }
 
-    return data.products.nodes.map((product: { slug: string }) => ({
-      slug: product.slug,
-    }));
+    // Only generate the first 10 products at build time
+    // Adjust this number based on your build performance
+    return data.products.nodes
+      .slice(0, 10)
+      .map((product: { slug: string }) => ({
+        slug: product.slug,
+      }));
   } catch (error) {
     console.error('Error generating static params:', error);
     return [];
