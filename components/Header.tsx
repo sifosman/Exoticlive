@@ -15,7 +15,6 @@ import {
   MenuItem,
   Box,
   Fade,
-  Paper,
   Typography
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';

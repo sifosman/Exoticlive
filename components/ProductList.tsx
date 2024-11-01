@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, gql } from '@apollo/client';
+import { useSearchParams } from 'next/navigation';
 import ProductCard from './ProductCard';
 import FilterPanel from './FilterPanel';
 import SortDropdown from './SortDropdown';
 import { ProductsOrderByEnum, OrderEnum } from '../@types/graphql';
-import { Button } from './ui/button'; // Assuming you have a Button component
+import { Button } from './ui/button';
 import PriceRangeFilter from './PriceRangeFilter';
 
 const GET_PRODUCTS_AND_CATEGORIES = gql`
@@ -65,12 +66,6 @@ const GET_PRODUCTS_AND_CATEGORIES = gql`
   }
 `;
 
-interface FilterPanelProps {
-  categories: Array<{ id: string; name: string; slug: string }>;
-  selectedCategories: string[];
-  onCategoryChange: (category: string) => void;
-}
-
 interface Product {
   id: string;
   slug: string;
@@ -87,11 +82,8 @@ interface Product {
   };
 }
 
-interface ProductListProps {
-  categoryFilter: string | null;
-}
-
-const ProductList: React.FC<ProductListProps> = ({ categoryFilter }) => {
+const ProductList = () => {
+  const searchParams = useSearchParams();
   const [sortBy, setSortBy] = useState<ProductsOrderByEnum>(ProductsOrderByEnum.DATE);
   const [sortOrder, setSortOrder] = useState<OrderEnum>(OrderEnum.DESC);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -104,16 +96,17 @@ const ProductList: React.FC<ProductListProps> = ({ categoryFilter }) => {
   });
 
   useEffect(() => {
-    if (categoryFilter) {
-      if (categoryFilter.toLowerCase() === 'uncategorized') {
-        setSelectedCategories([]); // Clear selection for "ALL"
+    const category = searchParams?.get('category');
+    if (category) {
+      if (category.toLowerCase() === 'uncategorized') {
+        setSelectedCategories([]);
       } else {
-        setSelectedCategories([categoryFilter.toLowerCase()]);
+        setSelectedCategories([category.toLowerCase()]);
       }
     } else {
       setSelectedCategories([]);
     }
-  }, [categoryFilter]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (data?.products?.nodes) {

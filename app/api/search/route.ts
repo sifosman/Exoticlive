@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
@@ -9,12 +12,12 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Replace this with your actual GraphQL query to your WooCommerce/WordPress backend
-    const response = await fetch('YOUR_GRAPHQL_ENDPOINT', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_WORDPRESS_URL}/graphql`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      next: { revalidate: 60 }, // Cache for 60 seconds
       body: JSON.stringify({
         query: `
           query SearchProducts($search: String!) {
@@ -39,19 +42,43 @@ export async function GET(request: Request) {
       })
     });
 
+    if (!response.ok) {
+      throw new Error(`Search request failed with status ${response.status}`);
+    }
+
     const data = await response.json();
     
-    return NextResponse.json({
-      products: data.data.products.nodes.map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        price: product.price,
-        images: [{ sourceUrl: product.image.sourceUrl }]
-      }))
-    });
+    if (!data?.data?.products?.nodes) {
+      return NextResponse.json({ products: [] });
+    }
+
+    return NextResponse.json(
+      {
+        products: data.data.products.nodes.map((product: any) => ({
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          price: product.price,
+          images: [{ sourceUrl: product?.image?.sourceUrl }]
+        }))
+      },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      }
+    );
   } catch (error) {
     console.error('Search API error:', error);
-    return NextResponse.json({ products: [] }, { status: 500 });
+    return NextResponse.json(
+      { 
+        products: [],
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }, 
+      { status: 500 }
+    );
   }
 } 

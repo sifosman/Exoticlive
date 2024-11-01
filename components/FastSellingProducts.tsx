@@ -3,7 +3,6 @@
 import { useQuery, gql } from '@apollo/client';
 import ProductCard from './ProductCard';
 import { ProductCardSkeleton } from './ui/LoadingSkeleton';
-import { ProductsOrderByEnum, OrderEnum } from '../@types/graphql';
 
 const GET_PRODUCTS = gql`
   query GetProducts($first: Int!) {

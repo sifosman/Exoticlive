@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import { getClient } from '@/lib/apollo-client';
 import ProductContent from '@/components/ProductContent';
+import { notFound } from 'next/navigation';
 
 const GET_PRODUCT = gql`
   query GetProduct($slug: ID!) {
@@ -71,21 +72,48 @@ const GET_ALL_PRODUCT_SLUGS = gql`
 `;
 
 export async function generateStaticParams() {
-  const { data } = await getClient().query({ query: GET_ALL_PRODUCT_SLUGS });
-  return data.products.nodes.map((product: { slug: string }) => ({
-    slug: product.slug,
-  }));
+  try {
+    const { data } = await getClient().query({ 
+      query: GET_ALL_PRODUCT_SLUGS,
+      fetchPolicy: 'no-cache' // Ensure fresh data during build
+    });
+
+    if (!data?.products?.nodes) {
+      console.error('No products found during static generation');
+      return [];
+    }
+
+    return data.products.nodes.map((product: { slug: string }) => ({
+      slug: product.slug,
+    }));
+  } catch (error) {
+    console.error('Error generating static params:', error);
+    return [];
+  }
 }
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const { data } = await getClient().query({
-    query: GET_PRODUCT,
-    variables: { slug: params.slug },
-  });
+  try {
+    const { data } = await getClient().query({
+      query: GET_PRODUCT,
+      variables: { slug: params.slug },
+      fetchPolicy: 'no-cache' // Ensure fresh data during build
+    });
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <ProductContent product={data.product} />
-    </div>
-  );
+    if (!data?.product) {
+      notFound();
+    }
+
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <ProductContent product={data.product} />
+      </div>
+    );
+  } catch (error) {
+    console.error(`Error fetching product ${params.slug}:`, error);
+    notFound();
+  }
 }
+
+// Add this to handle 404 cases
+export const dynamicParams = false; // Ensure only pre-rendered pages are served

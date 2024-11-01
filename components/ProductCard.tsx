@@ -3,7 +3,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { 
   Card, 
-  CardMedia, 
   CardContent as MuiCardContent, 
   CardActions, 
   Typography, 

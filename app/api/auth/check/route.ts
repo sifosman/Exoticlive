@@ -9,42 +9,63 @@ const api = new WooCommerceRestApi({
   version: 'wc/v3'
 });
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+
 export async function GET() {
-  const cookieStore = cookies();
-  const token = cookieStore.get('auth_token');
-
-  if (!token) {
-    return NextResponse.json(
-      { authenticated: false },
-      { status: 401 }
-    );
-  }
-
   try {
-    // Verify token with WordPress
-    const response = await fetch(`${process.env.NEXT_PUBLIC_WORDPRESS_URL}/wp-json/jwt-auth/v1/token/validate`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token.value}`
-      }
-    });
+    const cookieStore = cookies();
+    const token = cookieStore.get('auth_token');
 
-    if (!response.ok) {
+    if (!token) {
       return NextResponse.json(
-        { authenticated: false },
+        { authenticated: false, message: 'No token found' },
         { status: 401 }
       );
     }
 
+    // Verify token with WordPress
+    const response = await fetch(`${process.env.NEXT_PUBLIC_WORDPRESS_URL}/wp-json/jwt-auth/v1/token/validate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.value}`,
+        'Content-Type': 'application/json',
+      },
+      next: { revalidate: 60 }, // Cache for 60 seconds
+    });
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { authenticated: false, message: 'Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    const data = await response.json();
+
     return NextResponse.json(
-      { authenticated: true },
-      { status: 200 }
+      { 
+        authenticated: true,
+        data 
+      },
+      { 
+        status: 200,
+        headers: {
+          'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      }
     );
 
   } catch (error) {
     console.error('Auth check error:', error);
     return NextResponse.json(
-      { authenticated: false },
+      { 
+        authenticated: false, 
+        message: 'Authentication check failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
