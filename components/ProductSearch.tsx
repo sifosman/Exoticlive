@@ -74,36 +74,39 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* Header Image */}
-        <Box sx={{ position: 'relative', width: '100%', height: 200 }}>
+        <Box sx={{ 
+          position: 'relative', 
+          width: '100%', 
+          height: { xs: 150, sm: 200 }
+        }}>
           <Image
-            src="/search-header.webp" // Add your header image
+            src="/search-header.webp"
             alt="Search Header"
             fill
             style={{ objectFit: 'cover' }}
           />
-          <Box 
-            sx={{ 
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              bgcolor: 'rgba(0,0,0,0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              padding: 3
-            }}
-          >
+          <Box sx={{ 
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            padding: { xs: 2, sm: 3 }
+          }}>
             <Typography 
-              variant="h5" // Changed from h4 to h5
+              variant="h5"
               sx={{ 
                 color: 'white',
-                fontFamily: 'Lato', // Changed from Playfair Display to Lato
+                fontFamily: 'Lato, sans-serif',
                 mb: 2,
                 textAlign: 'center',
-                fontWeight: 500 // Added for better readability
+                fontWeight: 500,
+                fontSize: { xs: '1.25rem', sm: '1.5rem' }
               }}
             >
               Search Products
@@ -113,16 +116,17 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
             onClick={onClose}
             sx={{ 
               position: 'absolute',
-              top: 16,
-              right: 16,
+              top: { xs: 8, sm: 16 },
+              right: { xs: 8, sm: 16 },
               color: 'white',
               bgcolor: 'rgba(255,255,255,0.1)',
+              padding: { xs: '4px', sm: '8px' },
               '&:hover': {
                 bgcolor: 'rgba(255,255,255,0.2)'
               }
             }}
           >
-            <CloseIcon />
+            <CloseIcon sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }} />
           </IconButton>
         </Box>
 
@@ -130,14 +134,14 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
         <Paper
           elevation={0}
           sx={{
-            p: 3,
+            p: { xs: 2, sm: 3 },
             bgcolor: 'transparent'
           }}
         >
           <Paper
             elevation={0}
             sx={{
-              p: 2,
+              p: { xs: 1.5, sm: 2 },
               display: 'flex',
               alignItems: 'center',
               border: '1px solid #e0e0e0',
@@ -153,13 +157,17 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
               fullWidth
               startAdornment={
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: 'text.secondary' }} />
+                  <SearchIcon sx={{ 
+                    color: 'text.secondary',
+                    fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                  }} />
                 </InputAdornment>
               }
               sx={{
-                fontSize: '1.1rem',
+                fontFamily: 'Lato, sans-serif',
+                fontSize: { xs: '0.9rem', sm: '1.1rem' },
                 '& input': {
-                  padding: '4px 8px'
+                  padding: { xs: '2px 6px', sm: '4px 8px' }
                 }
               }}
             />
@@ -167,10 +175,10 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
         </Paper>
 
         {/* Results */}
-        <Box sx={{ flexGrow: 1, overflow: 'auto', px: 3, pb: 3 }}>
+        <Box sx={{ flexGrow: 1, overflow: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <CircularProgress size={40} />
+              <CircularProgress size={32} />
             </Box>
           ) : (
             <List sx={{ pt: 0 }}>
@@ -179,7 +187,7 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
                   key={product.id}
                   elevation={0}
                   sx={{
-                    mb: 2,
+                    mb: { xs: 1.5, sm: 2 },
                     overflow: 'hidden',
                     transition: 'all 0.3s',
                     cursor: 'pointer',
@@ -192,15 +200,15 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
                 >
                   <ListItem 
                     onClick={() => handleProductClick(product.slug)}
-                    sx={{ p: 2 }}
+                    sx={{ p: { xs: 1.5, sm: 2 } }}
                   >
                     <ListItemAvatar>
                       <Avatar 
                         sx={{ 
-                          width: 80, 
-                          height: 80, 
+                          width: { xs: 60, sm: 80 },
+                          height: { xs: 60, sm: 80 },
                           borderRadius: 2,
-                          mr: 2,
+                          mr: { xs: 1.5, sm: 2 },
                           bgcolor: 'white'
                         }}
                       >
@@ -219,9 +227,9 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
                       secondary={product.price}
                       primaryTypographyProps={{
                         sx: { 
-                          fontFamily: 'Lato',
+                          fontFamily: 'Lato, sans-serif',
                           fontWeight: 600,
-                          fontSize: '1.1rem',
+                          fontSize: { xs: '0.9rem', sm: '1.1rem' },
                           mb: 0.5
                         }
                       }}
@@ -229,7 +237,8 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
                         sx: { 
                           color: 'primary.main',
                           fontWeight: 600,
-                          fontSize: '1rem'
+                          fontSize: { xs: '0.85rem', sm: '1rem' },
+                          fontFamily: 'Lato, sans-serif'
                         }
                       }}
                     />
@@ -237,18 +246,29 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
                 </Paper>
               ))}
               {searchQuery.length >= 2 && searchResults.length === 0 && !loading && (
-                <Box 
-                  sx={{ 
-                    textAlign: 'center',
-                    mt: 8,
-                    color: 'text.secondary',
-                    p: 3
-                  }}
-                >
-                  <Typography variant="h6" sx={{ mb: 1 }}>
+                <Box sx={{ 
+                  textAlign: 'center',
+                  mt: { xs: 4, sm: 8 },
+                  color: 'text.secondary',
+                  p: { xs: 2, sm: 3 }
+                }}>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      mb: 1,
+                      fontFamily: 'Lato, sans-serif',
+                      fontSize: { xs: '1rem', sm: '1.25rem' }
+                    }}
+                  >
                     No products found
                   </Typography>
-                  <Typography variant="body2">
+                  <Typography 
+                    variant="body2"
+                    sx={{
+                      fontFamily: 'Lato, sans-serif',
+                      fontSize: { xs: '0.875rem', sm: '1rem' }
+                    }}
+                  >
                     Try different keywords or browse our categories
                   </Typography>
                 </Box>

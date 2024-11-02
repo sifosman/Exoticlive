@@ -161,9 +161,12 @@ export default function ProductCard({ product, index }: ProductCardProps) {
             position: 'relative',
             overflow: 'hidden',
             color: 'white',
-            fontSize: '0.7rem',
+            fontSize: { xs: '0.6rem', sm: '0.7rem' },
+            textAlign: 'center',
+            justifyContent: 'center',
             fontFamily: 'Lato, sans-serif',
-            bgcolor: 'transparent',
+            padding: { xs: '4px 8px', sm: '6px 16px' },
+            minHeight: { xs: '24px', sm: '36px' },
             border: '1px solid rgba(255, 255, 255, 0.2)',
             backdropFilter: 'blur(8px)',
             '&::before': {
@@ -198,7 +201,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
             '&:hover': {
               bgcolor: 'transparent',
               '&::before': {
-                animation: 'gradientMove 8s ease infinite', // Faster animation on hover
+                animation: 'gradientMove 8s ease infinite',
               }
             }
           }}

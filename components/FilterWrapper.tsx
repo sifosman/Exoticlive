@@ -22,6 +22,7 @@ export default function FilterWrapper({ categories }: { categories: any[] }) {
       ]}
       selectedCategories={selectedCategories}
       onCategoryToggle={handleCategoryToggle}
+      onClose={() => {}}
     />
   );
 }

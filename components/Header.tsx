@@ -15,7 +15,10 @@ import {
   MenuItem,
   Box,
   Fade,
-  Typography
+  Typography,
+  Drawer,
+  BottomNavigation,
+  BottomNavigationAction
 } from '@mui/material';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import PersonIcon from '@mui/icons-material/Person';
@@ -25,6 +28,9 @@ import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import SearchIcon from '@mui/icons-material/Search';
 import ProductSearch from './ProductSearch';
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
+import HomeIcon from '@mui/icons-material/Home';
 
 // Add this type definition
 type Category = {
@@ -56,6 +62,7 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [shopAnchorEl, setShopAnchorEl] = useState<null | HTMLElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -72,6 +79,52 @@ const Header = () => {
   const handleShopMenuClose = () => {
     setShopAnchorEl(null);
   };
+
+  const MobileBottomNav = () => (
+    <BottomNavigation
+      sx={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 65,
+        backgroundColor: 'black',
+        zIndex: 1200,
+        display: { xs: 'flex', lg: 'none' },
+        '& .MuiBottomNavigationAction-root': {
+          color: 'rgba(255, 255, 255, 0.7)',
+          '&.Mui-selected': {
+            color: 'white',
+          },
+        },
+      }}
+    >
+      <BottomNavigationAction
+        label="Home"
+        icon={<Image src="/cropped-logo11.png" alt="Home" width={24} height={24} />}
+        onClick={() => router.push('/')}
+      />
+      <BottomNavigationAction
+        label="Search"
+        icon={<SearchIcon />}
+        onClick={() => setIsSearchOpen(true)}
+      />
+      <BottomNavigationAction
+        label="Cart"
+        icon={
+          <Badge badgeContent={cartItemsCount} color="error">
+            <ShoppingBagIcon />
+          </Badge>
+        }
+        onClick={() => router.push('/cart')}
+      />
+      <BottomNavigationAction
+        label="Account"
+        icon={<PersonIcon />}
+        onClick={() => router.push('/account')}
+      />
+    </BottomNavigation>
+  );
 
   return (
     <>
@@ -230,6 +283,7 @@ const Header = () => {
               minHeight: '72px !important'
             }}
           >
+            {/* Logo - now consistently on the left */}
             <Link href="/">
               <Image
                 src="/cropped-logo11.png"
@@ -246,6 +300,7 @@ const Header = () => {
               />
             </Link>
 
+            {/* Desktop Menu - hidden on mobile */}
             <Box sx={{ display: { xs: 'none', lg: 'flex' }, gap: 4 }}>
               {['Home', 'Shop Now', 'Order Tracking', 'About Us'].map((item) => (
                 <Box key={item}>
@@ -314,7 +369,8 @@ const Header = () => {
               ))}
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            {/* Desktop Icons - hidden on mobile */}
+            <Box sx={{ display: { xs: 'none', lg: 'flex' }, gap: 2 }}>
               <IconButton 
                 color="inherit"
                 onClick={() => setIsSearchOpen(true)}
@@ -339,12 +395,168 @@ const Header = () => {
                 <PersonIcon />
               </IconButton>
             </Box>
+
+            {/* Mobile Menu Icon - now on the right */}
+            <IconButton
+              sx={{ display: { xs: 'flex', lg: 'none' } }}
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <MenuIcon />
+            </IconButton>
           </Toolbar>
         </Container>
       </AppBar>
       
-      {/* Remove the spacing box and replace with minimal spacing */}
-      <Box sx={{ height: { xs: 50, sm: 50 } }} />
+      {/* Mobile Menu Drawer */}
+      <Drawer
+        anchor="left"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        PaperProps={{
+          sx: {
+            width: '80%',
+            maxWidth: 300,
+            pt: 2,
+            pb: 4,
+          },
+        }}
+      >
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <IconButton onClick={() => setMobileMenuOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        
+        <Box sx={{ px: 2 }}>
+          {['Home', 'Shop Now', 'Order Tracking', 'About Us'].map((item) => (
+            <MenuItem
+              key={item}
+              onClick={() => {
+                if (item === 'Home') router.push('/');
+                else if (item === 'About Us') router.push('/about');
+                else if (item === 'Shop Now') {
+                  // Handle shop menu differently in mobile
+                  setMobileMenuOpen(false);
+                  router.push('/products');
+                }
+                setMobileMenuOpen(false);
+              }}
+              sx={{
+                py: 2,
+                fontFamily: 'Lato, sans-serif',
+                fontWeight: 500,
+              }}
+            >
+              {item}
+            </MenuItem>
+          ))}
+          
+          {/* Categories submenu */}
+          <Box sx={{ mt: 2, borderTop: '1px solid rgba(0,0,0,0.1)', pt: 2 }}>
+            <Typography variant="subtitle2" sx={{ px: 2, mb: 1, color: 'text.secondary' }}>
+              Categories
+            </Typography>
+            {categories.map((category) => (
+              <MenuItem
+                key={category.id}
+                onClick={() => {
+                  router.push(`/products?category=${category.slug}`);
+                  setMobileMenuOpen(false);
+                }}
+                sx={{ py: 1.5 }}
+              >
+                {category.name}
+              </MenuItem>
+            ))}
+          </Box>
+        </Box>
+      </Drawer>
+
+      {/* Bottom Navigation - updated styling */}
+      <BottomNavigation
+        sx={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 55, // Reduced height
+          backgroundColor: 'black',
+          zIndex: 1200,
+          display: { xs: 'flex', lg: 'none' },
+          borderTopLeftRadius: '16px',  // Added round corners
+          borderTopRightRadius: '16px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0px -2px 10px rgba(0, 0, 0, 0.2)',
+          '& .MuiBottomNavigationAction-root': {
+            color: 'white', // Made icons white
+            minWidth: 'auto',
+            padding: '6px 0',
+            '&.Mui-selected': {
+              color: 'white',
+            },
+            '& .MuiBottomNavigationAction-label': {
+              fontSize: '0.65rem', // Slightly reduced label size
+              color: 'white',
+              '&.Mui-selected': {
+                fontSize: '0.7rem',
+              }
+            },
+            '& .MuiSvgIcon-root': {
+              fontSize: '1.3rem', // Slightly reduced icon size
+              color: 'white',
+              transition: 'all 0.2s ease',
+            },
+            '&:hover': {
+              '& .MuiSvgIcon-root': {
+                transform: 'scale(1.1)',
+              }
+            }
+          },
+        }}
+      >
+        <BottomNavigationAction
+          label="Home"
+          icon={<HomeIcon />}
+          onClick={() => router.push('/')}
+        />
+        <BottomNavigationAction
+          label="Search"
+          icon={<SearchIcon />}
+          onClick={() => setIsSearchOpen(true)}
+        />
+        <BottomNavigationAction
+          label="Cart"
+          icon={
+            <Badge 
+              badgeContent={cartItemsCount} 
+              color="error"
+              sx={{
+                '& .MuiBadge-badge': {
+                  backgroundColor: '#ff4444',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  minWidth: '16px', // Slightly smaller badge
+                  height: '16px',
+                  fontSize: '0.65rem',
+                  top: 2,
+                  right: -2,
+                }
+              }}
+            >
+              <ShoppingBagIcon />
+            </Badge>
+          }
+          onClick={() => router.push('/cart')}
+        />
+        <BottomNavigationAction
+          label="Account"
+          icon={<PersonIcon />}
+          onClick={() => router.push('/account')}
+        />
+      </BottomNavigation>
+
+      {/* Adjust spacing to account for bottom navigation on mobile */}
+      <Box sx={{ height: { xs: 115, lg: 50 } }} />
 
       <ProductSearch 
         isOpen={isSearchOpen}

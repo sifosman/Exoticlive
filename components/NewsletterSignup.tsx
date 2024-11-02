@@ -52,7 +52,7 @@ const NewsletterSignup = () => {
     <Box 
       sx={{ 
         bgcolor: '#ffffff',
-        py: 8,
+        py: { xs: 4, md: 8 },
         borderTop: 1,
         borderBottom: 1,
         borderColor: 'divider'
@@ -66,13 +66,13 @@ const NewsletterSignup = () => {
           mx: 'auto'
         }}
       >
-        <Grid container spacing={6} alignItems="center">
+        <Grid container spacing={{ xs: 3, md: 6 }} alignItems="center">
           {/* Image Section */}
           <Grid item xs={12} md={4}>
             <Box
               sx={{
                 position: 'relative',
-                height: '350px',
+                height: { xs: '250px', sm: '300px', md: '350px' },
                 width: '100%',
                 borderRadius: 2,
                 overflow: 'hidden'
@@ -99,7 +99,7 @@ const NewsletterSignup = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
-                gap: 4,
+                gap: { xs: 2, md: 4 },
                 pl: { md: 8 },
                 width: '100%',
                 maxWidth: '1000px'
@@ -111,7 +111,8 @@ const NewsletterSignup = () => {
                 sx={{ 
                   fontFamily: 'Montserrat, sans-serif',
                   fontWeight: 600,
-                  mb: 2
+                  mb: { xs: 1, md: 2 },
+                  fontSize: { xs: '1.75rem', sm: '2rem', md: '3rem' }
                 }}
               >
                 Subscribe to Our Newsletter
@@ -122,8 +123,9 @@ const NewsletterSignup = () => {
                 color="text.secondary"
                 sx={{ 
                   fontFamily: 'Montserrat, sans-serif',
-                  mb: 2,
-                  maxWidth: '800px'
+                  mb: { xs: 1, md: 2 },
+                  maxWidth: '800px',
+                  fontSize: { xs: '0.9rem', sm: '1rem', md: '1.25rem' }
                 }}
               >
                 Stay updated with our latest products, exclusive offers, and fashion trends!
@@ -132,6 +134,7 @@ const NewsletterSignup = () => {
               <Box 
                 sx={{ 
                   display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
                   gap: 2,
                   width: '100%',
                   maxWidth: '1000px'
@@ -147,7 +150,7 @@ const NewsletterSignup = () => {
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       bgcolor: 'white',
-                      height: '56px',
+                      height: { xs: '48px', md: '56px' },
                       '&:hover fieldset': {
                         borderColor: '#007600',
                       },
@@ -168,9 +171,10 @@ const NewsletterSignup = () => {
                       bgcolor: '#006000',
                     },
                     fontFamily: 'Montserrat, sans-serif',
-                    px: 6,
-                    height: '56px',
-                    whiteSpace: 'nowrap'
+                    px: { xs: 4, md: 6 },
+                    height: { xs: '48px', md: '56px' },
+                    whiteSpace: 'nowrap',
+                    fontSize: { xs: '0.875rem', md: '1rem' }
                   }}
                 >
                   {isSubmitting ? 'Subscribing...' : 'Subscribe'}

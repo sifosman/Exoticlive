@@ -48,10 +48,13 @@ const CategorySection = () => {
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                     onLoad={() => setImagesLoaded(true)}
                   />
-                  <div className="absolute inset-0 flex items-end justify-center pb-4">
+                  <div className="absolute inset-0 flex items-end justify-center pb-2 md:pb-4">
                     <h3 className="bg-white bg-opacity-20 backdrop-blur-sm text-white 
-                      text-base font-montserrat font-medium tracking-wider text-center 
-                      px-4 py-1.5 rounded-md">
+                      text-xs md:text-base 
+                      font-montserrat font-medium tracking-wider text-center 
+                      px-2 md:px-4 
+                      py-1 md:py-1.5 
+                      rounded">
                       {category.name}
                     </h3>
                   </div>

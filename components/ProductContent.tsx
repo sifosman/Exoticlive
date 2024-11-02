@@ -195,12 +195,11 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
   const maxQuantity = getSelectedVariation()?.stockQuantity ?? Infinity;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8" style={{ marginTop: '52px' }}> {/* Added marginTop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+    <div className="max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
         <div>
-          {/* Breadcrumb Navigation */}
-          <nav className="mb-4">
-            <ol className="flex space-x-2 text-sm text-gray-500">
+          <nav className="mb-4 overflow-x-auto whitespace-nowrap">
+            <ol className="flex space-x-2 text-xs md:text-sm text-gray-500">
               <li>
                 <Link href="/" className="hover:text-primary">Home</Link>
               </li>
@@ -209,11 +208,10 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                 <Link href="/products" className="hover:text-primary">Products</Link>
               </li>
               <li>/</li>
-              <li className="text-gray-700">{product.name}</li>
+              <li className="text-gray-700 truncate max-w-[150px]">{product.name}</li>
             </ol>
           </nav>
 
-          {/* Product Image Gallery */}
           <motion.div
             className="relative bg-white rounded-lg overflow-hidden shadow-md border border-gray-200"
             initial={{ opacity: 0 }}
@@ -228,48 +226,46 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="relative"
+                  className="relative aspect-square"
                 >
                   <Image
                     src={imageError ? '/placeholder-image.jpg' : (images[currentImageIndex]?.sourceUrl || '/placeholder-image.jpg')}
                     alt={product.name}
-                    width={500}
-                    height={500}
-                    objectFit="contain"
+                    fill
+                    style={{ objectFit: 'contain' }}
                     onError={() => setImageError(true)}
-                    className="w-full h-auto"
+                    className="w-full h-full"
                   />
                 </motion.div>
               )}
             </AnimatePresence>
-            {/* Gallery Navigation Buttons */}
+
             {totalImages > 1 && (
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white bg-opacity-50 p-2 rounded-full hover:bg-opacity-75 transition"
+                  className="absolute top-1/2 left-2 md:left-4 transform -translate-y-1/2 bg-white bg-opacity-50 p-1.5 md:p-2 rounded-full hover:bg-opacity-75 transition"
                   aria-label="Previous Image"
                 >
-                  <ChevronLeftIcon className="h-5 w-5 text-gray-800" />
+                  <ChevronLeftIcon className="h-4 w-4 md:h-5 md:w-5 text-gray-800" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white bg-opacity-50 p-2 rounded-full hover:bg-opacity-75 transition"
+                  className="absolute top-1/2 right-2 md:right-4 transform -translate-y-1/2 bg-white bg-opacity-50 p-1.5 md:p-2 rounded-full hover:bg-opacity-75 transition"
                   aria-label="Next Image"
                 >
-                  <ChevronRightIcon className="h-5 w-5 text-gray-800" />
+                  <ChevronRightIcon className="h-4 w-4 md:h-5 md:w-5 text-gray-800" />
                 </button>
               </>
             )}
           </motion.div>
 
-          {/* Image Thumbnails */}
           {totalImages > 1 && (
-            <div className="flex space-x-2 mt-4">
+            <div className="flex space-x-2 mt-4 overflow-x-auto pb-2">
               {images.map((img, index) => (
                 <div
                   key={index}
-                  className={`relative w-16 h-16 cursor-pointer border ${
+                  className={`relative flex-shrink-0 w-14 md:w-16 h-14 md:h-16 cursor-pointer border ${
                     currentImageIndex === index ? 'border-primary' : 'border-transparent'
                   } rounded-md overflow-hidden`}
                   onClick={() => setCurrentImageIndex(index)}
@@ -277,8 +273,8 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                   <Image
                     src={img.sourceUrl}
                     alt={`${product.name} thumbnail ${index + 1}`}
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    style={{ objectFit: 'cover' }}
                     className="hover:opacity-80 transition-opacity duration-300"
                   />
                 </div>
@@ -291,10 +287,10 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="space-y-6"
+          className="space-y-4 md:space-y-6"
         >
-          <h1 className="text-3xl font-lato font-bold text-gray-800">{product.name}</h1>
-          <p className="text-2xl font-montserrat font-bold text-primary">
+          <h1 className="text-2xl md:text-3xl font-lato font-bold text-gray-800">{product.name}</h1>
+          <p className="text-xl md:text-2xl font-montserrat font-bold text-primary">
             {formatPrice(
               getSelectedVariation()?.salePrice || 
               getSelectedVariation()?.regularPrice || 
@@ -303,13 +299,17 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
               product.price
             )}
           </p>
-          <div dangerouslySetInnerHTML={{ __html: product.description }} className="prose prose-sm max-w-none" />
+
+          <div 
+            dangerouslySetInnerHTML={{ __html: product.description }} 
+            className="prose prose-sm md:prose max-w-none text-sm md:text-base"
+          />
 
           {isVariableProduct && (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {['pa_color', 'pa_size'].map((attrName) => (
                 <div key={attrName}>
-                  <h4 className="font-montserrat font-semibold text-gray-700 mb-2">
+                  <h4 className="font-montserrat font-semibold text-gray-700 text-sm md:text-base mb-2">
                     {displayAttributeName(attrName)}
                   </h4>
                   <div className="flex flex-wrap gap-2">
@@ -356,42 +356,34 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                   </div>
                 </div>
               ))}
-              <button
-                className="text-sm text-gray-500 hover:text-primary transition-colors duration-300"
-                onClick={handleResetSelection}
-              >
-                Reset Selection
-              </button>
             </div>
           )}
 
-          {/* Quantity Selector */}
           <div className="flex items-center space-x-4">
-            <span className="text-sm font-medium text-gray-700">Quantity:</span>
+            <span className="text-xs md:text-sm font-medium text-gray-700">Quantity:</span>
             <div className="flex items-center border border-gray-300 rounded-full">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="rounded-l-full"
+                className="rounded-l-full px-2 md:px-3"
               >
                 -
               </Button>
-              <span className="mx-2 text-sm">{quantity}</span>
+              <span className="mx-2 text-xs md:text-sm min-w-[20px] text-center">{quantity}</span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
-                className="rounded-r-full"
+                className="rounded-r-full px-2 md:px-3"
               >
                 +
               </Button>
             </div>
           </div>
-          
-          {/* Add to Cart Button */}
+
           {getSelectedVariation() && (
-            <p className="text-sm text-gray-600">
+            <p className="text-xs md:text-sm text-gray-600">
               {getSelectedVariation()?.stockStatus === 'IN_STOCK' 
                 ? `In stock${getSelectedVariation()?.stockQuantity !== null ? `: ${getSelectedVariation()?.stockQuantity}` : ''}`
                 : ''}
@@ -403,7 +395,7 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
             whileTap={{ scale: 0.98 }}
           >
             <Button
-              className="w-full bg-black font-lato hover:bg-gray-900 text-white transition-colors duration-300 py-3"
+              className="w-full bg-black font-lato hover:bg-gray-900 text-white transition-colors duration-300 py-2.5 md:py-3 text-sm md:text-base"
               onClick={handleAddToCart}
               disabled={false}
             >
@@ -411,31 +403,31 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
             </Button>
           </motion.div>
 
-          {/* Updated version with glass effect and background image */}
-          <div className="mt-6 bg-[url('/payment-methods.webp')] bg-cover p-6 rounded-lg text-white relative">
-            {/* Glass effect overlay */}
+          <div className="mt-4 md:mt-6 bg-[url('/payment-methods.webp')] bg-cover p-4 md:p-6 rounded-lg text-white relative">
             <div className="absolute inset-0 bg-white/10 backdrop-blur-sm rounded-lg"></div>
-            
-            {/* Content */}
-            <div className="relative z-10 flex items-center justify-center space-x-4">
-              <Lock className="w-5 h-5 text-white" />
-              <span className="text-white font-medium">
+            <div className="relative z-10 flex items-center justify-center space-x-2 md:space-x-4">
+              <Lock className="w-4 h-4 md:w-5 md:h-5 text-white" />
+              <span className="text-white font-medium text-xs md:text-base">
                 Trusted Supplier for over 15 Years
               </span>
-              <CheckCircle className="w-5 h-5 text-white stroke-2" />
+              <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-white stroke-2" />
             </div>
           </div>
 
-          {/* Additional Information */}
           {product.additionalInformation && (
-            <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-              <h2 className="text-xl font-lato font-semibold text-gray-800 mb-2">Additional Information</h2>
-              <div dangerouslySetInnerHTML={{ __html: product.additionalInformation }} className="prose prose-sm max-w-none" />
+            <div className="mt-6 md:mt-8 p-3 md:p-4 bg-gray-50 rounded-lg">
+              <h2 className="text-lg md:text-xl font-lato font-semibold text-gray-800 mb-2">
+                Additional Information
+              </h2>
+              <div 
+                dangerouslySetInnerHTML={{ __html: product.additionalInformation }} 
+                className="prose-sm md:prose max-w-none text-sm md:text-base" 
+              />
             </div>
           )}
         </motion.div>
       </div>
-      
+
       <RelatedProducts />
     </div>
   );

@@ -9,6 +9,9 @@ import SortDropdown from './SortDropdown';
 import { ProductsOrderByEnum, OrderEnum } from '../@types/graphql';
 import { Button } from './ui/button';
 import PriceRangeFilter from './PriceRangeFilter';
+import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { Filter } from "lucide-react";
+import { Drawer } from '@mui/material';
 
 const GET_PRODUCTS_AND_CATEGORIES = gql`
   query GetProductsAndCategories($first: Int!, $after: String, $sortBy: ProductsOrderByEnum!, $sortOrder: OrderEnum!) {
@@ -82,6 +85,22 @@ interface Product {
   };
 }
 
+function ProductSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+      {[...Array(8)].map((_, index) => (
+        <div 
+          key={index}
+          className="p-3 md:p-4 rounded-lg border"
+        >
+          <div className="h-3 md:h-4 bg-gray-200 rounded animate-pulse w-3/4 mb-2"></div>
+          <div className="h-2 md:h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const ProductList = () => {
   const searchParams = useSearchParams();
   const [sortBy, setSortBy] = useState<ProductsOrderByEnum>(ProductsOrderByEnum.DATE);
@@ -90,6 +109,7 @@ const ProductList = () => {
   const [displayedProducts, setDisplayedProducts] = useState(12);
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [currentPriceRange, setCurrentPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const { loading, error, data } = useQuery(GET_PRODUCTS_AND_CATEGORIES, {
     variables: { first: 120, after: null, sortBy, sortOrder },
@@ -124,7 +144,7 @@ const ProductList = () => {
     }
   }, [data]);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <ProductSkeleton />;
   if (error) return <p>Error: {error.message}</p>;
 
   const products = data?.products.nodes || [];
@@ -164,44 +184,96 @@ const ProductList = () => {
     setDisplayedProducts(prev => Math.min(prev + 12, filteredProducts.length));
   };
 
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const filterContent = (
+    <div className="w-full">
+      <FilterPanel 
+        categories={[{id: 'all', name: 'All', slug: 'all'}, ...(data?.productCategories?.nodes || [])]}
+        selectedCategories={selectedCategories}
+        onCategoryToggle={handleCategoryToggle}
+        onClose={handleDrawerToggle}
+      />
+      <PriceRangeFilter
+        minPrice={priceRange.min}
+        maxPrice={priceRange.max}
+        currentMin={currentPriceRange.min}
+        currentMax={currentPriceRange.max}
+        onPriceChange={handlePriceChange}
+      />
+    </div>
+  );
+
   return (
-    <div className="container mx-auto my-12 flex">
-      <div className="w-1/4 pr-8">
-        <FilterPanel 
-          categories={[{id: 'all', name: 'All', slug: 'all'}, ...(data?.productCategories?.nodes || [])]}
-          selectedCategories={selectedCategories}
-          onCategoryToggle={handleCategoryToggle}
-        />
-        <PriceRangeFilter
-          minPrice={priceRange.min}
-          maxPrice={priceRange.max}
-          currentMin={currentPriceRange.min}
-          currentMax={currentPriceRange.max}
-          onPriceChange={handlePriceChange}
-        />
+    <div className="container mx-auto px-1 sm:px-2 md:px-3 pt-[60px] md:pt-[75px]">
+      <div className="lg:hidden mb-3">
+        <Button 
+          onClick={handleDrawerToggle} 
+          variant="outline" 
+          className="w-full py-2 text-xs md:text-sm"
+        >
+          <Filter className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+          Filters
+        </Button>
       </div>
-      <div className="w-3/4">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-lato font-bold">Our Products</h2>
-          <SortDropdown onSortChange={(newSortBy: string, newSortOrder: string) => 
-            handleSortChange(newSortBy as ProductsOrderByEnum, newSortOrder as OrderEnum)
-          } />
+      <Drawer
+        anchor="left"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true,
+        }}
+        sx={{
+          display: { xs: 'block', lg: 'none' },
+          '& .MuiDrawer-paper': { 
+            width: '100%', 
+            maxWidth: '280px',
+            top: '60px',
+            height: 'calc(100% - 60px)',
+            boxSizing: 'border-box',
+            padding: '16px',
+          },
+        }}
+      >
+        {filterContent}
+      </Drawer>
+      <div className="flex flex-col lg:flex-row gap-3 md:gap-4 lg:gap-6">
+        <div className="hidden lg:block w-[220px] flex-shrink-0">
+          {filterContent}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"> {/* Updated grid */}
-          {filteredProducts.slice(0, displayedProducts).map((product: any, index: number) => (
-            <ProductCard key={product.id} product={product} index={index} />
-          ))}
-        </div>
-        {displayedProducts < filteredProducts.length && (
-          <div className="mt-8 text-center">
-            <Button 
-              onClick={handleShowMore}
-              className="font-lato"
-            >
-              Show More
-            </Button>
+        <div className="flex-1">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 md:mb-4">
+            <h2 className="text-lg md:text-xl lg:text-2xl font-lato font-bold mb-2 sm:mb-0">
+              Our Products
+            </h2>
+            <SortDropdown 
+              onSortChange={(newSortBy: string, newSortOrder: string) => 
+                handleSortChange(newSortBy as ProductsOrderByEnum, newSortOrder as OrderEnum)
+              } 
+            />
           </div>
-        )}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-3">
+            {filteredProducts.slice(0, displayedProducts).map((product: any, index: number) => (
+              <div key={product.id} className="flex justify-center">
+                <div className="w-[calc(50vw-16px)] sm:w-full sm:max-w-[170px] md:max-w-[190px] lg:max-w-[210px]">
+                  <ProductCard product={product} index={index} />
+                </div>
+              </div>
+            ))}
+          </div>
+          {displayedProducts < filteredProducts.length && (
+            <div className="mt-4 md:mt-6 text-center">
+              <Button 
+                onClick={handleShowMore}
+                className="font-lato text-xs md:text-sm py-2 px-4 md:px-6"
+              >
+                Show More
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

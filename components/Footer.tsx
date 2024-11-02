@@ -61,7 +61,8 @@ const Footer = () => {
                       fontFamily: lato.style.fontFamily, // Use the imported Lato font
                       fontWeight: 600,
                       letterSpacing: '0.02em',
-                      color: 'white'
+                      color: 'white',
+                      fontSize: { xs: '1rem', md: '1.25rem' }
                     }}
                   >
                     About Us
@@ -70,7 +71,8 @@ const Footer = () => {
                     sx={{ 
                       color: 'white',
                       fontFamily: lato.style.fontFamily, // Use the imported Lato font
-                      letterSpacing: '0.02em'
+                      letterSpacing: '0.02em',
+                      fontSize: { xs: '0.875rem', md: '1rem' }
                     }}
                   >
                     We are a leading wholesale supplier of ladies shoes, providing quality footwear to businesses worldwide.
@@ -85,12 +87,13 @@ const Footer = () => {
                       fontFamily: lato.style.fontFamily, // Use the imported Lato font
                       fontWeight: 600,
                       letterSpacing: '0.02em',
-                      color: 'white'
+                      color: 'white',
+                      fontSize: { xs: '1rem', md: '1.25rem' }
                     }}
                   >
                     Quick Links
                   </Typography>
-                  <Stack spacing={2}>
+                  <Stack spacing={1.5}>
                     {[
                       { text: 'Products', href: '/products' },
                       { text: 'About Us', href: '/about' },
@@ -107,6 +110,7 @@ const Footer = () => {
                           fontFamily: lato.style.fontFamily, // Use the imported Lato font
                           letterSpacing: '0.02em',
                           cursor: 'pointer',
+                          fontSize: { xs: '0.875rem', md: '1rem' },
                           '&:hover': {
                             opacity: 0.8
                           }
@@ -126,7 +130,8 @@ const Footer = () => {
                       fontFamily: lato.style.fontFamily, // Use the imported Lato font
                       fontWeight: 600,
                       letterSpacing: '0.02em',
-                      color: 'white'
+                      color: 'white',
+                      fontSize: { xs: '1rem', md: '1.25rem' }
                     }}
                   >
                     Contact Us
@@ -136,7 +141,10 @@ const Footer = () => {
                     sx={{ 
                       color: 'white',
                       fontFamily: lato.style.fontFamily, // Use the imported Lato font
-                      letterSpacing: '0.02em'
+                      letterSpacing: '0.02em',
+                      '& .MuiTypography-root': {
+                        fontSize: { xs: '0.875rem', md: '1rem' }
+                      }
                     }}
                   >
                     <Typography>Dawncrest, Verulam,4340</Typography>
@@ -170,13 +178,14 @@ const Footer = () => {
                   fontFamily: lato.style.fontFamily, // Use the imported Lato font
                   fontWeight: 600,
                   letterSpacing: '0.02em',
-                  color: 'white'
+                  color: 'white',
+                  fontSize: { xs: '1rem', md: '1.25rem' }
                 }}
               >
                 Send us a Message
               </Typography>
               
-              <Stack spacing={3}>
+              <Stack spacing={2}>
                 <TextField
                   fullWidth
                   label="Name"
@@ -234,6 +243,7 @@ const Footer = () => {
                   sx={{
                     color: 'white',
                     borderColor: 'white',
+                    fontSize: { xs: '0.875rem', md: '1rem' },
                     '&:hover': {
                       borderColor: 'white',
                       bgcolor: 'rgba(255, 255, 255, 0.1)',
@@ -268,7 +278,8 @@ const Footer = () => {
             sx={{ 
               color: 'white',
               fontFamily: lato.style.fontFamily, // Use the imported Lato font
-              letterSpacing: '0.02em'
+              letterSpacing: '0.02em',
+              fontSize: { xs: '0.75rem', md: '0.875rem' }
             }}
           >
             &copy; 2024 Developed by OWD. All rights reserved.
