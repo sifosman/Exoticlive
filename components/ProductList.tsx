@@ -207,7 +207,7 @@ const ProductList = () => {
   );
 
   return (
-    <div className="container mx-auto px-1 sm:px-2 md:px-3 pt-[60px] md:pt-[75px]">
+    <div className="container mx-auto px-1 sm:px-2 md:px-3 lg:px-8 pt-[60px] md:pt-[75px]">
       <div className="lg:hidden mb-3">
         <Button 
           onClick={handleDrawerToggle} 
@@ -239,13 +239,13 @@ const ProductList = () => {
       >
         {filterContent}
       </Drawer>
-      <div className="flex flex-col lg:flex-row gap-3 md:gap-4 lg:gap-6">
+      <div className="flex flex-col lg:flex-row gap-3 md:gap-4 lg:gap-8">
         <div className="hidden lg:block w-[220px] flex-shrink-0">
           {filterContent}
         </div>
         <div className="flex-1">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 md:mb-4">
-            <h2 className="text-lg md:text-xl lg:text-2xl font-lato font-bold mb-2 sm:mb-0">
+            <h2 className="text-lg md:text-xl lg:text-2xl font-lato font-bold mb-2 sm:mb-0 w-full text-center">
               Our Products
             </h2>
             <SortDropdown 

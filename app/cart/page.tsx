@@ -23,9 +23,9 @@ export default function CartPage() {
   const formatPrice = (price: number) => `R${price.toFixed(2)}`;
 
   return (
-    <div className={`min-h-screen bg-gray-50 ${lato.className}`}>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-12">
-        <h1 className="text-xl md:text-2xl font-bold mb-4 md:mb-8">Your Cart</h1>
+    <div className={`min-h-screen py-12 bg-white ${lato.className}`}>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-12">
+        <h1 className="text-xl font-lato md:text-2xl font-bold mb-4 md:mb-8">Your Cart</h1>
         
         {cart.length === 0 ? (
           <div className="text-center py-12">

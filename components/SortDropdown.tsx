@@ -18,14 +18,16 @@ const SortDropdown: React.FC<SortDropdownProps> = ({ onSortChange }) => {
         className="
           appearance-none
           w-full
-          px-4
-          py-2
+          px-3
+          py-1.5
           bg-white
           border
           border-gray-300
           rounded-lg
           shadow-sm
           font-lato
+          text-xs
+          md:text-sm
           text-gray-700
           focus:outline-none
           focus:ring-2

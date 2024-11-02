@@ -36,25 +36,15 @@ export default async function ProductsPage() {
   const categories = data?.productCategories?.nodes || [];
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="pt-16 md:pt-20 pb-6 md:pb-8">
-          <h1 className="text-2xl md:text-3xl font-lato font-bold text-gray-900 text-center mb-2">
-            Our Products
-          </h1>
-          <p className="text-sm md:text-base text-gray-600 text-center max-w-2xl mx-auto">
-            Discover our collection of quality footwear for every occasion
-          </p>
-        </div>
+    <main className="min-h-screen bg-white">
+     
 
         {/* Products Grid */}
-        <div className="pb-12 md:pb-16">
+        <div className="pt-6 md:pt-6 pb-12 md:pb-16">
           <Suspense fallback={<LoadingFallback />}>
             <ProductList />
           </Suspense>
         </div>
-      </div>
     </main>
   );
 }
