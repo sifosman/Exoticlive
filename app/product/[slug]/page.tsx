@@ -16,6 +16,9 @@ const GET_PRODUCT = gql`
       name
       description
       shortDescription
+      image {
+        sourceUrl
+      }
       sku
       status
       reviewCount
@@ -24,7 +27,11 @@ const GET_PRODUCT = gql`
         price
         regularPrice
         salePrice
+        image {
+          sourceUrl
+        }
         stockStatus
+        stockQuantity
       }
       ... on VariableProduct {
         price
@@ -39,7 +46,11 @@ const GET_PRODUCT = gql`
             price
             regularPrice
             salePrice
+            image {
+              sourceUrl
+            }
             stockStatus
+            stockQuantity
             attributes {
               nodes {
                 name

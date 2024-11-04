@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'; // For gallery navigation
 import { motion, AnimatePresence } from 'framer-motion'; // For animations
 import RelatedProducts from './RelatedProducts';
-import { Lock, CheckCircle } from 'lucide-react';
+import { Lock, CheckCircle, XCircle } from 'lucide-react';
 
 interface ProductContentProps {
   product: {
@@ -53,6 +53,9 @@ interface ProductContentProps {
             stockQuantity?: number | null;
             regularPrice: string;
             salePrice: string;
+            image: {
+              sourceUrl: string;
+            };
             attributes: {
               nodes: Array<{
                 name: string;
@@ -194,6 +197,33 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
 
   const maxQuantity = getSelectedVariation()?.stockQuantity ?? Infinity;
 
+  const selectedVariation = getSelectedVariation();
+  
+  const renderStockStatus = () => {
+    if (!selectedVariation) return null;
+
+    return (
+      <div className="flex items-center space-x-2 text-sm">
+        {selectedVariation.stockStatus === 'IN_STOCK' ? (
+          <>
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <span className="text-green-600 font-medium">
+              In Stock
+              {selectedVariation.stockQuantity !== null && 
+                ` (${selectedVariation.stockQuantity} available)`
+              }
+            </span>
+          </>
+        ) : (
+          <>
+            <XCircle className="w-4 h-4 text-red-600" />
+            <span className="text-red-600 font-medium">Out of Stock</span>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
@@ -329,33 +359,14 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                         `}
                         onClick={() => handleAttributeSelect(attrName, attrValue)}
                       >
-                        <style jsx>{`
-                          @keyframes moveGradient {
-                            0% { background-position: 0% 50%; }
-                            50% { background-position: 100% 50%; }
-                            100% { background-position: 0% 50%; }
-                          }
-                          button.selected::after {
-                            content: '';
-                            position: absolute;
-                            inset: -2px;
-                            z-index: -1;
-                            background: linear-gradient(90deg, #3D6660, #669492, #254843, #3D6660);
-                            background-size: 300% 100%;
-                            animation: moveGradient 15s ease infinite;
-                            filter: blur(8px);
-                            opacity: 0.7;
-                          }
-                          button:hover::after {
-                            opacity: 1;
-                          }
-                        `}</style>
                         <span className="relative z-10">{attrValue}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               ))}
+              
+              {renderStockStatus()}
             </div>
           )}
 
@@ -367,6 +378,7 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                 size="sm"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="rounded-l-full px-2 md:px-3"
+                disabled={!selectedVariation || selectedVariation.stockStatus !== 'IN_STOCK'}
               >
                 -
               </Button>
@@ -374,21 +386,14 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
+                onClick={() => setQuantity(Math.min(selectedVariation?.stockQuantity || Infinity, quantity + 1))}
                 className="rounded-r-full px-2 md:px-3"
+                disabled={!selectedVariation || selectedVariation.stockStatus !== 'IN_STOCK'}
               >
                 +
               </Button>
             </div>
           </div>
-
-          {getSelectedVariation() && (
-            <p className="text-xs md:text-sm text-gray-600">
-              {getSelectedVariation()?.stockStatus === 'IN_STOCK' 
-                ? `In stock${getSelectedVariation()?.stockQuantity !== null ? `: ${getSelectedVariation()?.stockQuantity}` : ''}`
-                : ''}
-            </p>
-          )}
 
           <motion.div
             whileHover={{ scale: 1.02 }}
@@ -397,9 +402,11 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
             <Button
               className="w-full bg-black font-lato hover:bg-gray-900 text-white transition-colors duration-300 py-2.5 md:py-3 text-sm md:text-base"
               onClick={handleAddToCart}
-              disabled={false}
+              disabled={!selectedVariation || selectedVariation.stockStatus !== 'IN_STOCK'}
             >
-              ADD TO CART
+              {!selectedVariation ? 'SELECT OPTIONS' : 
+               selectedVariation.stockStatus !== 'IN_STOCK' ? 'OUT OF STOCK' : 
+               'ADD TO CART'}
             </Button>
           </motion.div>
 
