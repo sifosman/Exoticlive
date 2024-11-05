@@ -63,7 +63,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
 
   const imageUrl = isValidImageUrl(product.image?.sourceUrl)
     ? product.image.sourceUrl
-    : 'https://www.exoticshoes.co.za/wp-content/uploads/2021/09/cropped-logo11.png'
+    : 'https://wp.exoticshoes.co.za/wp-content/uploads/2021/09/cropped-logo11.png'
 
   return (
     <Card 

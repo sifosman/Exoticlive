@@ -85,21 +85,6 @@ interface Product {
   };
 }
 
-function ProductSkeleton() {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-      {[...Array(8)].map((_, index) => (
-        <div 
-          key={index}
-          className="p-3 md:p-4 rounded-lg border"
-        >
-          <div className="h-3 md:h-4 bg-gray-200 rounded animate-pulse w-3/4 mb-2"></div>
-          <div className="h-2 md:h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 const ProductList = () => {
   const searchParams = useSearchParams();
@@ -144,7 +129,7 @@ const ProductList = () => {
     }
   }, [data]);
 
-  if (loading) return <ProductSkeleton />;
+ 
   if (error) return <p>Error: {error.message}</p>;
 
   const products = data?.products.nodes || [];
