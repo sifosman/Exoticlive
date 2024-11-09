@@ -89,7 +89,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
           }}
         >
           <Image
-            src={product.image?.sourceUrl || 'https://www.exoticshoes.co.za/wp-content/uploads/2021/09/cropped-logo11.png'}
+            src={product.image?.sourceUrl || 'https://wp.exoticshoes.co.za/wp-content/uploads/2021/09/cropped-logo11.png'}
             alt={product.name || 'Product Image'}
             fill
             style={{

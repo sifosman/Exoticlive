@@ -181,7 +181,7 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 ${lato.className}`}>
+    <div className={`min-h-screen bg-white ${lato.className}`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-[60px] pb-8 sm:pb-12">
         <style>{styles.popupOverride}</style>
         

@@ -95,15 +95,46 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
     return isNaN(numPrice) ? 'N/A' : `R${numPrice.toFixed(2)}`;
   };
 
+  const checkVariationAvailability = (attributes: { [key: string]: string }) => {
+    if (!isVariableProduct || !product.variations) return false;
+    
+    const matchingVariation = product.variations.nodes.find(variation =>
+      variation.attributes.nodes.every(attr =>
+        attributes[attr.name] === attr.value
+      )
+    );
+
+    return {
+      exists: !!matchingVariation,
+      inStock: matchingVariation?.stockStatus === 'IN_STOCK'
+    };
+  };
+
   const handleAttributeSelect = (attrName: string, attrValue: string) => {
-    let value = attrValue;
-    if (attrName === 'pa_size') {
-      value = attrValue.replace('.', '-');
-    }
-    setSelectedAttributes(prev => ({
-      ...prev,
+    let value = attrName === 'pa_size' ? attrValue.replace('.', '-') : attrValue;
+    
+    const newAttributes = {
+      ...selectedAttributes,
       [attrName]: value
-    }));
+    };
+
+    const result = checkVariationAvailability(newAttributes);
+    
+    if (!result || (!result.exists || !result.inStock)) {
+      const hasAllAttributes = ['pa_color', 'pa_size'].every(attr => newAttributes[attr]);
+      if (hasAllAttributes) {
+        setSelectedAttributes({});
+        toast({
+          title: "Combination Not Available",
+          description: "This variation is out of stock. Please select a different combination.",
+          duration: 3000,
+        });
+      } else {
+        setSelectedAttributes(newAttributes);
+      }
+    } else {
+      setSelectedAttributes(newAttributes);
+    }
   };
 
   const getSelectedVariation = () => {
@@ -224,6 +255,25 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
     );
   };
 
+  // Add this helper function to check if an option is available based on current selection
+  const isOptionAvailable = (attrName: string, attrValue: string) => {
+    if (!isVariableProduct || !product.variations) return true;
+
+    // Get the other attribute name (if color is passed, get size, and vice versa)
+    const otherAttrName = attrName === 'pa_color' ? 'pa_size' : 'pa_color';
+    const otherAttrValue = selectedAttributes[otherAttrName];
+
+    return product.variations.nodes.some(variation => {
+      const matchesCurrentAttr = variation.attributes.nodes
+        .some(attr => attr.name === attrName && attr.value === attrValue);
+      
+      const matchesOtherAttr = !otherAttrValue || variation.attributes.nodes
+        .some(attr => attr.name === otherAttrName && attr.value === otherAttrValue);
+
+      return matchesCurrentAttr && matchesOtherAttr && variation.stockStatus === 'IN_STOCK';
+    });
+  };
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
@@ -336,36 +386,74 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
           />
 
           {isVariableProduct && (
-            <div className="space-y-3 md:space-y-4">
+            <div className="space-y-4 md:space-y-6">
+              <h3 className="font-montserrat font-bold text-lg md:text-xl text-gray-800">
+                Select Options
+              </h3>
+
               {['pa_color', 'pa_size'].map((attrName) => (
-                <div key={attrName}>
-                  <h4 className="font-montserrat font-semibold text-gray-700 text-sm md:text-base mb-2">
-                    {displayAttributeName(attrName)}
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {getAvailableOptionsForAttribute(attrName).map((attrValue) => (
-                      <button
-                        key={attrValue}
-                        className={`
-                          relative px-3 py-1 text-sm border rounded-full overflow-hidden transition-all duration-300
-                          ${
-                            selectedAttributes[attrName] === (attrName === 'pa_size' ? attrValue.replace('.', '-') : attrValue)
-                            ? 'border-transparent bg-black text-white shadow-lg selected'
-                            : 'border-gray-300 bg-white text-gray-700'
-                          }
-                          hover:border-transparent hover:text-white
-                          before:absolute before:inset-0 before:z-0
-                          hover:before:opacity-100
-                        `}
-                        onClick={() => handleAttributeSelect(attrName, attrValue)}
-                      >
-                        <span className="relative z-10">{attrValue}</span>
-                      </button>
-                    ))}
+                <div key={attrName} className="border-b pb-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-montserrat font-bold text-gray-800 text-base md:text-lg">
+                        {displayAttributeName(attrName)}:
+                      </h4>
+                      {selectedAttributes[attrName] && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedAttributes(prev => {
+                            const newAttributes = { ...prev };
+                            delete newAttributes[attrName];
+                            return newAttributes;
+                          })}
+                          className="text-xs hover:bg-gray-100 h-6 px-2 text-gray-500"
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {getAvailableOptionsForAttribute(attrName).map((attrValue) => {
+                      const normalizedValue = attrName === 'pa_size' ? attrValue.replace('.', '-') : attrValue;
+                      const isSelected = selectedAttributes[attrName] === normalizedValue;
+                      const isAvailable = isOptionAvailable(attrName, normalizedValue);
+
+                      return (
+                        <button
+                          key={attrValue}
+                          className={`
+                            relative px-4 py-2 text-sm md:text-base border-2 rounded-lg
+                            font-medium transition-all duration-300
+                            ${isSelected 
+                              ? 'border-black bg-black text-white shadow-lg transform scale-105' 
+                              : isAvailable
+                                ? 'border-gray-300 hover:border-black bg-white text-gray-700'
+                                : 'border-gray-200 bg-gray-100 text-gray-400 line-through'
+                            }
+                            ${isAvailable ? 'hover:scale-105' : 'cursor-not-allowed opacity-60'}
+                          `}
+                          onClick={() => isAvailable && handleAttributeSelect(attrName, attrValue)}
+                          disabled={!isAvailable}
+                        >
+                          <span className="relative">
+                            {attrValue}
+                            {!isAvailable && (
+                              <>
+                                <span className="absolute inset-0 flex items-center justify-center">
+                                  <XCircle className="w-full h-full text-red-500 opacity-70" />
+                                </span>
+                                <span className="absolute inset-0 bg-gray-300 opacity-30"></span>
+                              </>
+                            )}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
-              
               {renderStockStatus()}
             </div>
           )}
