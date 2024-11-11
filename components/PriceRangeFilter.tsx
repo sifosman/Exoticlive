@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import * as Slider from '@radix-ui/react-slider';
 
 interface PriceRangeFilterProps {
@@ -9,13 +9,13 @@ interface PriceRangeFilterProps {
   onPriceChange: (min: number, max: number) => void;
 }
 
-const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
+const PriceRangeFilter = memo(({
   minPrice,
   maxPrice,
   currentMin,
   currentMax,
   onPriceChange,
-}) => {
+}: PriceRangeFilterProps) => {
   return (
     <div className=" bg-white p-4 rounded-lg space-y-4">
       <div className="flex items-center justify-between">
@@ -52,6 +52,6 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default PriceRangeFilter;

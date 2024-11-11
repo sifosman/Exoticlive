@@ -8,7 +8,7 @@ export const revalidate = 3600;
 
 const GET_CATEGORIES = gql`
   query GetCategories {
-    productCategories(first: 100) {
+    productCategories(first: 100, where: { exclude: "uncategorized" }) {
       nodes {
         id
         name
@@ -30,21 +30,20 @@ const LoadingFallback = () => (
 
 export default async function ProductsPage() {
   const { data } = await getApolloClient().query({ 
-    query: GET_CATEGORIES 
+    query: GET_CATEGORIES,
+    fetchPolicy: 'cache-first'
   });
 
-  const categories = data?.productCategories?.nodes || [];
+  // Add console log for debugging
+  console.log('Initial Categories:', data?.productCategories?.nodes);
 
   return (
     <main className="min-h-screen bg-white">
-     
-
-        {/* Products Grid */}
-        <div className="pt-6 md:pt-6 pb-12 md:pb-16">
-          <Suspense fallback={<LoadingFallback />}>
-            <ProductList />
-          </Suspense>
-        </div>
+      <div className="pt-6 md:pt-6 pb-12 md:pb-16">
+        <Suspense fallback={<LoadingFallback />}>
+          <ProductList initialCategories={data?.productCategories?.nodes || []} />
+        </Suspense>
+      </div>
     </main>
   );
 }

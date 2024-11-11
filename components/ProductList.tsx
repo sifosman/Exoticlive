@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, gql } from '@apollo/client';
 import { useSearchParams } from 'next/navigation';
 import ProductCard from './ProductCard';
@@ -13,25 +13,37 @@ import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Filter } from "lucide-react";
 import { Drawer } from '@mui/material';
 
-const GET_PRODUCTS_AND_CATEGORIES = gql`
-  query GetProductsAndCategories($first: Int!, $after: String, $sortBy: ProductsOrderByEnum!, $sortOrder: OrderEnum!) {
-    products(first: $first, after: $after, where: { orderby: { field: $sortBy, order: $sortOrder } }) {
+const GET_PRODUCTS = gql`
+  query GetProducts(
+    $first: Int!, 
+    $after: String, 
+    $sortBy: ProductsOrderByEnum!, 
+    $sortOrder: OrderEnum!,
+    $categories: [String]
+  ) {
+    products(
+      first: $first, 
+      after: $after, 
+      where: { 
+        orderby: { field: $sortBy, order: $sortOrder },
+        status: "publish",
+        categoryIn: $categories
+      }
+    ) {
       nodes {
         ... on SimpleProduct {
           id
           slug
           name
           price
-          regularPrice
-          salePrice
-          onSale
-          averageRating
           image {
             sourceUrl
           }
           productCategories {
             nodes {
+              id
               name
+              slug
             }
           }
         }
@@ -40,16 +52,14 @@ const GET_PRODUCTS_AND_CATEGORIES = gql`
           slug
           name
           price
-          regularPrice
-          salePrice
-          onSale
-          averageRating
           image {
             sourceUrl
           }
           productCategories {
             nodes {
+              id
               name
+              slug
             }
           }
         }
@@ -59,15 +69,18 @@ const GET_PRODUCTS_AND_CATEGORIES = gql`
         endCursor
       }
     }
-    productCategories(first: 100) {
-      nodes {
-        id
-        name
-        slug
-      }
-    }
   }
 `;
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface ProductListProps {
+  initialCategories: Category[];
+}
 
 interface Product {
   id: string;
@@ -85,8 +98,19 @@ interface Product {
   };
 }
 
+const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void => {
+  let timeout: NodeJS.Timeout;
+  
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
 
-const ProductList = () => {
+const ProductList = ({ initialCategories }: ProductListProps) => {
   const searchParams = useSearchParams();
   const [sortBy, setSortBy] = useState<ProductsOrderByEnum>(ProductsOrderByEnum.DATE);
   const [sortOrder, setSortOrder] = useState<OrderEnum>(OrderEnum.DESC);
@@ -95,9 +119,19 @@ const ProductList = () => {
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [currentPriceRange, setCurrentPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 48;
 
-  const { loading, error, data } = useQuery(GET_PRODUCTS_AND_CATEGORIES, {
-    variables: { first: 120, after: null, sortBy, sortOrder },
+  const { data, error } = useQuery(GET_PRODUCTS, {
+    variables: { 
+      first: ITEMS_PER_PAGE, 
+      after: null, 
+      sortBy, 
+      sortOrder,
+      categories: selectedCategories.length > 0 ? selectedCategories : null
+    },
+    fetchPolicy: 'cache-and-network',
+    nextFetchPolicy: 'cache-first'
   });
 
   useEffect(() => {
@@ -117,7 +151,7 @@ const ProductList = () => {
     if (data?.products?.nodes) {
       const prices = data.products.nodes.map((product: Product) => {
         const price = product.price ? product.price.replace(/[^\d.]/g, '') : '0';
-        return parseFloat(price) / 100; // Divide by 100 to convert cents to rand
+        return parseFloat(price) / 100;
       });
       const validPrices = prices.filter((price: number) => !isNaN(price));
       if (validPrices.length > 0) {
@@ -129,54 +163,76 @@ const ProductList = () => {
     }
   }, [data]);
 
- 
-  if (error) return <p>Error: {error.message}</p>;
+  const debouncedPriceChange = useCallback(
+    debounce((min: number, max: number) => {
+      setCurrentPriceRange({ min, max });
+    }, 300),
+    []
+  );
 
-  const products = data?.products.nodes || [];
+  const handleShowMore = useCallback(() => {
+    setDisplayedProducts(prev => prev + 12);
+  }, []);
 
-  const filteredProducts = products.filter((product: Product) => {
-    const price = product.price ? parseFloat(product.price.replace(/[^\d.]/g, '')) / 100 : 0; // Divide by 100 here as well
-    const categoryMatch = selectedCategories.length === 0 || 
-      product.productCategories?.nodes?.some(category => 
-        selectedCategories.includes(category.name.toLowerCase())
-      );
-    const priceMatch = price >= currentPriceRange.min && price <= currentPriceRange.max;
-    return categoryMatch && priceMatch;
-  });
+  const products = useMemo(() => {
+    return data?.products?.nodes || [];
+  }, [data]);
+
+  const filteredProducts = useMemo(() => {
+    const products = data?.products?.nodes || [];
+    if (!products.length) return [];
+
+    return products.filter((product: Product) => {
+      const price = product.price ? parseFloat(product.price.replace(/[^\d.]/g, '')) / 100 : 0;
+      const priceMatch = price >= currentPriceRange.min && price <= currentPriceRange.max;
+      
+      return priceMatch;
+    });
+  }, [data, currentPriceRange]);
+
+  useEffect(() => {
+    console.log('Total products loaded:', products.length);
+    console.log('Filtered products:', filteredProducts.length);
+    console.log('Selected categories:', selectedCategories);
+  }, [products.length, filteredProducts.length, selectedCategories]);
 
   const handleSortChange = (newSortBy: ProductsOrderByEnum, newSortOrder: OrderEnum) => {
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
   };
 
-  const handleCategoryToggle = (category: string) => {
-    if (category.toLowerCase() === 'all') {
-      setSelectedCategories([]);
-    } else {
-      setSelectedCategories(prev => 
-        prev.includes(category.toLowerCase()) 
-          ? prev.filter(c => c !== category.toLowerCase()) 
-          : [...prev, category.toLowerCase()]
-      );
-    }
+  const handleCategoryToggle = (categorySlug: string) => {
+    setSelectedCategories(prev => {
+      if (categorySlug.toLowerCase() === 'all') {
+        return [];
+      }
+      return prev.includes(categorySlug)
+        ? prev.filter(c => c !== categorySlug)
+        : [...prev, categorySlug];
+    });
   };
 
   const handlePriceChange = (min: number, max: number) => {
     setCurrentPriceRange({ min, max });
   };
 
-  const handleShowMore = () => {
-    setDisplayedProducts(prev => Math.min(prev + 12, filteredProducts.length));
-  };
-
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
+  useEffect(() => {
+    console.log('Selected Categories:', selectedCategories);
+    console.log('Available Categories:', initialCategories);
+    console.log('Products Data:', data?.products?.nodes);
+  }, [selectedCategories, initialCategories, data]);
+
   const filterContent = (
     <div className="w-full">
       <FilterPanel 
-        categories={[{id: 'all', name: 'All', slug: 'all'}, ...(data?.productCategories?.nodes || [])]}
+        categories={[
+          {id: 'all', name: 'All', slug: 'all'}, 
+          ...initialCategories
+        ]}
         selectedCategories={selectedCategories}
         onCategoryToggle={handleCategoryToggle}
         onClose={handleDrawerToggle}
@@ -190,6 +246,10 @@ const ProductList = () => {
       />
     </div>
   );
+
+  console.log('Products:', products);
+  console.log('Filtered Products:', filteredProducts);
+  console.log('Categories:', initialCategories);
 
   return (
     <div className="container mx-auto px-1 sm:px-2 md:px-3 lg:px-8 pt-[60px] md:pt-[75px]">
@@ -239,24 +299,36 @@ const ProductList = () => {
               } 
             />
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-3">
-            {filteredProducts.slice(0, displayedProducts).map((product: any, index: number) => (
-              <div key={product.id} className="flex justify-center">
-                <div className="w-[calc(50vw-16px)] sm:w-full sm:max-w-[170px] md:max-w-[190px] lg:max-w-[210px]">
-                  <ProductCard product={product} index={index} />
-                </div>
-              </div>
-            ))}
-          </div>
-          {displayedProducts < filteredProducts.length && (
-            <div className="mt-4 md:mt-6 text-center">
-              <Button 
-                onClick={handleShowMore}
-                className="font-lato text-xs md:text-sm py-2 px-4 md:px-6"
-              >
-                Show More
-              </Button>
+
+          {error ? (
+            <div className="text-center py-4 text-red-500">
+              Error loading products. Please try again.
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-3">
+                {filteredProducts.slice(0, displayedProducts).map((product: any, index: number) => (
+                  <div key={product.id} className="flex justify-center">
+                    <div className="w-[calc(50vw-16px)] sm:w-full sm:max-w-[170px] md:max-w-[190px] lg:max-w-[210px]">
+                      <ProductCard product={product} index={index} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {filteredProducts.length > displayedProducts && (
+                <div className="mt-4 md:mt-6 text-center">
+                  <Button 
+                    onClick={handleShowMore}
+                    className="font-lato text-xs md:text-sm py-2 px-4 md:px-6"
+                  >
+                    Show More ({filteredProducts.length - displayedProducts} more)
+                  </Button>
+                </div>
+              )}
+
+              
+            </>
           )}
         </div>
       </div>
