@@ -100,7 +100,7 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
   const allImages = [
     ...(product.image && isValidImageUrl(product.image.sourceUrl) ? [product.image] : []),
     ...validImages
-  ];
+  ].filter((img): img is { sourceUrl: string } => img !== null);
 
   const totalImages = allImages.length;
 
