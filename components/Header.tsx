@@ -199,12 +199,10 @@ const Header = () => {
         TransitionProps={{
           timeout: 400,
         }}
-        slotProps={{
-          backdrop: {
-            sx: {
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              backdropFilter: 'blur(4px)',
-            },
+        BackdropProps={{
+          sx: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
           },
         }}
       >
@@ -522,6 +520,12 @@ const Header = () => {
             maxWidth: 300,
             pt: 2,
             pb: 4,
+          },
+        }}
+        BackdropProps={{
+          sx: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
           },
         }}
       >
