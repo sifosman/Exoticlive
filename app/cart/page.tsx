@@ -15,20 +15,16 @@ export default function CartPage() {
   const router = useRouter();
   const [imageError, setImageError] = useState<{ [key: string]: boolean }>({});
 
-  // Calculate subtotal and discounts
-  const { subtotal, discount, total } = cart.reduce((acc, item) => {
+  // Calculate subtotal
+  const { subtotal, total } = cart.reduce((acc, item) => {
     const itemPrice = item.price;
     const itemSubtotal = itemPrice * item.quantity;
     
-    // Apply R50 discount per item if quantity is 3 or more
-    const itemDiscount = item.quantity >= 3 ? 50 * item.quantity : 0;
-    
     return {
       subtotal: acc.subtotal + itemSubtotal,
-      discount: acc.discount + itemDiscount,
-      total: acc.total + (itemSubtotal - itemDiscount)
+      total: acc.total + itemSubtotal
     };
-  }, { subtotal: 0, discount: 0, total: 0 });
+  }, { subtotal: 0, total: 0 });
 
   const formatPrice = (price: number) => `R${price.toFixed(2)}`;
 
@@ -128,12 +124,6 @@ export default function CartPage() {
                       <span>Subtotal</span>
                       <span>{formatPrice(subtotal)}</span>
                     </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-green-400">
-                        <span>Quantity Discount</span>
-                        <span>-{formatPrice(discount)}</span>
-                      </div>
-                    )}
                     <div className="flex justify-between">
                       <span>Shipping</span>
                       <span className="text-xs md:text-sm">Calculated at checkout</span>
@@ -161,7 +151,7 @@ export default function CartPage() {
 
         {cart.length > 0 && (
           <div className="mt-4 text-sm text-gray-600">
-            <p>Get R50 off per item when you buy 3 or more of the same product!</p>
+            <p></p>
           </div>
         )}
       </div>

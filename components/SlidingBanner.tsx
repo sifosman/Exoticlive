@@ -32,15 +32,17 @@ const banners = [
 
 const SlidingBanner: React.FC = () => {
   const [currentBanner, setCurrentBanner] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(true); // Set default to true for mobile-first approach
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768); // Changed to 768px (md breakpoint)
+      setIsMobile(window.innerWidth < 768);
     };
 
-    // Set initial value
-    handleResize();
+    // Set initial value immediately
+    if (typeof window !== 'undefined') {
+      handleResize();
+    }
 
     // Add event listener
     window.addEventListener('resize', handleResize);

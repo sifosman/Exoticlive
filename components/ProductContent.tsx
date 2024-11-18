@@ -79,8 +79,30 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
   const { toast } = useToast();
   
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const images = product.galleryImages?.nodes || [product.image];
-  const totalImages = images.length;
+  const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
+
+  const isValidImageUrl = (url: string) => {
+    return url && url.startsWith('http');
+  };
+
+  const getSafeImageUrl = (image: { sourceUrl: string } | undefined, index: number) => {
+    if (!image || !isValidImageUrl(image.sourceUrl)) {
+      return 'https://exoticlive.co.za/wp-content/uploads/woocommerce-placeholder.png';
+    }
+    return imageErrors[`${index}-${image.sourceUrl}`] 
+      ? 'https://exoticlive.co.za/wp-content/uploads/woocommerce-placeholder.png'
+      : image.sourceUrl;
+  };
+
+  const validImages = (product.galleryImages?.nodes || [])
+    .filter(img => isValidImageUrl(img.sourceUrl));
+  
+  const allImages = [
+    ...(isValidImageUrl(product.image.sourceUrl) ? [product.image] : []),
+    ...validImages
+  ];
+
+  const totalImages = allImages.length;
 
   const isVariableProduct = product.__typename === 'VariableProduct';
 
@@ -210,7 +232,10 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
     )));
 
     if (attrName === 'pa_size') {
-      return options.map(option => option.replace('-', '.'));
+      // Convert sizes to numbers for proper sorting
+      return options
+        .map(option => option.replace('-', '.'))
+        .sort((a, b) => parseFloat(a) - parseFloat(b));
     }
 
     return options;
@@ -223,8 +248,6 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev === totalImages - 1 ? 0 : prev + 1));
   };
-
-  const [imageError, setImageError] = useState(false);
 
   const maxQuantity = getSelectedVariation()?.stockQuantity ?? Infinity;
 
@@ -299,7 +322,7 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
             transition={{ duration: 0.5 }}
           >
             <AnimatePresence mode="wait">
-              {images.length > 0 && (
+              {allImages.length > 0 && (
                 <motion.div
                   key={currentImageIndex}
                   initial={{ opacity: 0 }}
@@ -309,11 +332,21 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                   className="relative aspect-square"
                 >
                   <Image
-                    src={imageError ? '/placeholder-image.jpg' : (images[currentImageIndex]?.sourceUrl || '/placeholder-image.jpg')}
+                    src={getSafeImageUrl(allImages[currentImageIndex], currentImageIndex)}
                     alt={product.name}
                     fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority={currentImageIndex === 0}
                     style={{ objectFit: 'contain' }}
-                    onError={() => setImageError(true)}
+                    onError={() => {
+                      const currentImage = allImages[currentImageIndex];
+                      if (currentImage) {
+                        setImageErrors(prev => ({
+                          ...prev,
+                          [`${currentImageIndex}-${currentImage.sourceUrl}`]: true
+                        }));
+                      }
+                    }}
                     className="w-full h-full"
                   />
                 </motion.div>
@@ -342,19 +375,26 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
 
           {totalImages > 1 && (
             <div className="flex space-x-2 mt-4 overflow-x-auto pb-2">
-              {images.map((img, index) => (
+              {allImages.map((img, index) => (
                 <div
-                  key={index}
+                  key={`thumb-${index}-${img.sourceUrl}`}
                   className={`relative flex-shrink-0 w-14 md:w-16 h-14 md:h-16 cursor-pointer border ${
                     currentImageIndex === index ? 'border-primary' : 'border-transparent'
                   } rounded-md overflow-hidden`}
                   onClick={() => setCurrentImageIndex(index)}
                 >
                   <Image
-                    src={img.sourceUrl}
+                    src={getSafeImageUrl(img, index)}
                     alt={`${product.name} thumbnail ${index + 1}`}
                     fill
+                    sizes="(max-width: 768px) 56px, 64px"
                     style={{ objectFit: 'cover' }}
+                    onError={() => {
+                      setImageErrors(prev => ({
+                        ...prev,
+                        [`${index}-${img.sourceUrl}`]: true
+                      }));
+                    }}
                     className="hover:opacity-80 transition-opacity duration-300"
                   />
                 </div>

@@ -12,6 +12,7 @@ import PriceRangeFilter from './PriceRangeFilter';
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Filter } from "lucide-react";
 import { Drawer } from '@mui/material';
+import AttributeFilters from './AttributeFilters';
 
 const GET_PRODUCTS = gql`
   query GetProducts(
@@ -46,6 +47,12 @@ const GET_PRODUCTS = gql`
               slug
             }
           }
+          attributes {
+            nodes {
+              name
+              options
+            }
+          }
         }
         ... on VariableProduct {
           id
@@ -60,6 +67,22 @@ const GET_PRODUCTS = gql`
               id
               name
               slug
+            }
+          }
+          attributes {
+            nodes {
+              name
+              options
+            }
+          }
+          variations {
+            nodes {
+              attributes {
+                nodes {
+                  name
+                  value
+                }
+              }
             }
           }
         }
@@ -79,7 +102,7 @@ interface Category {
 }
 
 interface ProductListProps {
-  initialCategories: Category[];
+  initialCategories?: Category[];
 }
 
 interface Product {
@@ -110,11 +133,13 @@ const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-const ProductList = ({ initialCategories }: ProductListProps) => {
+const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => {
   const searchParams = useSearchParams();
   const [sortBy, setSortBy] = useState<ProductsOrderByEnum>(ProductsOrderByEnum.DATE);
   const [sortOrder, setSortOrder] = useState<OrderEnum>(OrderEnum.DESC);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [displayedProducts, setDisplayedProducts] = useState(12);
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [currentPriceRange, setCurrentPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
@@ -128,7 +153,9 @@ const ProductList = ({ initialCategories }: ProductListProps) => {
       after: null, 
       sortBy, 
       sortOrder,
-      categories: selectedCategories.length > 0 ? selectedCategories : null
+      categories: selectedCategories.length > 0 
+        ? selectedCategories.map(cat => cat.toLowerCase())
+        : null
     },
     fetchPolicy: 'cache-and-network',
     nextFetchPolicy: 'cache-first'
@@ -179,22 +206,64 @@ const ProductList = ({ initialCategories }: ProductListProps) => {
   }, [data]);
 
   const filteredProducts = useMemo(() => {
-    const products = data?.products?.nodes || [];
-    if (!products.length) return [];
-
-    return products.filter((product: Product) => {
+    if (!products) return [];
+    
+    return products.filter(product => {
+      // Price filter
       const price = product.price ? parseFloat(product.price.replace(/[^\d.]/g, '')) / 100 : 0;
       const priceMatch = price >= currentPriceRange.min && price <= currentPriceRange.max;
-      
-      return priceMatch;
+
+      // Category filter
+      const categoryMatch = selectedCategories.length === 0 || 
+        product.productCategories?.nodes?.some(category => 
+          selectedCategories.includes(category.slug?.toLowerCase() || '')
+        );
+
+      // Color and size filters
+      let attributeMatch = true;
+      if (selectedColors.length > 0 || selectedSizes.length > 0) {
+        if (product.__typename === 'VariableProduct' && product.variations?.nodes) {
+          // Check if any variation matches the selected attributes
+          attributeMatch = product.variations.nodes.some(variation => {
+            const colorAttr = variation.attributes.nodes.find(
+              attr => attr.name.toLowerCase() === 'pa_color'
+            );
+            const sizeAttr = variation.attributes.nodes.find(
+              attr => attr.name.toLowerCase() === 'pa_size'
+            );
+
+            const matchesColor = selectedColors.length === 0 || 
+              (colorAttr && selectedColors.includes(colorAttr.value));
+            const matchesSize = selectedSizes.length === 0 || 
+              (sizeAttr && selectedSizes.includes(sizeAttr.value));
+
+            return matchesColor && matchesSize;
+          });
+        } else {
+          // For simple products, check direct attributes
+          const attributes = product.attributes?.nodes || [];
+          const colorAttr = attributes.find(attr => attr.name.toLowerCase() === 'pa_color');
+          const sizeAttr = attributes.find(attr => attr.name.toLowerCase() === 'pa_size');
+
+          const matchesColor = selectedColors.length === 0 || 
+            (colorAttr && colorAttr.options.some(option => selectedColors.includes(option)));
+          const matchesSize = selectedSizes.length === 0 || 
+            (sizeAttr && sizeAttr.options.some(option => selectedSizes.includes(option)));
+
+          attributeMatch = matchesColor && matchesSize;
+        }
+      }
+
+      return priceMatch && categoryMatch && attributeMatch;
     });
-  }, [data, currentPriceRange]);
+  }, [products, selectedCategories, currentPriceRange, selectedColors, selectedSizes]);
 
   useEffect(() => {
-    console.log('Total products loaded:', products.length);
-    console.log('Filtered products:', filteredProducts.length);
-    console.log('Selected categories:', selectedCategories);
-  }, [products.length, filteredProducts.length, selectedCategories]);
+    console.log('Selected Categories:', selectedCategories);
+    console.log('Available Categories:', initialCategories);
+    console.log('Total Products:', data?.products?.nodes?.length);
+    console.log('Filtered Products:', filteredProducts.length);
+  }, [selectedCategories, initialCategories, data, filteredProducts]);
 
   const handleSortChange = (newSortBy: ProductsOrderByEnum, newSortOrder: OrderEnum) => {
     setSortBy(newSortBy);
@@ -206,9 +275,12 @@ const ProductList = ({ initialCategories }: ProductListProps) => {
       if (categorySlug.toLowerCase() === 'all') {
         return [];
       }
-      return prev.includes(categorySlug)
-        ? prev.filter(c => c !== categorySlug)
-        : [...prev, categorySlug];
+      
+      if (prev.includes(categorySlug.toLowerCase())) {
+        return prev.filter(c => c !== categorySlug.toLowerCase());
+      }
+      
+      return [...prev, categorySlug.toLowerCase()];
     });
   };
 
@@ -226,6 +298,123 @@ const ProductList = ({ initialCategories }: ProductListProps) => {
     console.log('Products Data:', data?.products?.nodes);
   }, [selectedCategories, initialCategories, data]);
 
+  // Extract unique colors and sizes from products
+  const { availableColors, availableSizes } = useMemo(() => {
+    const colors = new Set<string>();
+    const sizes = new Set<string>();
+
+    data?.products.nodes.forEach((product: any) => {
+      // Get attributes from both simple and variable products
+      const attributes = product.attributes?.nodes || [];
+      const variations = product.variations?.nodes || [];
+
+      // Check direct attributes
+      attributes.forEach((attr: any) => {
+        if (attr.name.toLowerCase() === 'pa_color') {
+          attr.options.forEach((color: string) => colors.add(color));
+        }
+        if (attr.name.toLowerCase() === 'pa_size') {
+          attr.options.forEach((size: string) => sizes.add(size));
+        }
+      });
+
+      // Check variation attributes
+      variations.forEach((variation: any) => {
+        variation.attributes.nodes.forEach((attr: any) => {
+          if (attr.name.toLowerCase() === 'pa_color') {
+            colors.add(attr.value);
+          }
+          if (attr.name.toLowerCase() === 'pa_size') {
+            sizes.add(attr.value);
+          }
+        });
+      });
+    });
+
+    return {
+      availableColors: Array.from(colors).sort(),
+      availableSizes: Array.from(sizes)
+        .sort((a, b) => {
+          const numA = parseFloat(a);
+          const numB = parseFloat(b);
+          if (isNaN(numA) || isNaN(numB)) return a.localeCompare(b);
+          return numA - numB;
+        })
+    };
+  }, [data]);
+
+  // Get available sizes for selected colors
+  const availableSizesForColors = useMemo(() => {
+    if (selectedColors.length === 0) return availableSizes;
+    
+    const sizes = new Set<string>();
+    data?.products.nodes.forEach((product: any) => {
+      if (product.__typename === 'VariableProduct') {
+        product.variations.nodes.forEach((variation: any) => {
+          const colorAttr = variation.attributes.nodes.find((attr: any) => 
+            attr.name.toLowerCase() === 'pa_color'
+          );
+          const sizeAttr = variation.attributes.nodes.find((attr: any) => 
+            attr.name.toLowerCase() === 'pa_size'
+          );
+          
+          if (colorAttr && sizeAttr && selectedColors.includes(colorAttr.value)) {
+            sizes.add(sizeAttr.value);
+          }
+        });
+      }
+    });
+    
+    return Array.from(sizes).sort((a, b) => {
+      const numA = parseFloat(a);
+      const numB = parseFloat(b);
+      if (isNaN(numA) || isNaN(numB)) return a.localeCompare(b);
+      return numA - numB;
+    });
+  }, [data, selectedColors, availableSizes]);
+
+  // Get available colors for selected sizes
+  const availableColorsForSizes = useMemo(() => {
+    if (selectedSizes.length === 0) return availableColors;
+    
+    const colors = new Set<string>();
+    data?.products.nodes.forEach((product: any) => {
+      if (product.__typename === 'VariableProduct') {
+        product.variations.nodes.forEach((variation: any) => {
+          const colorAttr = variation.attributes.nodes.find((attr: any) => 
+            attr.name.toLowerCase() === 'pa_color'
+          );
+          const sizeAttr = variation.attributes.nodes.find((attr: any) => 
+            attr.name.toLowerCase() === 'pa_size'
+          );
+          
+          if (colorAttr && sizeAttr && selectedSizes.includes(sizeAttr.value)) {
+            colors.add(colorAttr.value);
+          }
+        });
+      }
+    });
+    
+    return Array.from(colors).sort();
+  }, [data, selectedSizes, availableColors]);
+
+  // Handle color and size selection
+  const handleColorToggle = (color: string) => {
+    setSelectedColors(prev => 
+      prev.includes(color) 
+        ? prev.filter(c => c !== color)
+        : [...prev, color]
+    );
+  };
+
+  const handleSizeToggle = (size: string) => {
+    setSelectedSizes(prev => 
+      prev.includes(size) 
+        ? prev.filter(s => s !== size)
+        : [...prev, size]
+    );
+  };
+
   const filterContent = (
     <div className="w-full">
       <FilterPanel 
@@ -236,6 +425,12 @@ const ProductList = ({ initialCategories }: ProductListProps) => {
         selectedCategories={selectedCategories}
         onCategoryToggle={handleCategoryToggle}
         onClose={handleDrawerToggle}
+        availableColors={availableColorsForSizes}
+        selectedColors={selectedColors}
+        onColorToggle={handleColorToggle}
+        availableSizes={availableSizesForColors}
+        selectedSizes={selectedSizes}
+        onSizeToggle={handleSizeToggle}
       />
       <PriceRangeFilter
         minPrice={priceRange.min}
@@ -243,6 +438,14 @@ const ProductList = ({ initialCategories }: ProductListProps) => {
         currentMin={currentPriceRange.min}
         currentMax={currentPriceRange.max}
         onPriceChange={handlePriceChange}
+      />
+      <AttributeFilters
+        availableColors={availableColorsForSizes}
+        selectedColors={selectedColors}
+        onColorToggle={handleColorToggle}
+        availableSizes={availableSizesForColors}
+        selectedSizes={selectedSizes}
+        onSizeToggle={handleSizeToggle}
       />
     </div>
   );
@@ -334,6 +537,10 @@ const ProductList = ({ initialCategories }: ProductListProps) => {
       </div>
     </div>
   );
+};
+
+ProductList.defaultProps = {
+  initialCategories: []
 };
 
 export default ProductList;
