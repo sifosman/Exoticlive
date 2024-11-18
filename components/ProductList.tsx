@@ -106,6 +106,7 @@ interface ProductListProps {
 }
 
 interface Product {
+  __typename?: string;
   id: string;
   slug: string;
   name: string;
@@ -117,6 +118,22 @@ interface Product {
     nodes?: Array<{
       name: string;
       slug?: string;
+    }>;
+  };
+  variations?: {
+    nodes?: Array<{
+      attributes: {
+        nodes: Array<{
+          name: string;
+          value: string;
+        }>;
+      };
+    }>;
+  };
+  attributes?: {
+    nodes?: Array<{
+      name: string;
+      options: string[];
     }>;
   };
 }
@@ -208,7 +225,7 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     
-    return products.filter(product => {
+    return products.filter((product: Product) => {
       // Price filter
       const price = product.price ? parseFloat(product.price.replace(/[^\d.]/g, '')) / 100 : 0;
       const priceMatch = price >= currentPriceRange.min && price <= currentPriceRange.max;
