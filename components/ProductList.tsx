@@ -442,12 +442,6 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
         selectedCategories={selectedCategories}
         onCategoryToggle={handleCategoryToggle}
         onClose={handleDrawerToggle}
-        availableColors={availableColorsForSizes}
-        selectedColors={selectedColors}
-        onColorToggle={handleColorToggle}
-        availableSizes={availableSizesForColors}
-        selectedSizes={selectedSizes}
-        onSizeToggle={handleSizeToggle}
       />
       <PriceRangeFilter
         minPrice={priceRange.min}
