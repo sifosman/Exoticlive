@@ -232,9 +232,9 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
 
       // Category filter
       const categoryMatch = selectedCategories.length === 0 || 
-        product.productCategories?.nodes?.some(category => 
+        (product.productCategories?.nodes?.some(category => 
           selectedCategories.includes(category.slug?.toLowerCase() || '')
-        );
+        ) ?? false);
 
       // Color and size filters
       let attributeMatch = true;
@@ -263,9 +263,9 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
           const sizeAttr = attributes.find(attr => attr.name.toLowerCase() === 'pa_size');
 
           const matchesColor = selectedColors.length === 0 || 
-            (colorAttr && colorAttr.options.some(option => selectedColors.includes(option)));
+            (colorAttr && colorAttr.options.some(option => selectedColors.includes(option)) || false);
           const matchesSize = selectedSizes.length === 0 || 
-            (sizeAttr && sizeAttr.options.some(option => selectedSizes.includes(option)));
+            (sizeAttr && sizeAttr.options.some(option => selectedSizes.includes(option)) || false);
 
           attributeMatch = matchesColor && matchesSize;
         }
