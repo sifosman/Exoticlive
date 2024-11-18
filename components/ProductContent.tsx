@@ -19,12 +19,12 @@ interface ProductContentProps {
     description: string;
     image: {
       sourceUrl: string;
-    };
+    } | null;
     galleryImages?: {
       nodes: Array<{
         sourceUrl: string;
         altText?: string;
-      }>;
+      } | null>;
     };
     additionalInformation?: string;
     categories?: {
@@ -85,7 +85,7 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
     return url && url.startsWith('http');
   };
 
-  const getSafeImageUrl = (image: { sourceUrl: string } | undefined, index: number) => {
+  const getSafeImageUrl = (image: { sourceUrl: string } | null | undefined, index: number) => {
     if (!image || !isValidImageUrl(image.sourceUrl)) {
       return 'https://exoticlive.co.za/wp-content/uploads/woocommerce-placeholder.png';
     }
@@ -95,10 +95,10 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
   };
 
   const validImages = (product.galleryImages?.nodes || [])
-    .filter(img => isValidImageUrl(img.sourceUrl));
+    .filter(img => img && isValidImageUrl(img.sourceUrl));
   
   const allImages = [
-    ...(isValidImageUrl(product.image.sourceUrl) ? [product.image] : []),
+    ...(product.image && isValidImageUrl(product.image.sourceUrl) ? [product.image] : []),
     ...validImages
   ];
 
