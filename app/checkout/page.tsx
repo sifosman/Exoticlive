@@ -29,10 +29,11 @@ const styles = {
 };
 
 interface OrderLineItem {
-  product_id: string;
+  product_id: number | null;
   quantity: number;
-  name: string;
-  total: string;
+  name?: string;
+  total?: string;
+  variation_id?: number;
 }
 
 const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
@@ -70,51 +71,96 @@ export default function CheckoutPage() {
   const createWooCommerceOrder = async (paymentMethodTitle: string) => {
     console.log('Cart contents before creating order:', cart);
     try {
-      const orderResponse = await fetch('https://exoticshoes.co.za/wp-json/wc/v3/orders', {
+      // Function to extract numeric ID from base64 GraphQL ID
+      const getNumericId = (base64Id: string) => {
+        try {
+          // Decode base64
+          const decoded = atob(base64Id);
+          // Extract numeric ID (assuming format is 'product:12345')
+          const numericId = decoded.split(':')[1];
+          return parseInt(numericId);
+        } catch (error) {
+          console.error('Error decoding ID:', error);
+          return null;
+        }
+      };
+
+      const orderPayload = {
+        payment_method: paymentMethod,
+        payment_method_title: paymentMethodTitle,
+        set_paid: paymentMethod === 'yoco',
+        billing: {
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          phone: phone,
+          address_1: address,
+          city: city,
+          state: '',
+          postcode: postalCode,
+          country: 'ZA'
+        },
+        shipping: {
+          first_name: firstName,
+          last_name: lastName,
+          address_1: address,
+          city: city,
+          state: '',
+          postcode: postalCode,
+          country: 'ZA'
+        },
+        line_items: cart.map(item => {
+          const numericId = getNumericId(item.id);
+          console.log('Converting ID:', item.id, 'to:', numericId);
+          
+          const lineItem: OrderLineItem = {
+            product_id: numericId,
+            quantity: item.quantity
+          };
+
+          // Only add variation_id if it exists and has a value
+          if (item.variationId && item.variationId !== '') {
+            const numericVariationId = getNumericId(item.variationId);
+            if (numericVariationId) {
+              lineItem.variation_id = numericVariationId;
+            }
+          }
+
+          return lineItem;
+        }).filter(item => item.product_id !== null), // Remove any items with null product_id
+        shipping_lines: [
+          {
+            method_id: 'flat_rate',
+            method_title: 'Flat Rate',
+            total: shipping.toString()
+          }
+        ]
+      };
+
+      console.log('Order payload:', JSON.stringify(orderPayload, null, 2));
+
+      const orderResponse = await fetch('https://wp.exoticshoes.co.za/wp-json/wc/v3/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
         },
-        body: JSON.stringify({
-          payment_method: paymentMethod,
-          payment_method_title: paymentMethodTitle,
-          set_paid: paymentMethod === 'yoco',
-          billing: {
-            first_name: firstName,
-            last_name: lastName,
-            email: email,
-            phone: phone,
-            address_1: address,
-            city: city,
-            state: '',
-            postcode: postalCode,
-            country: 'ZA'
-          },
-          line_items: cart.map(item => ({
-            product_id: item.id,
-            quantity: item.quantity,
-            name: item.name,
-            total: (item.price * item.quantity).toFixed(2)
-          })),
-          shipping_lines: [
-            {
-              method_id: 'flat_rate',
-              method_title: 'Flat Rate',
-              total: shipping.toString()
-            }
-          ]
-        })
+        body: JSON.stringify(orderPayload)
       });
 
       const orderData = await orderResponse.json();
-
-      if (orderResponse.ok) {
-        console.log('Order created successfully:', orderData);
-        router.push(`/order-success?orderId=${orderData.id}`);
-      } else {
-        setPaymentError('Failed to create order in WooCommerce: ' + orderData.message);
+      
+      if (!orderResponse.ok) {
+        console.error('WooCommerce API Error Response:', {
+          status: orderResponse.status,
+          statusText: orderResponse.statusText,
+          data: orderData
+        });
+        throw new Error(orderData.message || 'Failed to create order');
       }
+
+      console.log('Order created successfully:', orderData);
+      router.push(`/order-success?id=${orderData.id}`);
     } catch (error) {
       console.error('Error creating order:', error);
       setPaymentError('An error occurred while creating the order. Please try again.');

@@ -416,7 +416,8 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
   }, [data, selectedSizes, availableColors]);
 
   // Handle color and size selection
-  const handleColorToggle = (color: string) => {
+  const handleColorToggle = (colors: string[]) => {
+    const color = colors[0]; // Get the first color from the array
     setSelectedColors(prev => 
       prev.includes(color) 
         ? prev.filter(c => c !== color)
