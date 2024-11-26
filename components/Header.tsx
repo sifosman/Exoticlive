@@ -53,7 +53,7 @@ const categories: Category[] = [
   { id: "dGVybToxNDY=", name: "Pumps", slug: "pumps" },
   { id: "dGVybToxNDU=", name: "Sandals", slug: "sandals" },
   { id: "dGVybToxNDc=", name: "Takkies", slug: "takkies" },
-  
+  { id: "dGVybToxNDk=", name: "Bargain Box", slug: "bargain-box" },
 ];
 
 const Header = () => {
