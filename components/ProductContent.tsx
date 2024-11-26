@@ -465,14 +465,14 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                           key={attrValue}
                           className={`
                             relative px-4 py-2 text-sm md:text-base border-2 rounded-lg
-                            font-medium transition-all duration-300
+                            font-lato transition-all duration-300
                             ${isSelected 
                               ? 'border-black bg-black text-white shadow-lg transform scale-105' 
                               : isAvailable
-                                ? 'border-gray-300 hover:border-black bg-white text-gray-700'
-                                : 'border-gray-200 bg-gray-100 text-gray-400 line-through'
+                                ? 'border-gray-600 hover:border-black bg-white text-gray-700'
+                                : 'border-red-400 bg-red-50 text-gray-500'
                             }
-                            ${isAvailable ? 'hover:scale-105' : 'cursor-not-allowed opacity-60'}
+                            ${isAvailable ? 'hover:scale-105' : 'cursor-not-allowed'}
                           `}
                           onClick={() => isAvailable && handleAttributeSelect(attrName, attrValue)}
                           disabled={!isAvailable}
@@ -482,9 +482,9 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                             {!isAvailable && (
                               <>
                                 <span className="absolute inset-0 flex items-center justify-center">
-                                  <XCircle className="w-full h-full text-red-500 opacity-70" />
+                                  <XCircle className="w-6 h-6 text-red-600 drop-shadow-sm" />
                                 </span>
-                                <span className="absolute inset-0 bg-gray-300 opacity-30"></span>
+                                <span className="absolute inset-0 bg-red-100/50"></span>
                               </>
                             )}
                           </span>
@@ -543,7 +543,7 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
             <div className="relative z-10 flex items-center justify-center space-x-2 md:space-x-4">
               <Lock className="w-4 h-4 md:w-5 md:h-5 text-white" />
               <span className="text-white font-medium text-xs md:text-base">
-                Trusted Supplier for over 15 Years
+                Trusted Supplier for over 10 Years
               </span>
               <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-white stroke-2" />
             </div>
