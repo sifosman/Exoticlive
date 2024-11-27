@@ -229,14 +229,14 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
     // Safely handle options from the product attributes
     const attributes = (product as any).attributes?.nodes || [];
     const attribute = attributes.find((attr: any) => attr.name === attrName);
-    const options = attribute?.options || [];
+    const options: string[] = attribute?.options || [];
 
     if (options.length > 0) {
       if (attrName === 'pa_size') {
         // Safely handle size sorting with error handling
         return options
-          .map(option => String(option).replace('-', '.'))
-          .sort((a, b) => {
+          .map((option: string) => String(option).replace('-', '.'))
+          .sort((a: string, b: string) => {
             const numA = parseFloat(a) || 0;
             const numB = parseFloat(b) || 0;
             return numA - numB;
@@ -254,8 +254,8 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
 
     if (attrName === 'pa_size') {
       return variationOptions
-        .map(option => String(option).replace('-', '.'))
-        .sort((a, b) => {
+        .map((option: string) => String(option).replace('-', '.'))
+        .sort((a: string, b: string) => {
           const numA = parseFloat(a) || 0;
           const numB = parseFloat(b) || 0;
           return numA - numB;
