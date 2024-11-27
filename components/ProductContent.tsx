@@ -80,6 +80,7 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
   
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
+  const [hoveredImageIndex, setHoveredImageIndex] = useState<number | null>(null);
 
   const isValidImageUrl = (url: string) => {
     return url && url.startsWith('http');
@@ -225,20 +226,63 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
   const getAvailableOptionsForAttribute = (attrName: string) => {
     if (product.__typename !== 'VariableProduct' || !product.variations) return [];
 
-    const options = Array.from(new Set(product.variations.nodes.flatMap((variation) =>
+    // Safely handle options from the product attributes
+    const attributes = (product as any).attributes?.nodes || [];
+    const attribute = attributes.find((attr: any) => attr.name === attrName);
+    const options = attribute?.options || [];
+
+    if (options.length > 0) {
+      if (attrName === 'pa_size') {
+        // Safely handle size sorting with error handling
+        return options
+          .map(option => String(option).replace('-', '.'))
+          .sort((a, b) => {
+            const numA = parseFloat(a) || 0;
+            const numB = parseFloat(b) || 0;
+            return numA - numB;
+          });
+      }
+      return options;
+    }
+
+    // Fallback to variations if no options found
+    const variationOptions = Array.from(new Set(product.variations.nodes.flatMap((variation) =>
       variation.attributes.nodes
         .filter((attr) => attr.name === attrName)
         .map((attr) => attr.value)
     )));
 
     if (attrName === 'pa_size') {
-      // Convert sizes to numbers for proper sorting
-      return options
-        .map(option => option.replace('-', '.'))
-        .sort((a, b) => parseFloat(a) - parseFloat(b));
+      return variationOptions
+        .map(option => String(option).replace('-', '.'))
+        .sort((a, b) => {
+          const numA = parseFloat(a) || 0;
+          const numB = parseFloat(b) || 0;
+          return numA - numB;
+        });
     }
 
-    return options;
+    return variationOptions;
+  };
+
+  const isOptionAvailable = (attrName: string, attrValue: string) => {
+    if (!product || product.__typename !== 'VariableProduct' || !product.variations) return true;
+
+    // Get the other attribute name (if color is passed, get size, and vice versa)
+    const otherAttrName = attrName === 'pa_color' ? 'pa_size' : 'pa_color';
+    const otherAttrValue = selectedAttributes[otherAttrName];
+
+    // Check if this combination exists in any in-stock variation
+    return product.variations.nodes.some(variation => {
+      const attrs = variation.attributes?.nodes || [];
+      const matchesCurrentAttr = attrs
+        .some(attr => attr.name === attrName && attr.value === attrValue);
+      
+      const matchesOtherAttr = !otherAttrValue || attrs
+        .some(attr => attr.name === otherAttrName && attr.value === otherAttrValue);
+
+      return matchesCurrentAttr && matchesOtherAttr && variation.stockStatus === 'IN_STOCK';
+    });
   };
 
   const prevImage = () => {
@@ -250,7 +294,6 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
   };
 
   const maxQuantity = getSelectedVariation()?.stockQuantity ?? Infinity;
-
   const selectedVariation = getSelectedVariation();
   
   const renderStockStatus = () => {
@@ -278,23 +321,18 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
     );
   };
 
-  // Add this helper function to check if an option is available based on current selection
-  const isOptionAvailable = (attrName: string, attrValue: string) => {
-    if (!isVariableProduct || !product.variations) return true;
-
-    // Get the other attribute name (if color is passed, get size, and vice versa)
-    const otherAttrName = attrName === 'pa_color' ? 'pa_size' : 'pa_color';
-    const otherAttrValue = selectedAttributes[otherAttrName];
-
-    return product.variations.nodes.some(variation => {
-      const matchesCurrentAttr = variation.attributes.nodes
-        .some(attr => attr.name === attrName && attr.value === attrValue);
-      
-      const matchesOtherAttr = !otherAttrValue || variation.attributes.nodes
-        .some(attr => attr.name === otherAttrName && attr.value === otherAttrValue);
-
-      return matchesCurrentAttr && matchesOtherAttr && variation.stockStatus === 'IN_STOCK';
-    });
+  const zoomStyles = {
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: 1000,
+    background: 'white',
+    padding: '1rem',
+    borderRadius: '0.5rem',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    maxWidth: '90vw',
+    maxHeight: '90vh',
   };
 
   return (
@@ -315,93 +353,102 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
             </ol>
           </nav>
 
-          <motion.div
-            className="relative bg-white rounded-lg overflow-hidden shadow-md border border-gray-200"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
+          <div className="relative w-full h-[600px] mb-8">
             <AnimatePresence mode="wait">
-              {allImages.length > 0 && (
-                <motion.div
-                  key={currentImageIndex}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="relative aspect-square"
-                >
-                  <Image
-                    src={getSafeImageUrl(allImages[currentImageIndex], currentImageIndex)}
-                    alt={product.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    priority={currentImageIndex === 0}
-                    style={{ objectFit: 'contain' }}
-                    onError={() => {
-                      const currentImage = allImages[currentImageIndex];
-                      if (currentImage) {
-                        setImageErrors(prev => ({
-                          ...prev,
-                          [`${currentImageIndex}-${currentImage.sourceUrl}`]: true
-                        }));
-                      }
-                    }}
-                    className="w-full h-full"
-                  />
-                </motion.div>
-              )}
+              <motion.div
+                key={currentImageIndex}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="relative w-full h-full"
+              >
+                <Image
+                  src={getSafeImageUrl(allImages[currentImageIndex], currentImageIndex)}
+                  alt={product.name}
+                  fill
+                  style={{
+                    objectFit: 'contain',
+                    padding: '16px',
+                    background: 'white',
+                  }}
+                  quality={95}
+                  priority={true}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                  className="rounded-lg shadow-sm"
+                />
+              </motion.div>
             </AnimatePresence>
 
             {totalImages > 1 && (
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute top-1/2 left-2 md:left-4 transform -translate-y-1/2 bg-white bg-opacity-50 p-1.5 md:p-2 rounded-full hover:bg-opacity-75 transition"
-                  aria-label="Previous Image"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white p-3 rounded-full shadow-lg z-10"
+                  aria-label="Previous image"
                 >
-                  <ChevronLeftIcon className="h-4 w-4 md:h-5 md:w-5 text-gray-800" />
+                  <ChevronLeftIcon className="h-8 w-8 text-gray-800" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute top-1/2 right-2 md:right-4 transform -translate-y-1/2 bg-white bg-opacity-50 p-1.5 md:p-2 rounded-full hover:bg-opacity-75 transition"
-                  aria-label="Next Image"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white p-3 rounded-full shadow-lg z-10"
+                  aria-label="Next image"
                 >
-                  <ChevronRightIcon className="h-4 w-4 md:h-5 md:w-5 text-gray-800" />
+                  <ChevronRightIcon className="h-8 w-8 text-gray-800" />
                 </button>
               </>
             )}
-          </motion.div>
+          </div>
 
           {totalImages > 1 && (
-            <div className="flex space-x-2 mt-4 overflow-x-auto pb-2">
-              {allImages.map((img, index) => (
+            <div className="flex gap-4 overflow-x-auto pb-4 mb-8">
+              {allImages.map((image, index) => (
                 <div
-                  key={`thumb-${index}-${img.sourceUrl}`}
-                  className={`relative flex-shrink-0 w-14 md:w-16 h-14 md:h-16 cursor-pointer border ${
-                    currentImageIndex === index ? 'border-primary' : 'border-transparent'
-                  } rounded-md overflow-hidden`}
+                  key={`${index}-${image?.sourceUrl}`}
+                  className={`relative aspect-square cursor-pointer rounded-lg overflow-hidden ${
+                    currentImageIndex === index ? 'ring-2 ring-black' : ''
+                  }`}
                   onClick={() => setCurrentImageIndex(index)}
+                  onMouseEnter={() => setHoveredImageIndex(index)}
+                  onMouseLeave={() => setHoveredImageIndex(null)}
                 >
                   <Image
-                    src={getSafeImageUrl(img, index)}
-                    alt={`${product.name} thumbnail ${index + 1}`}
+                    src={getSafeImageUrl(image, index)}
+                    alt={`Product thumbnail ${index + 1}`}
                     fill
-                    sizes="(max-width: 768px) 56px, 64px"
-                    style={{ objectFit: 'cover' }}
+                    className="object-contain p-2 hover:scale-110 transition-transform duration-200"
+                    sizes="(max-width: 768px) 25vw, 10vw"
+                    quality={80}
                     onError={() => {
                       setImageErrors(prev => ({
                         ...prev,
-                        [`${index}-${img.sourceUrl}`]: true
+                        [`${index}-${image?.sourceUrl}`]: true
                       }));
                     }}
-                    className="hover:opacity-80 transition-opacity duration-300"
                   />
                 </div>
               ))}
             </div>
           )}
         </div>
+
+        {/* Zoomed Image Overlay */}
+        {hoveredImageIndex !== null && (
+          <div
+            style={zoomStyles as any}
+            onClick={() => setHoveredImageIndex(null)}
+          >
+            <div className="relative aspect-square w-[80vh]">
+              <Image
+                src={getSafeImageUrl(allImages[hoveredImageIndex], hoveredImageIndex)}
+                alt={`Zoomed product image ${hoveredImageIndex + 1}`}
+                fill
+                className="object-contain"
+                sizes="80vh"
+                quality={95}
+              />
+            </div>
+          </div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -426,11 +473,7 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
           />
 
           {isVariableProduct && (
-            <div className="space-y-4 md:space-y-6">
-              <h3 className="font-montserrat font-bold text-lg md:text-xl text-gray-800">
-                Select Options
-              </h3>
-
+            <div className="space-y-6">
               {['pa_color', 'pa_size'].map((attrName) => (
                 <div key={attrName} className="border-b pb-4">
                   <div className="flex justify-between items-center mb-3">
@@ -438,20 +481,6 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                       <h4 className="font-montserrat font-bold text-gray-800 text-base md:text-lg">
                         {displayAttributeName(attrName)}:
                       </h4>
-                      {selectedAttributes[attrName] && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedAttributes(prev => {
-                            const newAttributes = { ...prev };
-                            delete newAttributes[attrName];
-                            return newAttributes;
-                          })}
-                          className="text-xs hover:bg-gray-100 h-6 px-2 text-gray-500"
-                        >
-                          Clear
-                        </Button>
-                      )}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
@@ -494,6 +523,17 @@ const ProductContent: React.FC<ProductContentProps> = memo(({ product }) => {
                   </div>
                 </div>
               ))}
+              {Object.keys(selectedAttributes).length > 0 && (
+                <div className="mt-4">
+                  <Button
+                    onClick={handleResetSelection}
+                    variant="outline"
+                    className="w-full py-2 text-sm font-lato font-medium text-gray-600 hover:text-gray-900 border-2 hover:border-gray-900 transition-colors"
+                  >
+                    Clear Selection
+                  </Button>
+                </div>
+              )}
               {renderStockStatus()}
             </div>
           )}

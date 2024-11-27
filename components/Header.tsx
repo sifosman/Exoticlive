@@ -41,15 +41,10 @@ type Category = {
 };
 
 const categories: Category[] = [
-  { id: "dGVybToxNQ==", name: "ALL", slug: "uncategorized" },
   { id: "dGVybToxNDg=", name: "Bags", slug: "bags" },
-  
   { id: "dGVybToxNDM=", name: "Boots", slug: "boots" },
-  
-  { id: "dGVybTozNDI=", name: "Hats", slug: "hats" },
   { id: "dGVybToxNDQ=", name: "Heels", slug: "heels" },
   { id: "dGVybToyODk=", name: "Mens", slug: "mens" },
-  
   { id: "dGVybToxNDY=", name: "Pumps", slug: "pumps" },
   { id: "dGVybToxNDU=", name: "Sandals", slug: "sandals" },
   { id: "dGVybToxNDc=", name: "Takkies", slug: "takkies" },
@@ -304,13 +299,19 @@ const Header = () => {
             position: 'absolute',
             right: 4,
             display: 'flex',
-            gap: 1 
+            gap: 1,
+            zIndex: 2  
           }}
         >
-          <Link 
-            href="https://facebook.com/yourpage" 
+          <a 
+            href="https://www.instagram.com/exotic_shoes_wholesale/?hl=en" 
             target="_blank"
-            style={{ textDecoration: 'none' }}
+            rel="noopener noreferrer"
+            style={{ 
+              textDecoration: 'none',
+              display: 'block',  
+              cursor: 'pointer'  
+            }}
           >
             <Box
               sx={{
@@ -323,41 +324,18 @@ const Header = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.3s ease',
+                position: 'relative',  
+                zIndex: 2,  
+                cursor: 'pointer',  
                 '&:hover': {
                   bgcolor: 'rgba(255, 255, 255, 0.2)',
                   transform: 'scale(1.1)'
                 }
               }}
             >
-              <FacebookIcon sx={{ color: 'white', fontSize: 18 }} />
+              <InstagramIcon sx={{ color: 'white', fontSize: 18, pointerEvents: 'none' }} />
             </Box>
-          </Link>
-
-          <Link 
-            href="https://instagram.com/yourpage" 
-            target="_blank"
-            style={{ textDecoration: 'none' }}
-          >
-            <Box
-              sx={{
-                bgcolor: 'rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(8px)',
-                borderRadius: '50%',
-                width: 28,
-                height: 28,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.2)',
-                  transform: 'scale(1.1)'
-                }
-              }}
-            >
-              <InstagramIcon sx={{ color: 'white', fontSize: 18 }} />
-            </Box>
-          </Link>
+          </a>
         </Box>
       </Box>
 
@@ -404,7 +382,7 @@ const Header = () => {
 
             {/* Desktop Menu - hidden on mobile */}
             <Box sx={{ display: { xs: 'none', lg: 'flex' }, gap: 4 }}>
-              {['Home', 'Shop Now', 'Order Tracking', 'About Us'].map((item) => (
+              {['Home', 'Shop Now', 'About Us'].map((item) => (
                 <Box key={item}>
                   <Button
                     color="inherit"
@@ -536,7 +514,7 @@ const Header = () => {
         </Box>
         
         <Box sx={{ px: 2 }}>
-          {['Home', 'Shop Now', 'Order Tracking', 'About Us'].map((item) => (
+          {['Home', 'Shop Now', 'About Us'].map((item) => (
             <MenuItem
               key={item}
               onClick={() => {

@@ -1,18 +1,21 @@
 "use client";
 
-import { useQuery, gql } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import ProductCard from './ProductCard';
 import { ProductCardSkeleton } from './ui/LoadingSkeleton';
 import { GET_PRODUCT } from '../graphql/queries';
 
 const FeaturedProducts = () => {
   const { loading, error, data } = useQuery(GET_PRODUCT, {
-    variables: { first: 20 },
+    variables: { 
+      first: 50,  // Increased to ensure we have enough products after filtering
+      orderby: [{ field: 'DATE', order: 'DESC' }]
+    },
   });
 
-  if (loading) return <ProductCardSkeleton count={8} />;
-  if (error) return <p>Error loading featured products: {error.message}</p>;
-  if (!data || !data.products || !data.products.nodes || data.products.nodes.length === 0) {
+  if (loading) return <ProductCardSkeleton count={9} />;
+  if (error) return <p>Error loading products: {error.message}</p>;
+  if (!data?.products?.nodes || data.products.nodes.length === 0) {
     return <p>No products found.</p>;
   }
 
@@ -24,22 +27,24 @@ const FeaturedProducts = () => {
     );
   });
 
-  const shuffledProducts = [...productsWithValidImages].sort(() => Math.random() - 0.5);
-  const randomFeaturedProducts = shuffledProducts.slice(0, 8);
+  // Take exactly 9 most recent products
+  const recentProducts = productsWithValidImages.slice(0, 9);
 
-  if (randomFeaturedProducts.length === 0) {
+  if (recentProducts.length === 0) {
     return <p>No products with valid images found.</p>;
   }
 
   return (
-    <section className="my-12 max-w-7xl mx-auto px-4">
-      <h2 className="text-3xl font-lato font-light tracking-wider text-center mb-8">
-        Featured Products
-      </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-        {randomFeaturedProducts.map((product: any, index: number) => (
-          <ProductCard key={product.id} product={product} index={index} />
-        ))}
+    <section className="w-full py-12 bg-gray-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="text-3xl font-bold text-center mb-8">
+          Featured Products
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 lg:gap-12">
+          {recentProducts.map((product: any, index: number) => (
+            <ProductCard key={product.id} product={product} index={index} />
+          ))}
+        </div>
       </div>
     </section>
   );

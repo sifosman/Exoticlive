@@ -467,84 +467,80 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
   console.log('Categories:', initialCategories);
 
   return (
-    <div className="container mx-auto px-1 sm:px-2 md:px-3 lg:px-8 pt-[60px] md:pt-[75px]">
-      <div className="lg:hidden mb-3">
-        <Button 
-          onClick={handleDrawerToggle} 
-          variant="outline" 
-          className="w-full py-2 text-xs md:text-sm"
-        >
-          <Filter className="h-3 w-3 md:h-4 md:w-4 mr-2" />
-          Filters
-        </Button>
-      </div>
-      <Drawer
-        anchor="left"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true,
-        }}
-        sx={{
-          display: { xs: 'block', lg: 'none' },
-          '& .MuiDrawer-paper': { 
-            width: '100%', 
-            maxWidth: '280px',
-            top: '60px',
-            height: 'calc(100% - 60px)',
-            boxSizing: 'border-box',
-            padding: '16px',
-          },
-        }}
-      >
-        {filterContent}
-      </Drawer>
-      <div className="flex flex-col lg:flex-row gap-3 md:gap-4 lg:gap-8">
-        <div className="hidden lg:block w-[220px] flex-shrink-0">
-          {filterContent}
+    <div className="w-full bg-gray-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-[60px] md:pt-[75px]">
+        <div className="lg:hidden mb-8">
+          <Button 
+            onClick={handleDrawerToggle} 
+            variant="outline" 
+            className="w-full py-2 text-sm font-medium"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+          </Button>
         </div>
-        <div className="flex-1">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 md:mb-4">
-            <h2 className="text-lg md:text-xl lg:text-2xl font-lato font-bold mb-2 sm:mb-0 w-full text-center">
-              Our Products
-            </h2>
-            <SortDropdown 
-              onSortChange={(newSortBy: string, newSortOrder: string) => 
-                handleSortChange(newSortBy as ProductsOrderByEnum, newSortOrder as OrderEnum)
-              } 
-            />
+        <Drawer
+          anchor="left"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: 'block', lg: 'none' },
+            '& .MuiDrawer-paper': { 
+              width: '100%', 
+              maxWidth: '280px',
+              top: '60px',
+              height: 'calc(100% - 60px)',
+              boxSizing: 'border-box',
+              padding: '16px',
+            },
+          }}
+        >
+          {filterContent}
+        </Drawer>
+        <div className="flex flex-col lg:flex-row gap-8">
+          <div className="hidden lg:block w-[280px] flex-shrink-0">
+            {filterContent}
           </div>
-
-          {error ? (
-            <div className="text-center py-4 text-red-500">
-              Error loading products. Please try again.
+          <div className="flex-1">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold mb-4 sm:mb-0">Our Products</h2>
+              <SortDropdown 
+                onSortChange={(newSortBy: string, newSortOrder: string) => 
+                  handleSortChange(newSortBy as ProductsOrderByEnum, newSortOrder as OrderEnum)
+                } 
+              />
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-2 md:gap-3">
-                {filteredProducts.slice(0, displayedProducts).map((product: any, index: number) => (
-                  <div key={product.id} className="flex justify-center">
-                    <div className="w-[calc(50vw-16px)] sm:w-full sm:max-w-[170px] md:max-w-[190px] lg:max-w-[210px]">
+
+            {error ? (
+              <div className="text-center py-4 text-red-500">
+                Error loading products. Please try again.
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 lg:gap-12">
+                  {filteredProducts.slice(0, displayedProducts).map((product: any, index: number) => (
+                    <div key={product.id}>
                       <ProductCard product={product} index={index} />
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              {filteredProducts.length > displayedProducts && (
-                <div className="mt-4 md:mt-6 text-center">
-                  <Button 
-                    onClick={handleShowMore}
-                    className="font-lato text-xs md:text-sm py-2 px-4 md:px-6"
-                  >
-                    Show More ({filteredProducts.length - displayedProducts} more)
-                  </Button>
+                  ))}
                 </div>
-              )}
 
-              
-            </>
-          )}
+                {filteredProducts.length > displayedProducts && (
+                  <div className="mt-8 text-center">
+                    <Button 
+                      onClick={handleShowMore}
+                      className="font-medium text-sm py-2 px-8 bg-gray-900 text-white hover:bg-gray-800"
+                    >
+                      Show More ({filteredProducts.length - displayedProducts} more)
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

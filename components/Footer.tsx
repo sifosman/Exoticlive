@@ -4,7 +4,6 @@ import { Box, Container, Grid, Typography, Stack, TextField, Button } from '@mui
 import Link from 'next/link';
 import { useState } from 'react';
 import Image from 'next/image';
-import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import { Lato } from 'next/font/google';
 
@@ -97,7 +96,7 @@ const Footer = () => {
                     {[
                       { text: 'Products', href: '/products' },
                       { text: 'About Us', href: '/about' },
-                      { text: 'Contact', href: '/contact' },
+                      { text: 'FAQ', href: '/faq' },
                       { text: 'Terms & Conditions', href: '/terms' }
                     ].map((link) => (
                       <Typography
@@ -302,33 +301,7 @@ const Footer = () => {
               }}
             >
               <Link 
-                href="https://facebook.com/yourpage" 
-                target="_blank"
-                style={{ textDecoration: 'none' }}
-              >
-                <Box
-                  sx={{
-                    bgcolor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(8px)',
-                    borderRadius: '50%',
-                    width: 40,
-                    height: 40,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      bgcolor: 'rgba(255, 255, 255, 0.2)',
-                      transform: 'scale(1.1)'
-                    }
-                  }}
-                >
-                  <FacebookIcon sx={{ color: 'white' }} />
-                </Box>
-              </Link>
-
-              <Link 
-                href="https://instagram.com/yourpage" 
+                href="https://www.instagram.com/exotic_shoes_wholesale/?hl=en" 
                 target="_blank"
                 style={{ textDecoration: 'none' }}
               >

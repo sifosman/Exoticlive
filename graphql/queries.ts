@@ -31,13 +31,15 @@ export const GET_PRODUCT = gql`
           price
           regularPrice
           salePrice
-          variations {
+          variations(first: 100) {
             nodes {
               id
               name
               price
               regularPrice
               salePrice
+              stockStatus
+              stockQuantity
               attributes {
                 nodes {
                   name
@@ -51,6 +53,7 @@ export const GET_PRODUCT = gql`
               name
               options
               variation
+              visible
             }
           }
         }
