@@ -186,18 +186,20 @@ export default function CheckoutPage() {
           callback: async function (result: any) {
             if (result.error) {
               setPaymentError(result.error.message);
+              setIsLoading(false);
             } else {
               await handleYocoPayment(result);
             }
           }
         });
       } else if (paymentMethod === 'bank_transfer') {
+        // Create order directly for bank transfer
         await createWooCommerceOrder('Bank Transfer');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Checkout error:', error);
       setPaymentError('An unexpected error occurred. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -329,7 +331,11 @@ export default function CheckoutPage() {
             <h2 className="text-lg sm:text-xl font-lato font-semibold mb-4">Payment Method</h2>
             <RadioGroup 
               value={paymentMethod} 
-              onValueChange={setPaymentMethod} 
+              onValueChange={(value) => {
+                setPaymentMethod(value);
+                // Reset any previous payment errors when changing payment method
+                setPaymentError('');
+              }} 
               className="space-y-3"
             >
               <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
@@ -360,8 +366,9 @@ export default function CheckoutPage() {
             {/* Bank Transfer Details */}
             {paymentMethod === 'bank_transfer' && (
               <div className="mt-4 p-4 bg-gray-50 rounded-lg text-sm">
-                <p className="mb-2">Make your payment directly into our bank account. Please use your Order ID as the payment reference.</p>
+                <p className="mb-2">Please note: After placing your order, you will need to make the payment using the banking details below. Your order will be processed once payment is received.</p>
                 <Button 
+                  type="button"
                   variant="outline" 
                   size="sm"
                   onClick={() => setShowBankingDetails(!showBankingDetails)}

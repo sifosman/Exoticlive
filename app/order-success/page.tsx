@@ -38,6 +38,7 @@ interface OrderDetails {
     subtotal: string;
   }>;
   payment_method_title: string;
+  payment_method: string;
   status: string;
   date_created: string;
 }
@@ -66,7 +67,7 @@ function OrderSuccessContent() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-16 pt-[100px]">
         <div className="max-w-3xl mx-auto">
           <Skeleton className="h-8 w-64 mb-8" />
           <div className="space-y-4">
@@ -80,8 +81,8 @@ function OrderSuccessContent() {
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-black to-zinc-900 ${lato.className}`}>
-      <div className="container mx-auto px-4 py-16">
+    <div className={`min-h-screen bg-white ${lato.className}`}>
+      <div className="container mx-auto px-4 py-16 pt-[100px]">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -97,8 +98,8 @@ function OrderSuccessContent() {
             >
               <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
             </motion.div>
-            <h1 className="text-3xl font-lato font-bold text-white mb-2">Order Confirmed!</h1>
-            <p className="text-white/80">Thank you for shopping with Exotic Shoes</p>
+            <h1 className="text-3xl font-lato font-bold text-gray-900 mb-2">Order Confirmed!</h1>
+            <p className="text-gray-600">Thank you for shopping with Exotic Shoes</p>
           </div>
 
           {/* Order Details Card */}
@@ -106,64 +107,109 @@ function OrderSuccessContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white/10 backdrop-blur-md rounded-lg p-6 mb-8"
+            className="bg-white rounded-lg p-6 mb-8"
           >
-            <div className="border-b border-white/20 pb-4 mb-4">
-              <h2 className="text-xl font-lato font-semibold text-white">Order #{id}</h2>
-              <p className="text-white/70 text-sm">
-                {order?.date_created && new Date(order.date_created).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
-            </div>
+            {order ? (
+              <>
+                <div className="mb-6">
+                  <h2 className="text-xl font-lato font-semibold text-gray-900 mb-2">Order #{order.id}</h2>
+                  <p className="text-gray-600">
+                    {new Date(order.date_created).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
 
-            {/* Order Items */}
-            <div className="space-y-4 mb-6">
-              {order?.line_items.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + index * 0.1 }}
-                  className="flex justify-between items-center"
-                >
-                  <div className="flex items-center space-x-4">
-                    <span className="text-white/90">{item.quantity}x</span>
-                    <span className="text-white">{item.name}</span>
+                {/* Payment Method */}
+                <div className="mb-6 pb-6 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-900 mb-2">Payment Method</h3>
+                  <p className="text-gray-600">{order.payment_method_title}</p>
+                  
+                  {/* Banking Details for Bank Transfer */}
+                  {order.payment_method === 'bank_transfer' && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-sm text-gray-600 mb-4">
+                        Please make your payment using the banking details below. Use your Order #{order.id} as the payment reference.
+                      </p>
+                      <div className="space-y-2 text-sm">
+                        <p className="font-semibold text-gray-900">Banking Details:</p>
+                        <div className="grid grid-cols-1 gap-2">
+                          <div className="flex justify-between p-2 bg-white rounded">
+                            <span className="text-gray-600">Account Name:</span>
+                            <span className="text-gray-900 font-medium">Exotic Shoes</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-white rounded">
+                            <span className="text-gray-600">Account Number:</span>
+                            <span className="text-gray-900 font-medium">60091190369</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-white rounded">
+                            <span className="text-gray-600">Bank Name:</span>
+                            <span className="text-gray-900 font-medium">First National Bank - Savings account</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-white rounded">
+                            <span className="text-gray-600">Branch Code:</span>
+                            <span className="text-gray-900 font-medium">220229</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-white rounded border-2 border-gray-200">
+                            <span className="text-gray-600">Reference:</span>
+                            <span className="text-gray-900 font-medium">Order #{order.id}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Shipping Address */}
+                <div className="mb-6 pb-6 border-b border-gray-200">
+                  <h3 className="font-lato font-semibold text-gray-900 mb-2">Shipping Address</h3>
+                  <div className="text-gray-600">
+                    <p>{order.shipping.address_1}</p>
+                    <p>{order.shipping.city}</p>
+                    <p>{order.shipping.state} {order.shipping.postcode}</p>
+                    <p>{order.shipping.country}</p>
                   </div>
-                  <span className="text-white/90">
-                    {formatPrice(item.subtotal ? parseFloat(item.subtotal) : 0)}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
+                </div>
 
-            {/* Order Total */}
-            <div className="border-t border-white/20 pt-4">
-              <div className="flex justify-between items-center">
-                <span className="text-white font-semibold">Total</span>
-                <span className="text-white font-bold">
-                  {order?.total ? formatPrice(parseFloat(order.total)) : formatPrice(0)}
-                </span>
-              </div>
-            </div>
-          </motion.div>
+                {/* Order Items */}
+                <div className="mb-6">
+                  <h3 className="font-lato font-semibold text-gray-900 mb-4">Order Items</h3>
+                  <div className="space-y-4">
+                    {order.line_items.map((item, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 + index * 0.1 }}
+                        className="flex justify-between items-center"
+                      >
+                        <div className="text-gray-600">
+                          <span className="font-medium">{item.name}</span>
+                          <span className="text-gray-500 ml-2">× {item.quantity}</span>
+                        </div>
+                        <span className="text-gray-900 font-bold">
+                          {formatPrice(item.subtotal ? parseFloat(item.subtotal) : 0)}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
 
-          {/* Shipping Details */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-white/10 backdrop-blur-md rounded-lg p-6 mb-8"
-          >
-            <h3 className="text-lg font-lato font-semibold text-white mb-4">Shipping Details</h3>
-            <div className="text-white/80">
-              <p>{order?.shipping.address_1}</p>
-              <p>{order?.shipping.city}, {order?.shipping.state} {order?.shipping.postcode}</p>
-              <p>{order?.shipping.country}</p>
-            </div>
+                {/* Order Total */}
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <span className="font-lato font-semibold text-gray-900">Total</span>
+                    <span className="font-lato font-bold text-gray-900">
+                      {order.total ? formatPrice(parseFloat(order.total)) : formatPrice(0)}
+                    </span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-gray-600 text-center">Order not found</p>
+            )}
           </motion.div>
 
           {/* Action Buttons */}
@@ -176,7 +222,7 @@ function OrderSuccessContent() {
             <Link href="/" className="w-full sm:w-auto">
               <Button
                 variant="outline"
-                className="w-full bg-white/10 hover:bg-white/20 text-white border-white/20"
+                className="w-full bg-gray-50 hover:bg-gray-100 text-gray-900 border-gray-200"
               >
                 Continue Shopping
               </Button>
