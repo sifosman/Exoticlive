@@ -164,6 +164,10 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 48;
 
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
   const { data, error } = useQuery(GET_PRODUCTS, {
     variables: { 
       first: ITEMS_PER_PAGE, 
@@ -303,10 +307,6 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
 
   const handlePriceChange = (min: number, max: number) => {
     setCurrentPriceRange({ min, max });
-  };
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
   };
 
   useEffect(() => {
@@ -467,21 +467,18 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
   console.log('Categories:', initialCategories);
 
   return (
-    <div className="bg-white">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl mb-8 font-lato">Our Products</h1>
+    <div className="w-full bg-gray-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-[60px] md:pt-[75px]">
         <div className="lg:hidden mb-8">
           <Button 
             onClick={handleDrawerToggle} 
             variant="outline" 
-            className="w-full py-2 text-sm font-medium flex items-center justify-center"
+            className="w-full py-2 text-sm font-medium"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
           </Button>
         </div>
-
-        {/* Mobile Filter Drawer */}
         <Drawer
           anchor="left"
           open={mobileOpen}
@@ -493,62 +490,19 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
             display: { xs: 'block', lg: 'none' },
             '& .MuiDrawer-paper': { 
               width: '100%', 
-              maxWidth: '320px',
+              maxWidth: '280px',
+              top: { xs: '116px', sm: '116px' },
+              height: 'calc(100% - 116px)',
               boxSizing: 'border-box',
-              padding: '20px',
-              paddingTop: '100px', // Account for header
-              backgroundColor: 'white',
-              borderRight: '1px solid rgba(0, 0, 0, 0.1)',
+              padding: '16px',
+              backgroundColor: 'white'
             },
             '& .MuiBackdrop-root': {
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              top: { xs: '116px', sm: '116px' }
             }
           }}
         >
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-4 font-lato">Categories</h3>
-              <FilterPanel 
-                categories={[
-                  {id: 'all', name: 'All', slug: 'all'}, 
-                  ...initialCategories
-                ]}
-                selectedCategories={selectedCategories}
-                onCategoryToggle={handleCategoryToggle}
-                onClose={handleDrawerToggle}
-              />
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4 font-lato">Price Range</h3>
-              <PriceRangeFilter
-                minPrice={priceRange.min}
-                maxPrice={priceRange.max}
-                currentMin={currentPriceRange.min}
-                currentMax={currentPriceRange.max}
-                onPriceChange={handlePriceChange}
-              />
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4 font-lato">Filters</h3>
-              <AttributeFilters
-                availableColors={availableColorsForSizes}
-                selectedColors={selectedColors}
-                onColorToggle={handleColorToggle}
-                availableSizes={availableSizesForColors}
-                selectedSizes={selectedSizes}
-                onSizeToggle={handleSizeToggle}
-              />
-            </div>
-
-            <Button 
-              onClick={handleDrawerToggle}
-              className="w-full mt-4"
-            >
-              Apply Filters
-            </Button>
-          </div>
+          {filterContent}
         </Drawer>
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="hidden lg:block w-[280px] flex-shrink-0">

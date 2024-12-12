@@ -221,7 +221,6 @@ export default function CheckoutPage() {
 
       if (data.success) {
         await createWooCommerceOrder('Yoco Payment Gateway');
-        clearCart(); // Clear the cart after successful Yoco payment
       } else {
         setPaymentError('Payment failed. Please try again.');
       }

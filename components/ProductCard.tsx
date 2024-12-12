@@ -67,18 +67,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
 
   return (
     <Link href={`/product/${product.slug}`} className="block w-full">
-      <Card 
-        sx={{ 
-          maxWidth: 345, 
-          height: '100%', 
-          display: 'flex', 
-          flexDirection: 'column',
-          backgroundColor: 'white',
-          '& .MuiTypography-root': {
-            fontFamily: 'Lato, sans-serif'
-          }
-        }}
-      >
+      <div className="group relative h-full bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
         <Box 
           sx={{ 
             position: 'relative',
@@ -135,7 +124,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
             </div>
           </div>
         </div>
-      </Card>
+      </div>
     </Link>
   )
 }
