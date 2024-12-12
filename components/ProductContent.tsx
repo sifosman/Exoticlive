@@ -220,6 +220,55 @@ const ProductContent = ({ product }: ProductContentProps) => {
   const selectedVariation = getSelectedVariation();
   const stockQuantity = selectedVariation ? (selectedVariation.stockQuantity !== null ? selectedVariation.stockQuantity : 0) : 0;
 
+  const getVariationStockInfo = (attrName: string, value: string) => {
+    if (!isVariableProduct || !product.variations) return null;
+
+    const matchingVariations = product.variations.nodes.filter(variation => {
+      const attrs = variation.attributes.nodes;
+      const matchesCurrentAttr = attrs.some(attr => 
+        attr.name === attrName && 
+        attr.value === value
+      );
+
+      // If other attribute is selected, check if this variation matches it
+      const otherAttrName = attrName === 'pa_color' ? 'pa_size' : 'pa_color';
+      const otherAttrValue = selectedAttributes[otherAttrName];
+      if (otherAttrValue) {
+        const matchesOtherAttr = attrs.some(attr => 
+          attr.name === otherAttrName && 
+          attr.value === otherAttrValue
+        );
+        return matchesCurrentAttr && matchesOtherAttr;
+      }
+
+      return matchesCurrentAttr;
+    });
+
+    if (matchingVariations.length === 0) return null;
+
+    // Get total stock quantity for this variation
+    const totalStock = matchingVariations.reduce((sum, variation) => {
+      return sum + (variation.stockQuantity || 0);
+    }, 0);
+
+    return totalStock;
+  };
+
+  const handleQuantityChange = (newQuantity: number) => {
+    const maxQuantity = selectedVariation ? selectedVariation.stockQuantity || 0 : 0;
+    if (newQuantity > maxQuantity) {
+      toast({
+        title: "Warning",
+        description: `Only ${maxQuantity} items available in stock`,
+        variant: "destructive",
+        duration: 1500,
+      });
+      setQuantity(maxQuantity);
+    } else {
+      setQuantity(newQuantity);
+    }
+  };
+
   const handleAddToCart = () => {
     if (isVariableProduct && !selectedVariation) {
       toast({
@@ -507,7 +556,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
         <div className="space-y-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-lato font-bold text-gray-800 mb-4">{product.name}</h1>
-            <p className="text-xl md:text-2xl font-montserrat font-bold text-primary mb-6">
+            <p className="text-xl md:text-2xl font-lato font-bold text-primary mb-6">
               {formatPrice(
                 isVariableProduct
                   ? selectedVariation?.salePrice || selectedVariation?.regularPrice
@@ -525,7 +574,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
             <div className="space-y-4">
               {product.attributes.nodes.map((attribute) => (
                 <div key={attribute.name}>
-                  <label className="block text-base font-medium text-gray-700 mb-2">
+                  <label className="block text-base font-lato font-medium text-gray-700 mb-2">
                     {displayAttributeName(attribute.name)}:
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -556,16 +605,24 @@ const ProductContent = ({ product }: ProductContentProps) => {
                   </div>
                 </div>
               ))}
+
+              {/* Stock Quantity Display */}
+              {selectedVariation && (
+                <div className="font-lato text-green-600 text-base">
+                  {selectedVariation.stockQuantity} in stock
+                </div>
+              )}
             </div>
           )}
 
           {/* Quantity Selector */}
           <div className="flex items-center space-x-4 mt-6">
-            <span className="text-base font-medium text-gray-700">Quantity:</span>
+            <span className="text-base font-lato font-medium text-gray-700">Quantity:</span>
             <div className="flex items-center">
               <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                onClick={() => handleQuantityChange(Math.max(1, quantity - 1))}
                 className="w-8 h-8 flex items-center justify-center border border-gray-300 text-gray-600 hover:border-black"
+                disabled={quantity <= 1}
               >
                 -
               </button>
@@ -575,14 +632,15 @@ const ProductContent = ({ product }: ProductContentProps) => {
                 onChange={(e) => {
                   const val = parseInt(e.target.value);
                   if (!isNaN(val) && val > 0) {
-                    setQuantity(val);
+                    handleQuantityChange(val);
                   }
                 }}
-                className="w-12 h-8 text-center border-t border-b border-gray-300"
+                className="w-12 h-8 text-center border-t border-b border-gray-300 font-lato"
               />
               <button
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => handleQuantityChange(quantity + 1)}
                 className="w-8 h-8 flex items-center justify-center border border-gray-300 text-gray-600 hover:border-black"
+                disabled={selectedVariation ? quantity >= (selectedVariation.stockQuantity || 0) : true}
               >
                 +
               </button>
@@ -594,7 +652,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
             onClick={handleAddToCart}
             disabled={isVariableProduct && !isValidSelection()}
             className={`
-              w-full py-3 text-base font-medium transition-colors mt-4
+              w-full py-3 text-base font-lato font-medium transition-colors mt-4
               ${isVariableProduct && !isValidSelection() 
                 ? 'bg-gray-600 text-white cursor-not-allowed'
                 : 'bg-black text-white hover:bg-gray-900'
@@ -610,7 +668,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
             style={{ backgroundImage: 'url("/notification-bg.webp")' }}
           >
             <Lock className="w-5 h-5" />
-            <span className="font-medium">Trusted Supplier for over 10 Years</span>
+            <span className="font-lato font-medium">Trusted Supplier for over 10 Years</span>
             <CheckCircle className="w-5 h-5" />
           </div>
 
