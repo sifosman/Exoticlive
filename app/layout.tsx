@@ -31,7 +31,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${playfairDisplay.variable}`}>
-          <body className={`${inter.className} font-sans ${lato.className}`}>
+          <body className={`${inter.className} font-sans ${lato.className} bg-white`}>
         <ThemeRegistry>
           <ApolloWrapper>
             <CartProvider>
