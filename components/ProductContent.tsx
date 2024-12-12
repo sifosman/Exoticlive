@@ -169,7 +169,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
     // Check if any matching variation is in stock
     return matchingVariations.some(variation => 
       variation.stockStatus === 'IN_STOCK' && 
-      (variation.stockQuantity === null || variation.stockQuantity > 0)
+      (typeof variation.stockQuantity === 'undefined' || variation.stockQuantity === null || variation.stockQuantity > 0)
     );
   };
 
@@ -188,25 +188,20 @@ const ProductContent = ({ product }: ProductContentProps) => {
     return name.replace(/^pa_/, '').toLowerCase();
   };
 
-  const handleAttributeSelect = (attrName: string, attrValue: string) => {
-    console.log('Selecting attribute:', { attrName, attrValue });
-    
-    setSelectedAttributes(prev => {
-      const newAttributes = {
-        ...prev,
-        [attrName]: attrValue
-      };
-      
-      console.log('New selected attributes:', newAttributes);
+  const handleAttributeChange = (attributeName: string, value: string) => {
+    setSelectedAttributes(prevAttributes => {
+      const newAttributes = { ...prevAttributes, [attributeName]: value };
       
       // Check if this combination exists in variations
-      const matchingVariation = product.variations?.nodes.find(variation => {
-        return variation.attributes.nodes.every(attr => 
-          newAttributes[attr.name]?.toLowerCase() === attr.value.toLowerCase()
-        );
-      });
-      
-      console.log('Matching variation:', matchingVariation);
+      if (product.__typename === 'VariableProduct') {
+        const matchingVariation = product.variations.nodes.find((variation: ProductVariation) => {
+          return variation.attributes.nodes.every((attr: { name: string; value: string }) => 
+            newAttributes[attr.name]?.toLowerCase() === attr.value.toLowerCase()
+          );
+        });
+        
+        console.log('Matching variation:', matchingVariation);
+      }
       
       return newAttributes;
     });
@@ -331,7 +326,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
                 <CheckCircle className="w-4 h-4 text-green-600" />
                 <span className="text-green-600 font-medium">
                   In Stock
-                  {product.stockQuantity !== null && 
+                  {(!product.stockQuantity || product.stockQuantity > 0) && 
                     ` (${product.stockQuantity} available)`
                   }
                 </span>
@@ -355,7 +350,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
             <CheckCircle className="w-4 h-4 text-green-600" />
             <span className="text-green-600 font-medium">
               In Stock
-              {selectedVariation.stockQuantity !== null && 
+              {(!selectedVariation.stockQuantity || selectedVariation.stockQuantity > 0) && 
                 ` (${selectedVariation.stockQuantity} available)`
               }
             </span>
@@ -368,6 +363,35 @@ const ProductContent = ({ product }: ProductContentProps) => {
         )}
       </div>
     );
+  };
+
+  const isVariationInStock = (variation: ProductVariation) => {
+    return variation.stockStatus === 'IN_STOCK' && 
+           (!variation.stockQuantity || variation.stockQuantity > 0);
+  };
+
+  const isVariationAvailable = (selectedAttrs: Record<string, string>) => {
+    if (product.__typename !== 'VariableProduct') {
+      return false;
+    }
+
+    const matchingVariations = product.variations.nodes.filter((variation: ProductVariation) => {
+      const matchesCurrentAttr = variation.attributes.nodes.every((attr: { name: string; value: string }) => {
+        const attrName = normalizeAttributeName(attr.name);
+        return selectedAttrs[attrName] === attr.value;
+      });
+
+      const matchesOtherAttr = Object.keys(selectedAttrs).every(selectedAttrName => {
+        return variation.attributes.nodes.some(
+          attr => normalizeAttributeName(attr.name) === selectedAttrName
+        );
+      });
+
+      return matchesCurrentAttr && matchesOtherAttr;
+    });
+
+    // Check if any matching variation is in stock
+    return matchingVariations.some(isVariationInStock);
   };
 
   const zoomStyles: React.CSSProperties = {
@@ -398,33 +422,6 @@ const ProductContent = ({ product }: ProductContentProps) => {
       }
       return true; // Skip attributes without options
     });
-  };
-
-  const isVariationAvailable = (selectedAttrs: Record<string, string>) => {
-    if (product.__typename !== 'VariableProduct') {
-      return false;
-    }
-
-    const matchingVariations = product.variations.nodes.filter((variation: ProductVariation) => {
-      const matchesCurrentAttr = variation.attributes.nodes.every((attr: { name: string; value: string }) => {
-        const attrName = normalizeAttributeName(attr.name);
-        return selectedAttrs[attrName] === attr.value;
-      });
-
-      const matchesOtherAttr = Object.keys(selectedAttrs).every(selectedAttrName => {
-        return variation.attributes.nodes.some(
-          attr => normalizeAttributeName(attr.name) === selectedAttrName
-        );
-      });
-
-      return matchesCurrentAttr && matchesOtherAttr;
-    });
-
-    // Check if any matching variation is in stock
-    return matchingVariations.some(variation => 
-      variation.stockStatus === 'IN_STOCK' && 
-      (variation.stockQuantity ?? 0) > 0
-    );
   };
 
   return (
@@ -537,7 +534,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
                       return (
                         <button
                           key={option}
-                          onClick={() => handleAttributeSelect(attribute.name, option)}
+                          onClick={() => handleAttributeChange(attribute.name, option)}
                           className={`
                             min-w-[40px] h-[40px] flex items-center justify-center
                             px-3 border rounded
