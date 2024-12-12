@@ -401,12 +401,12 @@ const ProductContent = ({ product }: ProductContentProps) => {
   };
 
   const isVariationAvailable = (selectedAttrs: Record<string, string>) => {
-    if (product.__typename !== 'VariableProduct' || !product.variations) {
+    if (product.__typename !== 'VariableProduct') {
       return false;
     }
 
-    const matchingVariations = product.variations.nodes.filter(variation => {
-      const matchesCurrentAttr = variation.attributes.nodes.every(attr => {
+    const matchingVariations = product.variations.nodes.filter((variation: ProductVariation) => {
+      const matchesCurrentAttr = variation.attributes.nodes.every((attr: { name: string; value: string }) => {
         const attrName = normalizeAttributeName(attr.name);
         return selectedAttrs[attrName] === attr.value;
       });
@@ -423,7 +423,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
     // Check if any matching variation is in stock
     return matchingVariations.some(variation => 
       variation.stockStatus === 'IN_STOCK' && 
-      (variation.stockQuantity === null || variation.stockQuantity > 0)
+      (variation.stockQuantity ?? 0) > 0
     );
   };
 
