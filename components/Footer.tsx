@@ -143,24 +143,27 @@ const Footer = () => {
                     Quick Links
                   </Typography>
                   <Stack spacing={1.5}>
-                    {quickLinks.map((link: FooterLink) => (
-                      <Typography
-                        key={link.href}
-                        component={Link}
+                    {quickLinks.map((link: FooterLink, index: number) => (
+                      <Link
+                        key={index}
                         href={link.href}
-                        sx={{ 
-                          color: 'rgba(255, 255, 255, 0.7)',
-                          textDecoration: 'none',
-                          transition: 'color 0.2s',
-                          fontFamily: lato.style.fontFamily,
-                          fontSize: { xs: '0.9rem', md: '1rem' },
-                          '&:hover': {
-                            color: 'white'
-                          }
-                        }}
+                        passHref
                       >
-                        {link.text}
-                      </Typography>
+                        <Typography
+                          sx={{ 
+                            color: 'rgba(255, 255, 255, 0.7)',
+                            textDecoration: 'none',
+                            transition: 'color 0.2s',
+                            fontFamily: lato.style.fontFamily,
+                            fontSize: { xs: '0.9rem', md: '1rem' },
+                            '&:hover': {
+                              color: 'white'
+                            }
+                          }}
+                        >
+                          {link.text}
+                        </Typography>
+                      </Link>
                     ))}
                   </Stack>
                 </Grid>
