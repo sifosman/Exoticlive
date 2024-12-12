@@ -474,12 +474,14 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
           <Button 
             onClick={handleDrawerToggle} 
             variant="outline" 
-            className="w-full py-2 text-sm font-medium"
+            className="w-full py-2 text-sm font-medium flex items-center justify-center"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filters
           </Button>
         </div>
+
+        {/* Mobile Filter Drawer */}
         <Drawer
           anchor="left"
           open={mobileOpen}
@@ -491,15 +493,62 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
             display: { xs: 'block', lg: 'none' },
             '& .MuiDrawer-paper': { 
               width: '100%', 
-              maxWidth: '280px',
-              top: '60px',
-              height: 'calc(100% - 60px)',
+              maxWidth: '320px',
               boxSizing: 'border-box',
-              padding: '16px',
+              padding: '20px',
+              paddingTop: '100px', // Account for header
+              backgroundColor: 'white',
+              borderRight: '1px solid rgba(0, 0, 0, 0.1)',
             },
+            '& .MuiBackdrop-root': {
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            }
           }}
         >
-          {filterContent}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-4 font-lato">Categories</h3>
+              <FilterPanel 
+                categories={[
+                  {id: 'all', name: 'All', slug: 'all'}, 
+                  ...initialCategories
+                ]}
+                selectedCategories={selectedCategories}
+                onCategoryToggle={handleCategoryToggle}
+                onClose={handleDrawerToggle}
+              />
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4 font-lato">Price Range</h3>
+              <PriceRangeFilter
+                minPrice={priceRange.min}
+                maxPrice={priceRange.max}
+                currentMin={currentPriceRange.min}
+                currentMax={currentPriceRange.max}
+                onPriceChange={handlePriceChange}
+              />
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4 font-lato">Filters</h3>
+              <AttributeFilters
+                availableColors={availableColorsForSizes}
+                selectedColors={selectedColors}
+                onColorToggle={handleColorToggle}
+                availableSizes={availableSizesForColors}
+                selectedSizes={selectedSizes}
+                onSizeToggle={handleSizeToggle}
+              />
+            </div>
+
+            <Button 
+              onClick={handleDrawerToggle}
+              className="w-full mt-4"
+            >
+              Apply Filters
+            </Button>
+          </div>
         </Drawer>
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="hidden lg:block w-[280px] flex-shrink-0">

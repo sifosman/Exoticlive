@@ -51,63 +51,57 @@ const AttributeFilters: React.FC<AttributeFiltersProps> = ({
       <motion.div 
         className="relative z-10 m-[5px] p-6 rounded-lg bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-md min-h-[200px]"
       >
-        {/* Colors Section */}
-        {availableColors.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-lg font-lato font-semibold mb-4 text-white">
-              Filter by Color
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {availableColors.map((color, index) => (
-                <motion.button
-                  key={color}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => onColorToggle([color])}
-                  className={`
-                    py-2 px-3 rounded-lg font-lato text-sm font-medium
-                    ${selectedColors.includes(color)
-                      ? 'bg-white text-black'
-                      : 'bg-white/10 text-white hover:bg-white/20'}
-                    transition-all duration-200
-                  `}
-                >
-                  {color}
-                </motion.button>
-              ))}
+        <div className="space-y-6">
+          {/* Color Filter */}
+          {availableColors.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-3">Colors</h4>
+              <div className="flex flex-wrap gap-2">
+                {availableColors.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => onColorToggle([color])}
+                    className={`
+                      w-8 h-8 rounded-full border-2 
+                      ${selectedColors.includes(color) ? 'border-black' : 'border-gray-200'}
+                      transition-all duration-200
+                    `}
+                    style={{
+                      backgroundColor: colorMap[color.toLowerCase()] || color.toLowerCase(),
+                      boxShadow: selectedColors.includes(color) ? '0 0 0 2px white, 0 0 0 4px black' : 'none'
+                    }}
+                    aria-label={color}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Sizes Section */}
-        {availableSizes.length > 0 && (
-          <div>
-            <h3 className="text-lg font-lato font-semibold mb-4 text-white">
-              Filter by Size
-            </h3>
-            <div className="grid grid-cols-3 gap-3">
-              {availableSizes.map((size, index) => (
-                <motion.button
-                  key={size}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => onSizeToggle(size)}
-                  className={`
-                    py-2 px-3 rounded-lg font-lato text-sm font-medium
-                    ${selectedSizes.includes(size)
-                      ? 'bg-white text-black'
-                      : 'bg-white/10 text-white hover:bg-white/20'}
-                    transition-all duration-200
-                  `}
-                >
-                  {size}
-                </motion.button>
-              ))}
+          {/* Size Filter */}
+          {availableSizes.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-3">Sizes</h4>
+              <div className="flex flex-wrap gap-2">
+                {availableSizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => onSizeToggle(size)}
+                    className={`
+                      px-4 py-2 rounded-md text-sm font-medium
+                      ${selectedSizes.includes(size) 
+                        ? 'bg-black text-white' 
+                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      }
+                      transition-all duration-200
+                    `}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </motion.div>
     </motion.div>
   );

@@ -40,7 +40,7 @@ const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart } = useCart();
+  const { cart, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('yoco'); // Default to Yoco payment
   const [paymentError, setPaymentError] = useState('');
   const [showBankingDetails, setShowBankingDetails] = useState(false);
@@ -160,6 +160,7 @@ export default function CheckoutPage() {
       }
 
       console.log('Order created successfully:', orderData);
+      clearCart(); // Clear the cart after successful order
       router.push(`/order-success?id=${orderData.id}`);
     } catch (error) {
       console.error('Error creating order:', error);
@@ -220,6 +221,7 @@ export default function CheckoutPage() {
 
       if (data.success) {
         await createWooCommerceOrder('Yoco Payment Gateway');
+        clearCart(); // Clear the cart after successful Yoco payment
       } else {
         setPaymentError('Payment failed. Please try again.');
       }

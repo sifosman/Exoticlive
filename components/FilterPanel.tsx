@@ -89,28 +89,21 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               </motion.div>
 
               {/* Category options */}
-              {filteredCategories.map((category, index) => (
-                <motion.div 
-                  key={category.id} 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between p-2 rounded-md hover:bg-white/10 transition-all duration-200 cursor-pointer"
-                  onClick={() => onCategoryToggle(category.slug)}
-                >
-                  <label 
-                    htmlFor={`category-${category.slug}`} 
-                    className="text-sm font-lato font-medium leading-none text-white/90 flex-grow cursor-pointer"
-                  >
-                    {category.name}
-                  </label>
-                  <Switch
-                    id={`category-${category.slug}`}
-                    checked={isCategorySelected(category.slug)}
-                    onCheckedChange={() => onCategoryToggle(category.slug)}
-                  />
-                </motion.div>
-              ))}
+              <div className="space-y-2">
+                {filteredCategories.map((category, index) => (
+                  <div key={category.id} className="flex items-center">
+                    <label className="flex items-center space-x-2 cursor-pointer w-full py-2">
+                      <input
+                        type="checkbox"
+                        checked={isCategorySelected(category.slug)}
+                        onChange={() => onCategoryToggle(category.slug)}
+                        className="rounded border-gray-300 text-black focus:ring-black"
+                      />
+                      <span className="text-sm font-medium">{category.name}</span>
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         </div>
