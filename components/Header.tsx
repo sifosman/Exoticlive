@@ -350,14 +350,14 @@ const Header = () => {
         position="fixed" 
         sx={{
           top: 0,
-          transform: isScrolled ? 'translateY(0)' : 'translateY(40px)',
-          bgcolor: isScrolled ? 'rgba(255, 255, 255, 0.95)' : 'transparent',
-          backdropFilter: isScrolled ? 'blur(8px)' : 'none',
+          transform: isScrolled ? 'translateY(0)' : 'translateY(0)',
+          bgcolor: isScrolled ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: isScrolled ? 'blur(8px)' : 'blur(8px)',
           boxShadow: isScrolled ? '0px 2px 8px rgba(0,0,0,0.1)' : 'none',
           transition: 'all 0.3s',
           zIndex: 1200,
           '& .MuiButton-root, & .MuiIconButton-root': {
-            color: isScrolled ? '#000' : '#000'
+            color: '#000'
           }
         }}
       >
