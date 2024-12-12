@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion'; // For animations
 import RelatedProducts from './RelatedProducts'; // Changed to default import
 import { Lock, CheckCircle, XCircle } from 'lucide-react';
 import { Snackbar, Alert } from '@mui/material';
+import { ProductVariation } from '@/types/product';
 
 interface ProductContentProps {
   product: {
@@ -53,23 +54,7 @@ interface ProductContentProps {
     | {
         __typename: 'VariableProduct';
         variations: {
-          nodes: Array<{
-            id: string;
-            name: string;
-            stockStatus: 'IN_STOCK' | 'OUT_OF_STOCK' | 'ON_BACKORDER';
-            stockQuantity?: number | null;
-            regularPrice: string;
-            salePrice: string;
-            image: {
-              sourceUrl: string;
-            };
-            attributes: {
-              nodes: Array<{
-                name: string;
-                value: string;
-              }>;
-            };
-          }>;
+          nodes: Array<ProductVariation>;
         };
       }
   );
@@ -413,6 +398,33 @@ const ProductContent = ({ product }: ProductContentProps) => {
       }
       return true; // Skip attributes without options
     });
+  };
+
+  const isVariationAvailable = (selectedAttrs: Record<string, string>) => {
+    if (product.__typename !== 'VariableProduct' || !product.variations) {
+      return false;
+    }
+
+    const matchingVariations = product.variations.nodes.filter(variation => {
+      const matchesCurrentAttr = variation.attributes.nodes.every(attr => {
+        const attrName = normalizeAttributeName(attr.name);
+        return selectedAttrs[attrName] === attr.value;
+      });
+
+      const matchesOtherAttr = Object.keys(selectedAttrs).every(selectedAttrName => {
+        return variation.attributes.nodes.some(
+          attr => normalizeAttributeName(attr.name) === selectedAttrName
+        );
+      });
+
+      return matchesCurrentAttr && matchesOtherAttr;
+    });
+
+    // Check if any matching variation is in stock
+    return matchingVariations.some(variation => 
+      variation.stockStatus === 'IN_STOCK' && 
+      (variation.stockQuantity === null || variation.stockQuantity > 0)
+    );
   };
 
   return (
