@@ -16,6 +16,13 @@ interface FooterLink {
   href: string;
 }
 
+const quickLinks: FooterLink[] = [
+  { text: 'Products', href: '/products' },
+  { text: 'About Us', href: '/about' },
+  { text: 'FAQ', href: '/faq' },
+  { text: 'Terms & Conditions', href: '/terms' }
+];
+
 const Footer = () => {
   useEffect(() => {
     emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_USER_ID!);
@@ -136,12 +143,7 @@ const Footer = () => {
                     Quick Links
                   </Typography>
                   <Stack spacing={1.5}>
-                    {[
-                      { text: 'Products', href: '/products' },
-                      { text: 'About Us', href: '/about' },
-                      { text: 'FAQ', href: '/faq' },
-                      { text: 'Terms & Conditions', href: '/terms' }
-                    ].map((link: FooterLink) => (
+                    {quickLinks.map((link: FooterLink) => (
                       <Typography
                         key={link.href}
                         component={Link}
