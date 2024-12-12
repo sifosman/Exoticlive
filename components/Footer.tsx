@@ -11,6 +11,11 @@ import * as emailjs from '@emailjs/browser';
 // Import the Lato font
 const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
 
+interface FooterLink {
+  text: string;
+  href: string;
+}
+
 const Footer = () => {
   useEffect(() => {
     emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_USER_ID!);
@@ -136,20 +141,19 @@ const Footer = () => {
                       { text: 'About Us', href: '/about' },
                       { text: 'FAQ', href: '/faq' },
                       { text: 'Terms & Conditions', href: '/terms' }
-                    ].map((link) => (
+                    ].map((link: FooterLink) => (
                       <Typography
                         key={link.href}
                         component={Link}
                         href={link.href}
                         sx={{ 
-                          color: 'white',
+                          color: 'rgba(255, 255, 255, 0.7)',
                           textDecoration: 'none',
-                          fontFamily: lato.style.fontFamily, // Use the imported Lato font
-                          letterSpacing: '0.02em',
-                          cursor: 'pointer',
-                          fontSize: { xs: '0.875rem', md: '1rem' },
+                          transition: 'color 0.2s',
+                          fontFamily: lato.style.fontFamily,
+                          fontSize: { xs: '0.9rem', md: '1rem' },
                           '&:hover': {
-                            opacity: 0.8
+                            color: 'white'
                           }
                         }}
                       >
