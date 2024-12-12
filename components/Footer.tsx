@@ -80,7 +80,7 @@ const Footer = () => {
         position: 'relative',
         mt: 12,
         py: 8,
-        fontFamily: lato.style.fontFamily, // Use the imported Lato font
+        fontFamily: lato.style.fontFamily,
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -107,7 +107,7 @@ const Footer = () => {
                     variant="h6" 
                     sx={{ 
                       mb: 3,
-                      fontFamily: lato.style.fontFamily, // Use the imported Lato font
+                      fontFamily: lato.style.fontFamily,
                       fontWeight: 600,
                       letterSpacing: '0.02em',
                       color: 'white',
@@ -119,7 +119,7 @@ const Footer = () => {
                   <Typography 
                     sx={{ 
                       color: 'white',
-                      fontFamily: lato.style.fontFamily, // Use the imported Lato font
+                      fontFamily: lato.style.fontFamily,
                       letterSpacing: '0.02em',
                       fontSize: { xs: '0.875rem', md: '1rem' }
                     }}
@@ -133,7 +133,7 @@ const Footer = () => {
                     variant="h6" 
                     sx={{ 
                       mb: 3,
-                      fontFamily: lato.style.fontFamily, // Use the imported Lato font
+                      fontFamily: lato.style.fontFamily,
                       fontWeight: 600,
                       letterSpacing: '0.02em',
                       color: 'white',
@@ -170,7 +170,7 @@ const Footer = () => {
                     variant="h6" 
                     sx={{ 
                       mb: 3,
-                      fontFamily: lato.style.fontFamily, // Use the imported Lato font
+                      fontFamily: lato.style.fontFamily,
                       fontWeight: 600,
                       letterSpacing: '0.02em',
                       color: 'white',
@@ -183,7 +183,7 @@ const Footer = () => {
                     spacing={1}
                     sx={{ 
                       color: 'white',
-                      fontFamily: lato.style.fontFamily, // Use the imported Lato font
+                      fontFamily: lato.style.fontFamily,
                       letterSpacing: '0.02em',
                       '& .MuiTypography-root': {
                         fontSize: { xs: '0.875rem', md: '1rem' }
@@ -328,7 +328,7 @@ const Footer = () => {
           <Typography 
             sx={{ 
               color: 'white',
-              fontFamily: lato.style.fontFamily, // Use the imported Lato font
+              fontFamily: lato.style.fontFamily,
               letterSpacing: '0.02em',
               fontSize: { xs: '0.75rem', md: '0.875rem' }
             }}
@@ -398,7 +398,7 @@ const Footer = () => {
                 }}
               >
                 <Image
-                  src="/yoco-logo.png" // Add your payment gateway image
+                  src="/yoco-logo.png"
                   alt="Payment Gateway"
                   fill
                   style={{ objectFit: 'contain', padding: '5px' }}
@@ -415,7 +415,7 @@ const Footer = () => {
                 }}
               >
                 <Image
-                  src="/secure-payment.png" // Add your secure payment badge
+                  src="/secure-payment.png"
                   alt="Secure Payment"
                   fill
                   style={{ objectFit: 'contain', padding: '5px' }}
