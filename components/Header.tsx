@@ -27,6 +27,7 @@ import { useCart } from '@/lib/cartContext';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import SearchIcon from '@mui/icons-material/Search';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import ProductSearch from './ProductSearch';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
@@ -135,9 +136,14 @@ const Header = () => {
           onClick={() => router.push('/cart')}
         />
         <BottomNavigationAction
-          label="Account"
-          icon={<PersonIcon />}
-          onClick={() => router.push('/account')}
+          label="WhatsApp"
+          icon={<WhatsAppIcon />}
+          onClick={() => window.open('https://wa.link/01atgb', '_blank')}
+          sx={{
+            '& .MuiSvgIcon-root': {
+              color: 'white',
+            }
+          }}
         />
       </BottomNavigation>
 
@@ -289,7 +295,7 @@ const Header = () => {
               overflow: 'hidden'
             }}
           >
-            Exotic Shoes - Summer Sale!
+            Delivery Available Nationwide!
           </Typography>
         </Box>
 
@@ -359,8 +365,8 @@ const Header = () => {
           <Toolbar 
             sx={{ 
               justifyContent: 'space-between', 
-              height: 72,
-              minHeight: '72px !important'
+              height: 100,
+              minHeight: '100px !important'
             }}
           >
             {/* Logo - now consistently on the left */}
@@ -368,11 +374,11 @@ const Header = () => {
               <Image
                 src="/cropped-logo11.png"
                 alt="Your Logo"
-                width={320}
-                height={100}
+                width={500}
+                height={156}
                 priority
                 style={{
-                  height: 60,
+                  height: 95,
                   width: 'auto',
                   transition: 'transform 0.3s',
                   cursor: 'pointer'

@@ -2,25 +2,63 @@
 
 import { Box, Container, Grid, Typography, Stack, TextField, Button } from '@mui/material';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import { Lato } from 'next/font/google';
+import * as emailjs from '@emailjs/browser';
 
 // Import the Lato font
 const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
 
 const Footer = () => {
+  useEffect(() => {
+    emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_USER_ID!);
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     message: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitStatus, setSubmitStatus] = useState({
+    loading: false,
+    error: null as string | null,
+    success: false
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log(formData);
+    setSubmitStatus({ loading: true, error: null, success: false });
+
+    try {
+      await emailjs.send(
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+        {
+          from_name: formData.name,
+          from_email: formData.email,
+          message: formData.message,
+        },
+        process.env.NEXT_PUBLIC_EMAILJS_USER_ID
+      );
+
+      setSubmitStatus({ loading: false, error: null, success: true });
+      setFormData({ name: '', email: '', message: '' }); // Reset form
+    } catch (error) {
+      console.error('EmailJS error:', error);
+      setSubmitStatus({
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to send message',
+        success: false
+      });
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -146,7 +184,7 @@ const Footer = () => {
                       }
                     }}
                   >
-                    <Typography>Dawncrest, Verulam,4340</Typography>
+                    <Typography>Durban, Verulam</Typography>
                     <Typography>Email: sameer@exoticshoes.co.za</Typography>
                     <Typography>faraaz@exoticshoes.co.za</Typography>
                     <Typography>Whatsapp/Call: 071 345 6393</Typography>
@@ -157,24 +195,14 @@ const Footer = () => {
             </Box>
           </Grid>
 
-          {/* Right side - Contact Form */}
+          {/* Right side - Contact form */}
           <Grid item xs={12} lg={4}>
-            <Box 
-              component="form"
-              onSubmit={handleSubmit}
-              sx={{ 
-                bgcolor: 'rgba(255, 255, 255, 0.1)', 
-                backdropFilter: 'blur(8px)', 
-                p: 4, 
-                borderRadius: 2,
-                height: '100%'
-              }}
-            >
+            <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(8px)', p: 4, borderRadius: 2 }}>
               <Typography 
                 variant="h6" 
                 sx={{ 
                   mb: 3,
-                  fontFamily: lato.style.fontFamily, // Use the imported Lato font
+                  fontFamily: lato.style.fontFamily,
                   fontWeight: 600,
                   letterSpacing: '0.02em',
                   color: 'white',
@@ -183,77 +211,95 @@ const Footer = () => {
               >
                 Send us a Message
               </Typography>
-              
-              <Stack spacing={2}>
-                <TextField
-                  fullWidth
-                  label="Name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  sx={{
-                    '& .MuiInputLabel-root': { color: 'white' },
-                    '& .MuiOutlinedInput-root': {
+              <form onSubmit={handleSubmit}>
+                <Stack spacing={2}>
+                  <TextField
+                    name="name"
+                    label="Name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        color: 'white',
+                        '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                        '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                        '&.Mui-focused fieldset': { borderColor: 'white' }
+                      },
+                      '& .MuiInputLabel-root': { 
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        '&.Mui-focused': { color: 'white' }
+                      }
+                    }}
+                  />
+                  <TextField
+                    name="email"
+                    label="Email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        color: 'white',
+                        '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                        '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                        '&.Mui-focused fieldset': { borderColor: 'white' }
+                      },
+                      '& .MuiInputLabel-root': { 
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        '&.Mui-focused': { color: 'white' }
+                      }
+                    }}
+                  />
+                  <TextField
+                    name="message"
+                    label="Message"
+                    multiline
+                    rows={4}
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        color: 'white',
+                        '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                        '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                        '&.Mui-focused fieldset': { borderColor: 'white' }
+                      },
+                      '& .MuiInputLabel-root': { 
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        '&.Mui-focused': { color: 'white' }
+                      }
+                    }}
+                  />
+                  <Button 
+                    type="submit"
+                    variant="outlined"
+                    disabled={submitStatus.loading}
+                    sx={{
                       color: 'white',
-                      '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
-                      '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
-                      '&.Mui-focused fieldset': { borderColor: 'white' },
-                    },
-                  }}
-                />
-                
-                <TextField
-                  fullWidth
-                  label="Email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  sx={{
-                    '& .MuiInputLabel-root': { color: 'white' },
-                    '& .MuiOutlinedInput-root': {
-                      color: 'white',
-                      '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
-                      '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
-                      '&.Mui-focused fieldset': { borderColor: 'white' },
-                    },
-                  }}
-                />
-                
-                <TextField
-                  fullWidth
-                  label="Message"
-                  multiline
-                  rows={4}
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  sx={{
-                    '& .MuiInputLabel-root': { color: 'white' },
-                    '& .MuiOutlinedInput-root': {
-                      color: 'white',
-                      '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
-                      '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
-                      '&.Mui-focused fieldset': { borderColor: 'white' },
-                    },
-                  }}
-                />
-                
-                <Button 
-                  type="submit"
-                  variant="outlined"
-                  sx={{
-                    color: 'white',
-                    borderColor: 'white',
-                    fontSize: { xs: '0.875rem', md: '1rem' },
-                    '&:hover': {
-                      borderColor: 'white',
-                      bgcolor: 'rgba(255, 255, 255, 0.1)',
-                    },
-                    fontFamily: lato.style.fontFamily, // Use the imported Lato font
-                    letterSpacing: '0.05em'
-                  }}
-                >
-                  Send Message
-                </Button>
-              </Stack>
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                      '&:hover': {
+                        borderColor: 'white',
+                        bgcolor: 'rgba(255, 255, 255, 0.1)'
+                      }
+                    }}
+                  >
+                    {submitStatus.loading ? 'Sending...' : 'Send Message'}
+                  </Button>
+                  {submitStatus.error && (
+                    <Typography color="error" variant="body2">
+                      {submitStatus.error}
+                    </Typography>
+                  )}
+                  {submitStatus.success && (
+                    <Typography sx={{ color: '#4caf50' }} variant="body2">
+                      Message sent successfully!
+                    </Typography>
+                  )}
+                </Stack>
+              </form>
             </Box>
           </Grid>
         </Grid>
