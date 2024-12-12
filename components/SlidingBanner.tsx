@@ -32,17 +32,17 @@ const banners = [
 
 const SlidingBanner: React.FC = () => {
   const [currentBanner, setCurrentBanner] = useState(0);
-  const [isMobile, setIsMobile] = useState(true); // Set default to true for mobile-first approach
+  const [isMobile, setIsMobile] = useState(false);  // Default to desktop view
+  const [isClient, setIsClient] = useState(false);  // Track if we're on client-side
 
   useEffect(() => {
+    setIsClient(true);  // We're now on client-side
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
 
-    // Set initial value immediately
-    if (typeof window !== 'undefined') {
-      handleResize();
-    }
+    // Set initial value
+    handleResize();
 
     // Add event listener
     window.addEventListener('resize', handleResize);
@@ -99,19 +99,22 @@ const SlidingBanner: React.FC = () => {
             inset: 0
           }}
         >
-          <Image
-            src={isMobile ? banners[currentBanner].mobileImage : banners[currentBanner].desktopImage}
-            alt={banners[currentBanner].alt}
-            fill
-            style={{ 
-              objectFit: 'cover',
-              objectPosition: isMobile ? 'center' : 'center',
-              width: '100%',
-              height: '100%'
-            }}
-            sizes={isMobile ? "100vw" : "75vw"}
-            priority
-          />
+          {/* Only render image after we detect client-side */}
+          {isClient && (
+            <Image
+              src={isMobile ? banners[currentBanner].mobileImage : banners[currentBanner].desktopImage}
+              alt={banners[currentBanner].alt}
+              fill
+              style={{ 
+                objectFit: 'cover',
+                objectPosition: 'center',
+                width: '100%',
+                height: '100%'
+              }}
+              sizes={isMobile ? "100vw" : "75vw"}
+              priority
+            />
+          )}
           <div className="absolute inset-0 flex items-end justify-center pb-4 md:pb-8">
             <Link href="/products" className="group relative">
               <motion.div

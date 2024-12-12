@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 import { getApolloClient } from '@/lib/apollo-client';
 import ProductContent from '@/components/ProductContent';
 import { notFound } from 'next/navigation';
-
+import { Suspense } from 'react';
 
 // Add revalidation time (in seconds)
 export const revalidate = 3600; // Revalidate every hour
@@ -16,6 +16,7 @@ const GET_PRODUCT = gql`
       name
       description
       shortDescription
+      __typename
       image {
         sourceUrl
       }
@@ -38,7 +39,7 @@ const GET_PRODUCT = gql`
         regularPrice
         salePrice
         stockStatus
-        variations {
+        variations(first: 100, where: {status: "publish"}) {
           nodes {
             id
             databaseId
@@ -142,7 +143,9 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
     return (
       <div className="container mx-auto px-4 py-8 md:pt-24">
-        <ProductContent product={data.product} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <ProductContent product={data.product} />
+        </Suspense>
       </div>
     );
   } catch (error) {
@@ -150,6 +153,6 @@ export default async function ProductPage({ params }: { params: { slug: string }
     throw error;
   }
 }
+
 // Enable dynamic paths
 export const dynamicParams = true;
-

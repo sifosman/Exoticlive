@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Container, Grid, Typography, Stack, Link as MuiLink } from '@mui/material';
+import { Box, Container, Grid, Typography, Stack, Link as MuiLink, TextField, Button } from '@mui/material';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import InstagramIcon from '@mui/icons-material/Instagram';
@@ -142,7 +142,7 @@ const Footer = () => {
                     Quick Links
                   </Typography>
                   <Stack spacing={1.5}>
-                    {quickLinks.map((link) => (
+                    {quickLinks.map((link: FooterLink) => (
                       <MuiLink
                         key={link.href}
                         href={link.href}
