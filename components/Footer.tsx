@@ -147,22 +147,18 @@ const Footer = () => {
                       <Link
                         key={index}
                         href={link.href}
-                        passHref
+                        style={{
+                          textDecoration: 'none',
+                          color: 'rgba(255, 255, 255, 0.7)',
+                          transition: 'color 0.2s',
+                          fontFamily: lato.style.fontFamily,
+                          fontSize: '0.9rem',
+                          '&:hover': {
+                            color: 'white'
+                          }
+                        }}
                       >
-                        <Typography
-                          sx={{ 
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            textDecoration: 'none',
-                            transition: 'color 0.2s',
-                            fontFamily: lato.style.fontFamily,
-                            fontSize: { xs: '0.9rem', md: '1rem' },
-                            '&:hover': {
-                              color: 'white'
-                            }
-                          }}
-                        >
-                          {link.text}
-                        </Typography>
+                        {link.text}
                       </Link>
                     ))}
                   </Stack>
