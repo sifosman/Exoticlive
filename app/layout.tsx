@@ -36,7 +36,7 @@ export default function RootLayout({
           <ApolloWrapper>
             <CartProvider>
               <Header />
-              <main className="min-h-screen">
+              <main className="min-h-screen pt-[120px]">
                 <div className={playfairDisplay.className}>{children}</div>
               </main>
               <Footer />

@@ -356,7 +356,6 @@ const Header = () => {
           boxShadow: isScrolled ? '0px 2px 8px rgba(0,0,0,0.1)' : 'none',
           transition: 'all 0.3s',
           zIndex: 1200,
-          marginBottom: '20px',
           '& .MuiButton-root, & .MuiIconButton-root': {
             color: '#000'
           }
@@ -366,9 +365,9 @@ const Header = () => {
           <Toolbar 
             sx={{ 
               justifyContent: 'space-between', 
-              height: 100,
-              minHeight: '100px !important',
-              mb: '20px'
+              height: 80,
+              minHeight: '80px !important',
+              py: 1
             }}
           >
             {/* Logo - now consistently on the left */}
