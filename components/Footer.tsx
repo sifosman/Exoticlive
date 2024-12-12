@@ -1,7 +1,6 @@
 'use client';
 
-import { Box, Container, Grid, Typography, Stack, TextField, Button } from '@mui/material';
-import Link from 'next/link';
+import { Box, Container, Grid, Typography, Stack, Link as MuiLink } from '@mui/material';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import InstagramIcon from '@mui/icons-material/Instagram';
@@ -143,23 +142,23 @@ const Footer = () => {
                     Quick Links
                   </Typography>
                   <Stack spacing={1.5}>
-                    {quickLinks.map((link: FooterLink, index: number) => (
-                      <Link
-                        key={index}
+                    {quickLinks.map((link) => (
+                      <MuiLink
+                        key={link.href}
                         href={link.href}
-                        style={{
-                          textDecoration: 'none',
+                        underline="none"
+                        sx={{
                           color: 'rgba(255, 255, 255, 0.7)',
-                          transition: 'color 0.2s',
                           fontFamily: lato.style.fontFamily,
-                          fontSize: '0.9rem',
+                          fontSize: { xs: '0.9rem', md: '1rem' },
+                          transition: 'color 0.2s',
                           '&:hover': {
                             color: 'white'
                           }
                         }}
                       >
                         {link.text}
-                      </Link>
+                      </MuiLink>
                     ))}
                   </Stack>
                 </Grid>
@@ -351,10 +350,17 @@ const Footer = () => {
                 mr: 2
               }}
             >
-              <Link 
+              <MuiLink 
                 href="https://www.instagram.com/exotic_shoes_wholesale/?hl=en" 
                 target="_blank"
-                style={{ textDecoration: 'none' }}
+                underline="none"
+                sx={{
+                  color: 'white',
+                  '&:hover': {
+                    color: 'white',
+                    textDecoration: 'none'
+                  }
+                }}
               >
                 <Box
                   sx={{
@@ -375,7 +381,7 @@ const Footer = () => {
                 >
                   <InstagramIcon sx={{ color: 'white' }} />
                 </Box>
-              </Link>
+              </MuiLink>
             </Box>
 
             {/* Payment Badges */}
