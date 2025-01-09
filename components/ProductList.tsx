@@ -111,40 +111,45 @@ interface ProductListProps {
   initialCategories?: Category[];
 }
 
+interface ProductVariation {
+  id: string;
+  name: string;
+  stockStatus: string;
+  stockQuantity?: number;
+  attributes: {
+    nodes: {
+      name: string;
+      value: string;
+    }[];
+  };
+}
+
 interface Product {
-  __typename?: string;
+  __typename: 'SimpleProduct' | 'VariableProduct';
   id: string;
   slug: string;
   name: string;
-  price: string;
+  price?: string;
   stockStatus?: string;
   stockQuantity?: number;
-  image: {
+  image?: {
     sourceUrl: string;
   };
   productCategories?: {
-    nodes?: Array<{
+    nodes: {
+      id: string;
       name: string;
       slug?: string;
-    }>;
-  };
-  variations?: {
-    nodes?: Array<{
-      attributes: {
-        nodes: Array<{
-          name: string;
-          value: string;
-        }>;
-      };
-      stockStatus?: string;
-      stockQuantity?: number;
-    }>;
+    }[];
   };
   attributes?: {
-    nodes?: Array<{
+    nodes: {
       name: string;
       options: string[];
-    }>;
+    }[];
+  };
+  variations?: {
+    nodes: ProductVariation[];
   };
 }
 
