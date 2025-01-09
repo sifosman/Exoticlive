@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Filter } from "lucide-react";
 import { Drawer } from '@mui/material';
 import AttributeFilters from './AttributeFilters';
+import { ProductCardSkeleton } from './ui/LoadingSkeleton';
 
 const GET_PRODUCTS = gql`
   query GetProducts(
@@ -31,12 +32,18 @@ const GET_PRODUCTS = gql`
         categoryIn: $categories
       }
     ) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
       nodes {
         ... on SimpleProduct {
           id
           slug
           name
           price
+          stockStatus
+          stockQuantity
           image {
             sourceUrl
           }
@@ -75,8 +82,11 @@ const GET_PRODUCTS = gql`
               options
             }
           }
-          variations {
+          variations(first: 100) {
             nodes {
+              id
+              stockStatus
+              stockQuantity
               attributes {
                 nodes {
                   name
@@ -86,10 +96,6 @@ const GET_PRODUCTS = gql`
             }
           }
         }
-      }
-      pageInfo {
-        hasNextPage
-        endCursor
       }
     }
   }
@@ -111,6 +117,8 @@ interface Product {
   slug: string;
   name: string;
   price: string;
+  stockStatus?: string;
+  stockQuantity?: number;
   image: {
     sourceUrl: string;
   };
@@ -128,6 +136,8 @@ interface Product {
           value: string;
         }>;
       };
+      stockStatus?: string;
+      stockQuantity?: number;
     }>;
   };
   attributes?: {
@@ -157,20 +167,23 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [displayedProducts, setDisplayedProducts] = useState(12);
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [currentPriceRange, setCurrentPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [page, setPage] = useState(1);
-  const ITEMS_PER_PAGE = 48;
+  const [displayedProducts, setDisplayedProducts] = useState(24);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const [endCursor, setEndCursor] = useState<string | null>(null);
+  const ITEMS_PER_LOAD = 24;
+  const FETCH_LIMIT = 100; // WooCommerce's maximum limit per request
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const { data, error } = useQuery(GET_PRODUCTS, {
+  const { loading, error, data, fetchMore } = useQuery(GET_PRODUCTS, {
     variables: { 
-      first: ITEMS_PER_PAGE, 
+      first: FETCH_LIMIT,
       after: null, 
       sortBy, 
       sortOrder,
@@ -179,8 +192,93 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
         : null
     },
     fetchPolicy: 'cache-and-network',
-    nextFetchPolicy: 'cache-first'
+    nextFetchPolicy: 'cache-first',
+    onCompleted: (data) => {
+      console.log('Query completed. Total products:', data?.products?.nodes?.length);
+      console.log('Page Info:', data?.products?.pageInfo);
+      if (data?.products?.pageInfo) {
+        setHasNextPage(data.products.pageInfo.hasNextPage);
+        setEndCursor(data.products.pageInfo.endCursor);
+      }
+    },
+    onError: (error) => {
+      console.error('GraphQL Error:', error);
+    }
   });
+
+  useEffect(() => {
+    if (error) {
+      console.error('GraphQL Error:', error);
+    }
+  }, [error]);
+
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      if (hasNextPage && endCursor) {
+        const result = await fetchMore({
+          variables: {
+            after: endCursor,
+            first: FETCH_LIMIT
+          },
+          updateQuery: (prev, { fetchMoreResult }) => {
+            if (!fetchMoreResult) return prev;
+            
+            console.log('Previous products:', prev.products.nodes.length);
+            console.log('New products:', fetchMoreResult.products.nodes.length);
+            console.log('Previous cursor:', endCursor);
+            console.log('New cursor:', fetchMoreResult.products.pageInfo.endCursor);
+            
+            return {
+              products: {
+                ...fetchMoreResult.products,
+                nodes: [
+                  ...prev.products.nodes,
+                  ...fetchMoreResult.products.nodes
+                ],
+                pageInfo: fetchMoreResult.products.pageInfo
+              }
+            };
+          }
+        });
+
+        if (result.data?.products?.pageInfo) {
+          setHasNextPage(result.data.products.pageInfo.hasNextPage);
+          setEndCursor(result.data.products.pageInfo.endCursor);
+        }
+      }
+      setDisplayedProducts(prev => prev + ITEMS_PER_LOAD);
+    } catch (error) {
+      console.error('Error loading more products:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [hasNextPage, isLoadingMore, endCursor, fetchMore]);
+
+  const handleSortChange = (newSortBy: ProductsOrderByEnum, newSortOrder: OrderEnum) => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+  };
+
+  const handleCategoryToggle = (categorySlug: string) => {
+    setSelectedCategories(prev => {
+      if (categorySlug.toLowerCase() === 'all') {
+        return [];
+      }
+      
+      if (prev.includes(categorySlug.toLowerCase())) {
+        return prev.filter(c => c !== categorySlug.toLowerCase());
+      }
+      
+      return [...prev, categorySlug.toLowerCase()];
+    });
+  };
+
+  const handlePriceChange = (min: number, max: number) => {
+    setCurrentPriceRange({ min, max });
+  };
 
   useEffect(() => {
     const category = searchParams?.get('category');
@@ -211,17 +309,6 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
     }
   }, [data]);
 
-  const debouncedPriceChange = useCallback(
-    debounce((min: number, max: number) => {
-      setCurrentPriceRange({ min, max });
-    }, 300),
-    []
-  );
-
-  const handleShowMore = useCallback(() => {
-    setDisplayedProducts(prev => prev + 12);
-  }, []);
-
   const products = useMemo(() => {
     return data?.products?.nodes || [];
   }, [data]);
@@ -229,23 +316,80 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     
+    console.log('Starting filtering with total products:', products.length);
+    
     return products.filter((product: Product) => {
-      // Price filter
-      const price = product.price ? parseFloat(product.price.replace(/[^\d.]/g, '')) / 100 : 0;
-      const priceMatch = price >= currentPriceRange.min && price <= currentPriceRange.max;
+      // Debug log for each product's stock status
+      if (product.__typename === 'VariableProduct') {
+        const totalVariations = product.variations?.nodes?.length || 0;
+        const inStockVariations = product.variations?.nodes?.filter(
+          v => v.stockStatus === 'IN_STOCK' || v.stockStatus === 'ON_BACKORDER'
+        ).length || 0;
+
+        console.log('Product:', {
+          id: product.id,
+          name: product.name,
+          totalVariations,
+          inStockVariations,
+          variations: product.variations?.nodes?.map(v => ({
+            id: v.id,
+            name: v.name,
+            stockStatus: v.stockStatus,
+            attributes: v.attributes.nodes.map(attr => ({
+              name: attr.name,
+              value: attr.value
+            }))
+          }))
+        });
+      }
+
+      // Check stock status for simple products
+      if (product.__typename === 'SimpleProduct') {
+        if (product.stockStatus === 'OUT_OF_STOCK') {
+          return false;
+        }
+      }
+
+      // Check stock status for variable products
+      if (product.__typename === 'VariableProduct' && product.variations?.nodes) {
+        // Check if at least one variation is in stock or on backorder
+        const hasAvailableVariation = product.variations.nodes.some(
+          variation => variation.stockStatus === 'IN_STOCK' || variation.stockStatus === 'ON_BACKORDER'
+        );
+        
+        if (!hasAvailableVariation) {
+          return false;
+        }
+      }
 
       // Category filter
       const categoryMatch = selectedCategories.length === 0 || 
-        (product.productCategories?.nodes?.some(category => 
-          selectedCategories.includes(category.slug?.toLowerCase() || '')
-        ) ?? false);
+        (product.productCategories?.nodes?.some(category => {
+          const matches = selectedCategories.includes(category.slug?.toLowerCase() || '');
+          return matches;
+        }) ?? false);
+
+      if (!categoryMatch) {
+        return false;
+      }
+
+      // Price filter
+      const price = product.price ? parseFloat(product.price.replace(/[^\d.]/g, '')) / 100 : 0;
+      const priceMatch = price >= currentPriceRange.min && price <= currentPriceRange.max;
+      if (!priceMatch) {
+        return false;
+      }
 
       // Color and size filters
       let attributeMatch = true;
       if (selectedColors.length > 0 || selectedSizes.length > 0) {
         if (product.__typename === 'VariableProduct' && product.variations?.nodes) {
-          // Check if any variation matches the selected attributes
-          attributeMatch = product.variations.nodes.some(variation => {
+          // Only check available variations for attribute matches
+          const availableVariations = product.variations.nodes.filter(
+            variation => variation.stockStatus === 'IN_STOCK' || variation.stockStatus === 'ON_BACKORDER'
+          );
+          
+          attributeMatch = availableVariations.some(variation => {
             const colorAttr = variation.attributes.nodes.find(
               attr => attr.name.toLowerCase() === 'pa_color'
             );
@@ -261,7 +405,6 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
             return matchesColor && matchesSize;
           });
         } else {
-          // For simple products, check direct attributes
           const attributes = product.attributes?.nodes || [];
           const colorAttr = attributes.find(attr => attr.name.toLowerCase() === 'pa_color');
           const sizeAttr = attributes.find(attr => attr.name.toLowerCase() === 'pa_size');
@@ -275,7 +418,7 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
         }
       }
 
-      return priceMatch && categoryMatch && attributeMatch;
+      return attributeMatch;
     });
   }, [products, selectedCategories, currentPriceRange, selectedColors, selectedSizes]);
 
@@ -284,38 +427,17 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
     console.log('Available Categories:', initialCategories);
     console.log('Total Products:', data?.products?.nodes?.length);
     console.log('Filtered Products:', filteredProducts.length);
-  }, [selectedCategories, initialCategories, data, filteredProducts]);
+    console.log('Has Next Page:', hasNextPage);
+    console.log('End Cursor:', endCursor);
+  }, [selectedCategories, initialCategories, data, filteredProducts, hasNextPage, endCursor]);
 
-  const handleSortChange = (newSortBy: ProductsOrderByEnum, newSortOrder: OrderEnum) => {
-    setSortBy(newSortBy);
-    setSortOrder(newSortOrder);
-  };
+  const debouncedPriceChange = useCallback(
+    debounce((min: number, max: number) => {
+      setCurrentPriceRange({ min, max });
+    }, 300),
+    []
+  );
 
-  const handleCategoryToggle = (categorySlug: string) => {
-    setSelectedCategories(prev => {
-      if (categorySlug.toLowerCase() === 'all') {
-        return [];
-      }
-      
-      if (prev.includes(categorySlug.toLowerCase())) {
-        return prev.filter(c => c !== categorySlug.toLowerCase());
-      }
-      
-      return [...prev, categorySlug.toLowerCase()];
-    });
-  };
-
-  const handlePriceChange = (min: number, max: number) => {
-    setCurrentPriceRange({ min, max });
-  };
-
-  useEffect(() => {
-    console.log('Selected Categories:', selectedCategories);
-    console.log('Available Categories:', initialCategories);
-    console.log('Products Data:', data?.products?.nodes);
-  }, [selectedCategories, initialCategories, data]);
-
-  // Extract unique colors and sizes from products
   const { availableColors, availableSizes } = useMemo(() => {
     const colors = new Set<string>();
     const sizes = new Set<string>();
@@ -522,6 +644,14 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
               <div className="text-center py-4 text-red-500">
                 Error loading products. Please try again.
               </div>
+            ) : loading && !data ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 lg:gap-12">
+                {[...Array(12)].map((_, index) => (
+                  <div key={index} className="animate-pulse">
+                    <ProductCardSkeleton count={1} />
+                  </div>
+                ))}
+              </div>
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 lg:gap-12">
@@ -533,13 +663,31 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
                 </div>
 
                 {filteredProducts.length > displayedProducts && (
-                  <div className="mt-8 text-center">
-                    <Button 
-                      onClick={handleShowMore}
-                      className="font-medium text-sm py-2 px-8 bg-gray-900 text-white hover:bg-gray-800"
+                  <div className="flex justify-center mt-8">
+                    <button
+                      className="bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm py-3 px-8 rounded-md transition-colors duration-200 flex items-center gap-2"
+                      onClick={handleLoadMore}
+                      disabled={isLoadingMore}
                     >
-                      Show More ({filteredProducts.length - displayedProducts} more)
-                    </Button>
+                      {isLoadingMore ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Loading More Products...
+                        </>
+                      ) : (
+                        <>Show More ({Math.min(ITEMS_PER_LOAD, filteredProducts.length - displayedProducts)} products)</>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {isLoadingMore && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 lg:gap-12 mt-8">
+                    {[...Array(Math.min(ITEMS_PER_LOAD, filteredProducts.length - displayedProducts))].map((_, index) => (
+                      <div key={`loading-${index}`} className="animate-pulse">
+                        <ProductCardSkeleton count={1} />
+                      </div>
+                    ))}
                   </div>
                 )}
               </>
