@@ -1,18 +1,19 @@
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface ProductVariation {
   id: string;
   name: string;
-  stockStatus: 'IN_STOCK' | 'OUT_OF_STOCK' | 'ON_BACKORDER';
+  stockStatus: string;
   stockQuantity?: number | null;
-  regularPrice: string;
-  salePrice: string;
-  image: {
-    sourceUrl: string;
-  };
   attributes: {
-    nodes: Array<{
+    nodes: {
       name: string;
       value: string;
-    }>;
+    }[];
   };
 }
 
@@ -22,6 +23,10 @@ export interface Product {
   slug: string;
   name: string;
   price?: string;
+  regularPrice?: string;
+  salePrice?: string;
+  onSale?: boolean;
+  averageRating?: number;
   stockStatus?: string;
   stockQuantity?: number;
   image?: {
@@ -43,10 +48,4 @@ export interface Product {
   variations?: {
     nodes: ProductVariation[];
   };
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
 }

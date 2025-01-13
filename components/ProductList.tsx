@@ -3,17 +3,30 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, gql } from '@apollo/client';
 import { useSearchParams } from 'next/navigation';
+import { ProductsOrderByEnum, OrderEnum } from '../@types/graphql';
+import { Button } from './ui/button';
+import { Filter } from "lucide-react";
+import { Drawer } from '@mui/material';
 import ProductCard from './ProductCard';
 import FilterPanel from './FilterPanel';
 import SortDropdown from './SortDropdown';
-import { ProductsOrderByEnum, OrderEnum } from '../@types/graphql';
-import { Button } from './ui/button';
 import PriceRangeFilter from './PriceRangeFilter';
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-import { Filter } from "lucide-react";
-import { Drawer } from '@mui/material';
 import AttributeFilters from './AttributeFilters';
 import { ProductCardSkeleton } from './ui/LoadingSkeleton';
+import { Product } from '@/components/product/types';
+import { Product as GraphQLProduct, Category } from '../types/product';
+
+const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void => {
+  let timeout: NodeJS.Timeout;
+  
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
 
 const GET_PRODUCTS = gql`
   query GetProducts(
@@ -42,6 +55,10 @@ const GET_PRODUCTS = gql`
           slug
           name
           price
+          regularPrice
+          salePrice
+          onSale
+          averageRating
           stockStatus
           stockQuantity
           image {
@@ -66,6 +83,11 @@ const GET_PRODUCTS = gql`
           slug
           name
           price
+          regularPrice
+          salePrice
+          onSale
+          averageRating
+          stockStatus
           image {
             sourceUrl
           }
@@ -82,9 +104,10 @@ const GET_PRODUCTS = gql`
               options
             }
           }
-          variations(first: 100) {
+          variations {
             nodes {
               id
+              name
               stockStatus
               stockQuantity
               attributes {
@@ -101,69 +124,12 @@ const GET_PRODUCTS = gql`
   }
 `;
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
 interface ProductListProps {
   initialCategories?: Category[];
 }
 
-interface ProductVariation {
-  id: string;
-  name: string;
-  stockStatus: string;
-  stockQuantity?: number;
-  attributes: {
-    nodes: {
-      name: string;
-      value: string;
-    }[];
-  };
-}
-
-interface Product {
-  __typename: 'SimpleProduct' | 'VariableProduct';
-  id: string;
-  slug: string;
-  name: string;
-  price?: string;
-  stockStatus?: string;
-  stockQuantity?: number;
-  image?: {
-    sourceUrl: string;
-  };
-  productCategories?: {
-    nodes: {
-      id: string;
-      name: string;
-      slug?: string;
-    }[];
-  };
-  attributes?: {
-    nodes: {
-      name: string;
-      options: string[];
-    }[];
-  };
-  variations?: {
-    nodes: ProductVariation[];
-  };
-}
-
-const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void => {
-  let timeout: NodeJS.Timeout;
-  
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-};
+const ITEMS_PER_LOAD = 24;
+const FETCH_LIMIT = 100; // WooCommerce's maximum limit per request
 
 const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => {
   const searchParams = useSearchParams();
@@ -175,92 +141,134 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [currentPriceRange, setCurrentPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [displayedProducts, setDisplayedProducts] = useState(24);
+  const [displayedProducts, setDisplayedProducts] = useState(ITEMS_PER_LOAD);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [endCursor, setEndCursor] = useState<string | null>(null);
-  const ITEMS_PER_LOAD = 24;
-  const FETCH_LIMIT = 100; // WooCommerce's maximum limit per request
+  const [allProducts, setAllProducts] = useState<GraphQLProduct[]>([]);
+  const [isBackgroundLoading, setIsBackgroundLoading] = useState(false);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const filterProducts = useCallback((products: GraphQLProduct[]) => {
+    if (!products) return [];
+    console.log('Filtering products:', products.length);
+    
+    return products.filter(product => {
+      // For SimpleProduct, check if it's in stock
+      if (!('variations' in product)) {
+        return product.stockStatus === 'instock' || product.stockStatus === 'IN_STOCK';
+      }
+      
+      // For VariableProduct, check if any variation is in stock
+      const variableProduct = product as any;
+      if (!variableProduct.variations?.nodes?.length) {
+        return variableProduct.stockStatus === 'instock' || variableProduct.stockStatus === 'IN_STOCK';
+      }
+      
+      // Check if at least one variation is in stock
+      return variableProduct.variations.nodes.some(
+        (variation: any) => variation.stockStatus === 'instock' || variation.stockStatus === 'IN_STOCK'
+      );
+    });
+  }, []);
 
   const { loading, error, data, fetchMore } = useQuery(GET_PRODUCTS, {
     variables: { 
       first: FETCH_LIMIT,
-      after: null, 
-      sortBy, 
+      after: null,
+      sortBy,
       sortOrder,
-      categories: selectedCategories.length > 0 
-        ? selectedCategories.map(cat => cat.toLowerCase())
-        : null
+      categories: selectedCategories.length > 0 ? selectedCategories : null
     },
-    fetchPolicy: 'cache-and-network',
-    nextFetchPolicy: 'cache-first',
-    onCompleted: (data) => {
-      console.log('Query completed. Total products:', data?.products?.nodes?.length);
-      console.log('Page Info:', data?.products?.pageInfo);
-      if (data?.products?.pageInfo) {
-        setHasNextPage(data.products.pageInfo.hasNextPage);
-        setEndCursor(data.products.pageInfo.endCursor);
-      }
-    },
+    notifyOnNetworkStatusChange: true,
     onError: (error) => {
-      console.error('GraphQL Error:', error);
+      console.error('Error fetching products:', error);
     }
   });
 
   useEffect(() => {
-    if (error) {
-      console.error('GraphQL Error:', error);
-    }
-  }, [error]);
-
-  const handleLoadMore = useCallback(async () => {
-    if (isLoadingMore) return;
-
-    setIsLoadingMore(true);
-    try {
-      if (hasNextPage && endCursor) {
-        const result = await fetchMore({
-          variables: {
-            after: endCursor,
-            first: FETCH_LIMIT
-          },
-          updateQuery: (prev, { fetchMoreResult }) => {
-            if (!fetchMoreResult) return prev;
-            
-            console.log('Previous products:', prev.products.nodes.length);
-            console.log('New products:', fetchMoreResult.products.nodes.length);
-            console.log('Previous cursor:', endCursor);
-            console.log('New cursor:', fetchMoreResult.products.pageInfo.endCursor);
-            
-            return {
-              products: {
-                ...fetchMoreResult.products,
-                nodes: [
-                  ...prev.products.nodes,
-                  ...fetchMoreResult.products.nodes
-                ],
-                pageInfo: fetchMoreResult.products.pageInfo
-              }
-            };
+    if (data?.products?.nodes) {
+      console.log('Raw products data:', data.products.nodes);
+      
+      
+      // Filter and deduplicate products when setting allProducts
+      setAllProducts(prevProducts => {
+        const existingIds = new Set(prevProducts.map(p => p.id));
+        const newProducts = [...prevProducts];
+        const filteredProducts = filterProducts(data.products.nodes);
+        console.log('Filtered products:', filteredProducts.length);
+        
+        filteredProducts.forEach((product: GraphQLProduct) => {
+          if (!existingIds.has(product.id)) {
+            newProducts.push(product);
+            existingIds.add(product.id);
           }
         });
+        console.log('Final products count:', newProducts.length);
+        return newProducts;
+      });
 
-        if (result.data?.products?.pageInfo) {
-          setHasNextPage(result.data.products.pageInfo.hasNextPage);
-          setEndCursor(result.data.products.pageInfo.endCursor);
-        }
+      if (data.products.pageInfo) {
+        setHasNextPage(data.products.pageInfo.hasNextPage);
+        setEndCursor(data.products.pageInfo.endCursor);
       }
-      setDisplayedProducts(prev => prev + ITEMS_PER_LOAD);
-    } catch (error) {
-      console.error('Error loading more products:', error);
-    } finally {
-      setIsLoadingMore(false);
     }
-  }, [hasNextPage, isLoadingMore, endCursor, fetchMore]);
+  }, [data, filterProducts]);
+
+  // Calculate filtered products
+  const filteredProducts = useMemo(() => {
+    console.log('Calculating filtered products from:', allProducts.length);
+    let filtered = [...allProducts];
+
+    // Apply category filter if categories are selected
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter(product => {
+        return product.productCategories?.nodes?.some(category => 
+          selectedCategories.includes(category.slug?.toLowerCase() || '')
+        );
+      });
+    }
+
+    // Apply price filter if price range is set
+    if (priceRange.min > 0 || priceRange.max < Infinity) {
+      filtered = filtered.filter(product => {
+        const price = parseFloat(product.price?.replace(/[^\d.]/g, '') || '0');
+        return price >= priceRange.min && price <= priceRange.max;
+      });
+    }
+
+    console.log('After category filter:', filtered.length);
+    console.log('Selected categories:', selectedCategories);
+    console.log('Price range:', priceRange);
+    console.log('Final filtered count:', filtered.length);
+    return filtered;
+  }, [allProducts, selectedCategories, priceRange]);
+
+  // Update displayedProducts when needed
+  useEffect(() => {
+    setDisplayedProducts(ITEMS_PER_LOAD);
+  }, [filteredProducts]);
+
+  // Update price range when products change
+  useEffect(() => {
+    if (allProducts.length > 0) {
+      const prices = allProducts.map(product => {
+        const price = product.price ? parseFloat(product.price.replace(/[^\d.]/g, '')) : 0;
+        return price;
+      });
+      
+      const validPrices = prices.filter(price => !isNaN(price) && price > 0);
+      if (validPrices.length > 0) {
+        const minPrice = Math.floor(Math.min(...validPrices));
+        const maxPrice = Math.ceil(Math.max(...validPrices));
+        setPriceRange({ min: minPrice, max: maxPrice });
+        setCurrentPriceRange({ min: minPrice, max: maxPrice });
+      }
+    }
+  }, [allProducts]);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   const handleSortChange = (newSortBy: ProductsOrderByEnum, newSortOrder: OrderEnum) => {
     setSortBy(newSortBy);
@@ -298,162 +306,16 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    if (data?.products?.nodes) {
-      const prices = data.products.nodes.map((product: Product) => {
-        const price = product.price ? product.price.replace(/[^\d.]/g, '') : '0';
-        return parseFloat(price) / 100;
-      });
-      const validPrices = prices.filter((price: number) => !isNaN(price));
-      if (validPrices.length > 0) {
-        const minPrice = Math.floor(Math.min(...validPrices));
-        const maxPrice = Math.ceil(Math.max(...validPrices));
-        setPriceRange({ min: minPrice, max: maxPrice });
-        setCurrentPriceRange({ min: minPrice, max: maxPrice });
-      }
-    }
-  }, [data]);
-
-  const products = useMemo(() => {
-    return data?.products?.nodes || [];
-  }, [data]);
-
-  const filteredProducts = useMemo(() => {
-    if (!products) return [];
-    
-    console.log('Starting filtering with total products:', products.length);
-    
-    return products.filter((product: Product) => {
-      // Debug log for each product's stock status
-      if (product.__typename === 'VariableProduct') {
-        const totalVariations = product.variations?.nodes?.length || 0;
-        const inStockVariations = product.variations?.nodes?.filter(
-          v => v.stockStatus === 'IN_STOCK' || v.stockStatus === 'ON_BACKORDER'
-        ).length || 0;
-
-        console.log('Product:', {
-          id: product.id,
-          name: product.name,
-          totalVariations,
-          inStockVariations,
-          variations: product.variations?.nodes?.map(v => ({
-            id: v.id,
-            name: v.name,
-            stockStatus: v.stockStatus,
-            attributes: v.attributes.nodes.map(attr => ({
-              name: attr.name,
-              value: attr.value
-            }))
-          }))
-        });
-      }
-
-      // Check stock status for simple products
-      if (product.__typename === 'SimpleProduct') {
-        if (product.stockStatus === 'OUT_OF_STOCK') {
-          return false;
-        }
-      }
-
-      // Check stock status for variable products
-      if (product.__typename === 'VariableProduct' && product.variations?.nodes) {
-        // Check if at least one variation is in stock or on backorder
-        const hasAvailableVariation = product.variations.nodes.some(
-          variation => variation.stockStatus === 'IN_STOCK' || variation.stockStatus === 'ON_BACKORDER'
-        );
-        
-        if (!hasAvailableVariation) {
-          return false;
-        }
-      }
-
-      // Category filter
-      const categoryMatch = selectedCategories.length === 0 || 
-        (product.productCategories?.nodes?.some(category => {
-          const matches = selectedCategories.includes(category.slug?.toLowerCase() || '');
-          return matches;
-        }) ?? false);
-
-      if (!categoryMatch) {
-        return false;
-      }
-
-      // Price filter
-      const price = product.price ? parseFloat(product.price.replace(/[^\d.]/g, '')) / 100 : 0;
-      const priceMatch = price >= currentPriceRange.min && price <= currentPriceRange.max;
-      if (!priceMatch) {
-        return false;
-      }
-
-      // Color and size filters
-      let attributeMatch = true;
-      if (selectedColors.length > 0 || selectedSizes.length > 0) {
-        if (product.__typename === 'VariableProduct' && product.variations?.nodes) {
-          // Only check available variations for attribute matches
-          const availableVariations = product.variations.nodes.filter(
-            variation => variation.stockStatus === 'IN_STOCK' || variation.stockStatus === 'ON_BACKORDER'
-          );
-          
-          attributeMatch = availableVariations.some(variation => {
-            const colorAttr = variation.attributes.nodes.find(
-              attr => attr.name.toLowerCase() === 'pa_color'
-            );
-            const sizeAttr = variation.attributes.nodes.find(
-              attr => attr.name.toLowerCase() === 'pa_size'
-            );
-
-            const matchesColor = selectedColors.length === 0 || 
-              (colorAttr && selectedColors.includes(colorAttr.value));
-            const matchesSize = selectedSizes.length === 0 || 
-              (sizeAttr && selectedSizes.includes(sizeAttr.value));
-
-            return matchesColor && matchesSize;
-          });
-        } else {
-          const attributes = product.attributes?.nodes || [];
-          const colorAttr = attributes.find(attr => attr.name.toLowerCase() === 'pa_color');
-          const sizeAttr = attributes.find(attr => attr.name.toLowerCase() === 'pa_size');
-
-          const matchesColor = selectedColors.length === 0 || 
-            (colorAttr && colorAttr.options.some(option => selectedColors.includes(option)) || false);
-          const matchesSize = selectedSizes.length === 0 || 
-            (sizeAttr && sizeAttr.options.some(option => selectedSizes.includes(option)) || false);
-
-          attributeMatch = matchesColor && matchesSize;
-        }
-      }
-
-      return attributeMatch;
-    });
-  }, [products, selectedCategories, currentPriceRange, selectedColors, selectedSizes]);
-
-  useEffect(() => {
-    console.log('Selected Categories:', selectedCategories);
-    console.log('Available Categories:', initialCategories);
-    console.log('Total Products:', data?.products?.nodes?.length);
-    console.log('Filtered Products:', filteredProducts.length);
-    console.log('Has Next Page:', hasNextPage);
-    console.log('End Cursor:', endCursor);
-  }, [selectedCategories, initialCategories, data, filteredProducts, hasNextPage, endCursor]);
-
-  const debouncedPriceChange = useCallback(
-    debounce((min: number, max: number) => {
-      setCurrentPriceRange({ min, max });
-    }, 300),
-    []
-  );
-
   const { availableColors, availableSizes } = useMemo(() => {
     const colors = new Set<string>();
     const sizes = new Set<string>();
 
-    data?.products.nodes.forEach((product: any) => {
-      // Get attributes from both simple and variable products
+    allProducts.forEach((product: GraphQLProduct) => {
       const attributes = product.attributes?.nodes || [];
       const variations = product.variations?.nodes || [];
 
       // Check direct attributes
-      attributes.forEach((attr: any) => {
+      attributes.forEach((attr) => {
         if (attr.name.toLowerCase() === 'pa_color') {
           attr.options.forEach((color: string) => colors.add(color));
         }
@@ -463,8 +325,8 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
       });
 
       // Check variation attributes
-      variations.forEach((variation: any) => {
-        variation.attributes.nodes.forEach((attr: any) => {
+      variations.forEach((variation) => {
+        variation.attributes.nodes.forEach((attr) => {
           if (attr.name.toLowerCase() === 'pa_color') {
             colors.add(attr.value);
           }
@@ -477,29 +339,27 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
 
     return {
       availableColors: Array.from(colors).sort(),
-      availableSizes: Array.from(sizes)
-        .sort((a, b) => {
-          const numA = parseFloat(a);
-          const numB = parseFloat(b);
-          if (isNaN(numA) || isNaN(numB)) return a.localeCompare(b);
-          return numA - numB;
-        })
+      availableSizes: Array.from(sizes).sort((a, b) => {
+        const numA = parseFloat(a);
+        const numB = parseFloat(b);
+        if (isNaN(numA) || isNaN(numB)) return a.localeCompare(b);
+        return numA - numB;
+      })
     };
-  }, [data]);
+  }, [allProducts]);
 
-  // Get available sizes for selected colors
   const availableSizesForColors = useMemo(() => {
     if (selectedColors.length === 0) return availableSizes;
     
     const sizes = new Set<string>();
-    data?.products.nodes.forEach((product: any) => {
+    allProducts.forEach((product: GraphQLProduct) => {
       if (product.__typename === 'VariableProduct') {
-        product.variations.nodes.forEach((variation: any) => {
-          const colorAttr = variation.attributes.nodes.find((attr: any) => 
-            attr.name.toLowerCase() === 'pa_color'
+        product.variations?.nodes.forEach((variation) => {
+          const colorAttr = variation.attributes.nodes.find(
+            attr => attr.name.toLowerCase() === 'pa_color'
           );
-          const sizeAttr = variation.attributes.nodes.find((attr: any) => 
-            attr.name.toLowerCase() === 'pa_size'
+          const sizeAttr = variation.attributes.nodes.find(
+            attr => attr.name.toLowerCase() === 'pa_size'
           );
           
           if (colorAttr && sizeAttr && selectedColors.includes(colorAttr.value)) {
@@ -515,21 +375,20 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
       if (isNaN(numA) || isNaN(numB)) return a.localeCompare(b);
       return numA - numB;
     });
-  }, [data, selectedColors, availableSizes]);
+  }, [allProducts, selectedColors, availableSizes]);
 
-  // Get available colors for selected sizes
   const availableColorsForSizes = useMemo(() => {
     if (selectedSizes.length === 0) return availableColors;
     
     const colors = new Set<string>();
-    data?.products.nodes.forEach((product: any) => {
+    allProducts.forEach((product: GraphQLProduct) => {
       if (product.__typename === 'VariableProduct') {
-        product.variations.nodes.forEach((variation: any) => {
-          const colorAttr = variation.attributes.nodes.find((attr: any) => 
-            attr.name.toLowerCase() === 'pa_color'
+        product.variations?.nodes.forEach((variation) => {
+          const colorAttr = variation.attributes.nodes.find(
+            attr => attr.name.toLowerCase() === 'pa_color'
           );
-          const sizeAttr = variation.attributes.nodes.find((attr: any) => 
-            attr.name.toLowerCase() === 'pa_size'
+          const sizeAttr = variation.attributes.nodes.find(
+            attr => attr.name.toLowerCase() === 'pa_size'
           );
           
           if (colorAttr && sizeAttr && selectedSizes.includes(sizeAttr.value)) {
@@ -540,11 +399,10 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
     });
     
     return Array.from(colors).sort();
-  }, [data, selectedSizes, availableColors]);
+  }, [allProducts, selectedSizes, availableColors]);
 
-  // Handle color and size selection
   const handleColorToggle = (colors: string[]) => {
-    const color = colors[0]; // Get the first color from the array
+    const color = colors[0];
     setSelectedColors(prev => 
       prev.includes(color) 
         ? prev.filter(c => c !== color)
@@ -560,142 +418,209 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
     );
   };
 
-  const filterContent = (
-    <div className="w-full">
-      <FilterPanel 
-        categories={[
-          {id: 'all', name: 'All', slug: 'all'}, 
-          ...initialCategories
-        ]}
-        selectedCategories={selectedCategories}
-        onCategoryToggle={handleCategoryToggle}
-        onClose={handleDrawerToggle}
-      />
-      <PriceRangeFilter
-        minPrice={priceRange.min}
-        maxPrice={priceRange.max}
-        currentMin={currentPriceRange.min}
-        currentMax={currentPriceRange.max}
-        onPriceChange={handlePriceChange}
-      />
-      <AttributeFilters
-        availableColors={availableColorsForSizes}
-        selectedColors={selectedColors}
-        onColorToggle={handleColorToggle}
-        availableSizes={availableSizesForColors}
-        selectedSizes={selectedSizes}
-        onSizeToggle={handleSizeToggle}
-      />
-    </div>
+  const debouncedPriceChange = useCallback(
+    debounce((min: number, max: number) => {
+      setCurrentPriceRange({ min, max });
+    }, 300),
+    []
   );
 
-  console.log('Products:', products);
-  console.log('Filtered Products:', filteredProducts);
-  console.log('Categories:', initialCategories);
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasNextPage) {
+      setIsLoadingMore(true);
+      console.log('Loading more products...');
+      
+      fetchMore({
+        variables: {
+          after: endCursor,
+          first: ITEMS_PER_LOAD,
+          sortBy,
+          sortOrder,
+          categories: selectedCategories.length > 0 ? selectedCategories : null
+        },
+        updateQuery: (prev, { fetchMoreResult }) => {
+          if (!fetchMoreResult) return prev;
+          if (!prev || !prev.products || !prev.products.nodes) return fetchMoreResult;
+          
+          try {
+            setHasNextPage(fetchMoreResult.products.pageInfo.hasNextPage);
+            setEndCursor(fetchMoreResult.products.pageInfo.endCursor);
+            
+            // Filter and deduplicate products
+            const existingIds = new Set(prev.products.nodes.map((node: GraphQLProduct) => node.id));
+            const filteredNewProducts = filterProducts(fetchMoreResult.products.nodes);
+            const newNodes = filteredNewProducts.filter(
+              (node: GraphQLProduct) => !existingIds.has(node.id)
+            );
+            
+            const result = {
+              products: {
+                ...fetchMoreResult.products,
+                nodes: [...prev.products.nodes, ...newNodes],
+                pageInfo: fetchMoreResult.products.pageInfo
+              }
+            };
+            
+            console.log('New nodes added:', newNodes.length);
+            return result;
+          } catch (error) {
+            console.error('Error in updateQuery:', error);
+            return prev;
+          }
+        }
+      }).finally(() => {
+        setIsLoadingMore(false);
+        setDisplayedProducts(prev => prev + ITEMS_PER_LOAD);
+      });
+    }
+  };
 
   return (
-    <div className="w-full bg-gray-50">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-[60px] md:pt-[75px]">
+    <div className="flex flex-col min-h-screen bg-white">
+      <div className="container mx-auto px-4 py-8">
         <div className="lg:hidden mb-8">
           <Button 
             onClick={handleDrawerToggle} 
-            variant="outline" 
-            className="w-full py-2 text-sm font-medium"
+            className="flex items-center gap-2"
           >
-            <Filter className="h-4 w-4 mr-2" />
+            <Filter className="h-4 w-4" />
             Filters
           </Button>
         </div>
-        <Drawer
-          anchor="left"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', lg: 'none' },
-            '& .MuiDrawer-paper': { 
-              width: '100%', 
-              maxWidth: '280px',
-              top: { xs: '116px', sm: '116px' },
-              height: 'calc(100% - 116px)',
-              boxSizing: 'border-box',
-              padding: '16px',
-              backgroundColor: 'white'
-            },
-            '& .MuiBackdrop-root': {
-              top: { xs: '116px', sm: '116px' }
-            }
-          }}
-        >
-          {filterContent}
-        </Drawer>
+
         <div className="flex flex-col lg:flex-row gap-8">
-          <div className="hidden lg:block w-[280px] flex-shrink-0">
-            {filterContent}
-          </div>
-          <div className="flex-1">
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
-              <h2 className="text-3xl font-bold mb-4 sm:mb-0">Our Products</h2>
-              <SortDropdown 
-                onSortChange={(newSortBy: string, newSortOrder: string) => 
-                  handleSortChange(newSortBy as ProductsOrderByEnum, newSortOrder as OrderEnum)
-                } 
+          {/* Desktop Filter Panel */}
+          <div className="hidden lg:block w-64 flex-shrink-0">
+            <div className="space-y-6">
+              <FilterPanel 
+                categories={[
+                  {id: 'all', name: 'All', slug: 'all'}, 
+                  ...initialCategories
+                ]}
+                selectedCategories={selectedCategories}
+                onCategoryToggle={handleCategoryToggle}
+                onClose={handleDrawerToggle}
+              />
+              <PriceRangeFilter
+                minPrice={priceRange.min}
+                maxPrice={priceRange.max}
+                currentMin={currentPriceRange.min}
+                currentMax={currentPriceRange.max}
+                onPriceChange={(min: number, max: number) => debouncedPriceChange(min, max)}
+              />
+              <AttributeFilters
+                availableColors={availableColorsForSizes}
+                selectedColors={selectedColors}
+                onColorToggle={handleColorToggle}
+                availableSizes={availableSizesForColors}
+                selectedSizes={selectedSizes}
+                onSizeToggle={handleSizeToggle}
               />
             </div>
+          </div>
 
-            {error ? (
-              <div className="text-center py-4 text-red-500">
-                Error loading products. Please try again.
-              </div>
-            ) : loading && !data ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 lg:gap-12">
-                {[...Array(12)].map((_, index) => (
-                  <div key={index} className="animate-pulse">
-                    <ProductCardSkeleton count={1} />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 lg:gap-12">
-                  {filteredProducts.slice(0, displayedProducts).map((product: any, index: number) => (
-                    <div key={product.id}>
-                      <ProductCard product={product} index={index} />
-                    </div>
-                  ))}
+          {/* Mobile Filter Panel */}
+          <Drawer
+            anchor="left"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            sx={{
+              '& .MuiDrawer-paper': {
+                width: 280,
+                boxSizing: 'border-box',
+                backgroundColor: 'white',
+                padding: '1rem'
+              },
+            }}
+          >
+            <div className="space-y-6">
+              <FilterPanel 
+                categories={[
+                  {id: 'all', name: 'All', slug: 'all'}, 
+                  ...initialCategories
+                ]}
+                selectedCategories={selectedCategories}
+                onCategoryToggle={handleCategoryToggle}
+                onClose={handleDrawerToggle}
+              />
+              <PriceRangeFilter
+                minPrice={priceRange.min}
+                maxPrice={priceRange.max}
+                currentMin={currentPriceRange.min}
+                currentMax={currentPriceRange.max}
+                onPriceChange={(min: number, max: number) => debouncedPriceChange(min, max)}
+              />
+              <AttributeFilters
+                availableColors={availableColorsForSizes}
+                selectedColors={selectedColors}
+                onColorToggle={handleColorToggle}
+                availableSizes={availableSizesForColors}
+                selectedSizes={selectedSizes}
+                onSizeToggle={handleSizeToggle}
+              />
+            </div>
+          </Drawer>
+
+          {/* Product Grid */}
+          <div className="flex-1">
+            <div className="mb-8">
+              <SortDropdown onSortChange={handleSortChange} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+              {loading && !allProducts.length ? (
+                // Initial loading state
+                Array.from({ length: 12 }).map((_, index) => (
+                  <ProductCardSkeleton key={`initial-${index}`} count={1} />
+                ))
+              ) : filteredProducts.length === 0 ? (
+                // No products found
+                <div className="col-span-full text-center py-12">
+                  <p className="text-xl text-gray-600">No products found matching your criteria.</p>
                 </div>
-
-                {filteredProducts.length > displayedProducts && (
-                  <div className="flex justify-center mt-8">
-                    <button
-                      className="bg-gray-900 hover:bg-gray-800 text-white font-medium text-sm py-3 px-8 rounded-md transition-colors duration-200 flex items-center gap-2"
-                      onClick={handleLoadMore}
-                      disabled={isLoadingMore}
-                    >
-                      {isLoadingMore ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Loading More Products...
-                        </>
-                      ) : (
-                        <>Show More ({Math.min(ITEMS_PER_LOAD, filteredProducts.length - displayedProducts)} products)</>
-                      )}
-                    </button>
-                  </div>
-                )}
-
-                {isLoadingMore && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 lg:gap-12 mt-8">
-                    {[...Array(Math.min(ITEMS_PER_LOAD, filteredProducts.length - displayedProducts))].map((_, index) => (
-                      <div key={`loading-${index}`} className="animate-pulse">
-                        <ProductCardSkeleton count={1} />
-                      </div>
+              ) : (
+                // Product list
+                <>
+                  {filteredProducts
+                    .slice(0, displayedProducts)
+                    .map((product: GraphQLProduct, index: number) => (
+                      <ProductCard 
+                        key={product.id} 
+                        product={product as Product}
+                        index={index}
+                      />
                     ))}
-                  </div>
-                )}
-              </>
+                  {isLoadingMore && (
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <ProductCardSkeleton key={`loading-more-${index}`} count={1} />
+                    ))
+                  )}
+                </>
+              )}
+            </div>
+
+            {hasNextPage && filteredProducts.length >= displayedProducts && (
+              <div className="flex justify-center mt-12 mb-8">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="font-lato px-8 py-3 bg-black text-white rounded-lg transition-all duration-300 
+                    hover:bg-gray-900 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed
+                    text-base tracking-wide font-medium transform hover:-translate-y-0.5"
+                >
+                  {isLoadingMore ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading...
+                    </span>
+                  ) : (
+                    'Load More'
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </div>

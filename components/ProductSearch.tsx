@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Drawer, 
   IconButton, 
@@ -21,17 +21,45 @@ import SearchIcon from '@mui/icons-material/Search';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useQuery, gql } from '@apollo/client';
-import { PRODUCT_FIELDS } from '../graphql/fragments';
+import { useDebounce } from '../hooks/useDebounce';
 
 const SEARCH_PRODUCTS = gql`
   query SearchProducts($search: String!) {
-    products(where: { search: $search }, first: 10) {
+    products(
+      first: 10,
+      where: {
+        search: $search,
+        status: "publish"
+      }
+    ) {
       nodes {
-        ...ProductFields
+        ... on SimpleProduct {
+          id
+          name
+          slug
+          stockStatus
+          image {
+            sourceUrl
+          }
+        }
+        ... on VariableProduct {
+          id
+          name
+          slug
+          stockStatus
+          image {
+            sourceUrl
+          }
+          variations {
+            nodes {
+              id
+              stockStatus
+            }
+          }
+        }
       }
     }
   }
-  ${PRODUCT_FIELDS}
 `;
 
 interface ProductSearchProps {
@@ -40,21 +68,42 @@ interface ProductSearchProps {
 }
 
 const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedTerm] = useDebounce(searchTerm, 300);
   const router = useRouter();
 
-  const { loading, data } = useQuery(SEARCH_PRODUCTS, {
-    variables: { search: searchQuery },
-    skip: searchQuery.length < 2,
+  const { loading, error, data } = useQuery(SEARCH_PRODUCTS, {
+    variables: { search: debouncedTerm },
+    skip: !debouncedTerm,
   });
+
+  const filteredProducts = useMemo(() => {
+    if (!data?.products?.nodes) return [];
+    
+    return data.products.nodes.filter(product => {
+      // For SimpleProduct, check if it's in stock
+      if (!('variations' in product)) {
+        return product.stockStatus === 'instock' || product.stockStatus === 'IN_STOCK';
+      }
+      
+      // For VariableProduct, check if any variation is in stock
+      const variableProduct = product as any;
+      if (!variableProduct.variations?.nodes?.length) {
+        return variableProduct.stockStatus === 'instock' || variableProduct.stockStatus === 'IN_STOCK';
+      }
+      
+      // Check if at least one variation is in stock
+      return variableProduct.variations.nodes.some(
+        (variation: any) => variation.stockStatus === 'instock' || variation.stockStatus === 'IN_STOCK'
+      );
+    });
+  }, [data]);
 
   const handleProductClick = (slug: string) => {
     router.push(`/product/${slug}`);
     onClose();
-    setSearchQuery('');
+    setSearchTerm('');
   };
-
-  const searchResults = data?.products?.nodes || [];
 
   return (
     <Drawer
@@ -152,8 +201,8 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
             <InputBase
               autoFocus
               placeholder="Search for products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               fullWidth
               startAdornment={
                 <InputAdornment position="start">
@@ -182,7 +231,7 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
             </Box>
           ) : (
             <List sx={{ pt: 0 }}>
-              {searchResults.map((product: any) => (
+              {filteredProducts.map((product: any) => (
                 <Paper
                   key={product.id}
                   elevation={0}
@@ -245,7 +294,7 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
                   </ListItem>
                 </Paper>
               ))}
-              {searchQuery.length >= 2 && searchResults.length === 0 && !loading && (
+              {searchTerm.length >= 2 && filteredProducts.length === 0 && !loading && (
                 <Box sx={{ 
                   textAlign: 'center',
                   mt: { xs: 4, sm: 8 },

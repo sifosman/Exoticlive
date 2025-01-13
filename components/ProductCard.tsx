@@ -10,18 +10,11 @@ import {
   Chip, 
   Box 
 } from '@mui/material'
-import { Product } from '@/@types/graphql';
+import { Product } from '@/components/product/types';
+import { useState, useEffect } from 'react';
 
 interface ProductCardProps {
-  product: Product & {
-    variationId?: string;
-    categories?: {
-      nodes?: {
-        slug: string;
-      }[];
-    };
-    __typename?: 'SimpleProduct' | 'VariableProduct';
-  };
+  product: Product;
   index: number;
 }
 
@@ -38,7 +31,26 @@ const formatPrice = (price: string | null | undefined, productName?: string, pro
   return `R${numPrice.toFixed(2)}`;
 };
 
-export default function ProductCard({ product, index }: ProductCardProps) {
+const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
+  const [imageError, setImageError] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+  const imageUrl = product.image?.sourceUrl;
+
+  useEffect(() => {
+    // Reset states when product changes
+    setImageError(false);
+    setIsImageLoading(true);
+  }, [product.id]);
+
+  const handleImageLoad = () => {
+    setIsImageLoading(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+    setIsImageLoading(false);
+  };
+
   console.log('Product Price Data:', {
     name: product.name,
     price: product.price,
@@ -52,61 +64,66 @@ export default function ProductCard({ product, index }: ProductCardProps) {
     return null
   }
 
-  const isValidImageUrl = (url: string) => {
+  const isValidImageUrl = (url: string | undefined): boolean => {
+    if (!url) return false;
     try {
-      new URL(url)
-      return true
+      new URL(url);
+      return true;
     } catch (error) {
-      return false
+      return false;
     }
   }
-
-  const imageUrl = isValidImageUrl(product.image?.sourceUrl)
-    ? product.image.sourceUrl
-    : 'https://wp.exoticshoes.co.za/wp-content/uploads/2021/09/cropped-logo11.png'
 
   return (
     <Link href={`/product/${product.slug}`} className="block w-full">
       <div className="group relative h-full bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-        <Box 
-          sx={{ 
+        <Box
+          sx={{
             position: 'relative',
             width: '100%',
-            aspectRatio: '1/1',  
+            aspectRatio: '1/1',
             overflow: 'hidden',
-            '&:hover img': {
-              transform: 'scale(1.05)',
-              transition: 'transform 0.3s ease'
-            },
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0)',
-              transition: 'background 0.3s ease',
-            },
-            '&:hover::after': {
-              background: 'rgba(0, 0, 0, 0.1)',
-            }
+            background: 'white',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
           }}
         >
-          <Image
-            src={product.image?.sourceUrl || 'https://wp.exoticshoes.co.za/wp-content/uploads/2021/09/cropped-logo11.png'}
-            alt={product.name || 'Product Image'}
-            fill
-            style={{
-              objectFit: 'contain',
-              transition: 'transform 0.3s ease',
-              padding: '16px', 
-              background: 'white'
-            }}
-            sizes="(max-width: 640px) 95vw, (max-width: 1024px) 45vw, 30vw" 
-            quality={90} 
-            loading={index < 8 ? "eager" : "lazy"} 
-          />
+          {isImageLoading && !imageError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+              <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+          {imageUrl && !imageError ? (
+            <Image
+              src={imageUrl}
+              alt={product.name || 'Product Image'}
+              fill
+              style={{
+                objectFit: 'contain',
+                transition: 'transform 0.3s ease',
+                padding: '16px'
+              }}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              quality={75}
+              priority={index < 12}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              className={`transition-opacity duration-300 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
+            />
+          ) : (
+            <Image
+              src="https://wp.exoticshoes.co.za/wp-content/uploads/2021/09/cropped-logo11.png"
+              alt="Fallback Image"
+              fill
+              style={{
+                objectFit: 'contain',
+                padding: '16px'
+              }}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              priority={index < 12}
+            />
+          )}
         </Box>
 
         <div className="p-4">
@@ -119,7 +136,7 @@ export default function ProductCard({ product, index }: ProductCardProps) {
                 </span>
               )}
               <span className="text-xl font-semibold text-gray-900">
-                {product.price || 'Price on request'}
+                {formatPrice(product.price)}
               </span>
             </div>
           </div>
@@ -128,3 +145,5 @@ export default function ProductCard({ product, index }: ProductCardProps) {
     </Link>
   )
 }
+
+export default ProductCard;
