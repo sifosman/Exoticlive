@@ -6,12 +6,21 @@ import { useSearchParams } from 'next/navigation';
 import { ProductsOrderByEnum, OrderEnum } from '../@types/graphql';
 import { Button } from './ui/button';
 import { Filter } from "lucide-react";
-import { Drawer } from '@mui/material';
+import { 
+  Grid, 
+  Container, 
+  Drawer,
+  Box,
+  Typography,
+  IconButton
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import ProductCard from './ProductCard';
 import FilterPanel from './FilterPanel';
 import SortDropdown from './SortDropdown';
 import PriceRangeFilter from './PriceRangeFilter';
 import AttributeFilters from './AttributeFilters';
+import MobileFilterPanel from './MobileFilterPanel';
 import { ProductCardSkeleton } from './ui/LoadingSkeleton';
 import { Product } from '@/components/product/types';
 import { Product as GraphQLProduct, Category } from '../types/product';
@@ -519,22 +528,42 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
             </div>
           </div>
 
-          {/* Mobile Filter Panel */}
+          {/* Mobile Filter Drawer */}
           <Drawer
+            variant="temporary"
             anchor="left"
             open={mobileOpen}
             onClose={handleDrawerToggle}
+            ModalProps={{
+              keepMounted: true, // Better open performance on mobile.
+            }}
             sx={{
-              '& .MuiDrawer-paper': {
+              display: { xs: 'block', sm: 'none' },
+              '& .MuiDrawer-paper': { 
+                boxSizing: 'border-box', 
                 width: 280,
-                boxSizing: 'border-box',
-                backgroundColor: 'white',
-                padding: '1rem'
+                padding: 2,
+                backgroundColor: 'background.paper'
               },
             }}
           >
-            <div className="space-y-6">
-              <FilterPanel 
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              mb: 2, 
+              borderBottom: 1, 
+              borderColor: 'divider', 
+              pb: 1,
+              pt: 1.5
+            }}>
+              <Typography variant="h6">Filters</Typography>
+              <IconButton onClick={handleDrawerToggle}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            <div className="space-y-6 mt-4">
+              <MobileFilterPanel 
                 categories={[
                   {id: 'all', name: 'All', slug: 'all'}, 
                   ...initialCategories
@@ -543,13 +572,6 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
                 onCategoryToggle={handleCategoryToggle}
                 onClose={handleDrawerToggle}
               />
-              <PriceRangeFilter
-                minPrice={priceRange.min}
-                maxPrice={priceRange.max}
-                currentMin={currentPriceRange.min}
-                currentMax={currentPriceRange.max}
-                onPriceChange={(min: number, max: number) => debouncedPriceChange(min, max)}
-              />
               <AttributeFilters
                 availableColors={availableColorsForSizes}
                 selectedColors={selectedColors}
@@ -557,6 +579,13 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
                 availableSizes={availableSizesForColors}
                 selectedSizes={selectedSizes}
                 onSizeToggle={handleSizeToggle}
+              />
+              <PriceRangeFilter
+                minPrice={priceRange.min}
+                maxPrice={priceRange.max}
+                currentMin={currentPriceRange.min}
+                currentMax={currentPriceRange.max}
+                onPriceChange={(min: number, max: number) => debouncedPriceChange(min, max)}
               />
             </div>
           </Drawer>

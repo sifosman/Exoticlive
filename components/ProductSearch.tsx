@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { 
   Drawer, 
   IconButton, 
@@ -38,6 +38,10 @@ const SEARCH_PRODUCTS = gql`
           name
           slug
           stockStatus
+          price
+          regularPrice
+          salePrice
+          onSale
           image {
             sourceUrl
           }
@@ -47,6 +51,10 @@ const SEARCH_PRODUCTS = gql`
           name
           slug
           stockStatus
+          price
+          regularPrice
+          salePrice
+          onSale
           image {
             sourceUrl
           }
@@ -67,10 +75,31 @@ interface ProductSearchProps {
   onClose: () => void;
 }
 
+interface SearchProduct {
+  id: string;
+  name: string;
+  slug: string;
+  stockStatus: string;
+  price: string;
+  regularPrice: string;
+  salePrice: string;
+  onSale: boolean;
+  image?: {
+    sourceUrl: string;
+  };
+  variations?: {
+    nodes: Array<{
+      id: string;
+      stockStatus: string;
+    }>;
+  };
+}
+
 const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedTerm] = useDebounce(searchTerm, 300);
   const router = useRouter();
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const { loading, error, data } = useQuery(SEARCH_PRODUCTS, {
     variables: { search: debouncedTerm },
@@ -80,21 +109,20 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
   const filteredProducts = useMemo(() => {
     if (!data?.products?.nodes) return [];
     
-    return data.products.nodes.filter(product => {
+    return data.products.nodes.filter((product: SearchProduct) => {
       // For SimpleProduct, check if it's in stock
       if (!('variations' in product)) {
         return product.stockStatus === 'instock' || product.stockStatus === 'IN_STOCK';
       }
       
       // For VariableProduct, check if any variation is in stock
-      const variableProduct = product as any;
-      if (!variableProduct.variations?.nodes?.length) {
-        return variableProduct.stockStatus === 'instock' || variableProduct.stockStatus === 'IN_STOCK';
+      if (!product.variations?.nodes?.length) {
+        return product.stockStatus === 'instock' || product.stockStatus === 'IN_STOCK';
       }
       
       // Check if at least one variation is in stock
-      return variableProduct.variations.nodes.some(
-        (variation: any) => variation.stockStatus === 'instock' || variation.stockStatus === 'IN_STOCK'
+      return product.variations.nodes.some(
+        variation => variation.stockStatus === 'instock' || variation.stockStatus === 'IN_STOCK'
       );
     });
   }, [data]);
@@ -231,7 +259,7 @@ const ProductSearch = ({ isOpen, onClose }: ProductSearchProps) => {
             </Box>
           ) : (
             <List sx={{ pt: 0 }}>
-              {filteredProducts.map((product: any) => (
+              {filteredProducts.map((product: SearchProduct) => (
                 <Paper
                   key={product.id}
                   elevation={0}
