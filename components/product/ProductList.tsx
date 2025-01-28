@@ -320,7 +320,7 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {loading ? (
                 Array.from({ length: 12 }).map((_, index) => (
-                  <ProductCardSkeleton key={index} />
+                  <ProductCardSkeleton key={index} count={1} />
                 ))
               ) : (
                 filteredProducts
