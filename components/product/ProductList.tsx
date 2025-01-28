@@ -325,8 +325,8 @@ const ProductList: React.FC<ProductListProps> = ({ initialCategories = [] }) => 
               ) : (
                 filteredProducts
                   .slice(0, displayedProducts)
-                  .map((product: Product) => (
-                    <ProductCard key={product.id} product={product} />
+                  .map((product: Product, index: number) => (
+                    <ProductCard key={product.id} product={product} index={index} />
                   ))
               )}
             </div>
