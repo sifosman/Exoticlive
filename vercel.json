@@ -2,15 +2,14 @@
     "redirects": [
       {
         "source": "/api/cron/sync",
-        "destination": "/api/cron/sync",
+        "destination": "https://www.exoticshoes.co.za/api/cron/sync",
         "permanent": false
       }
     ],
     "crons": [
       {
         "path": "/api/cron/sync",
-        "schedule": "0 */6 * * *",
-        "timezone": "Africa/Johannesburg"
+        "schedule": "0 0 * * *"
       }
     ]
   }
