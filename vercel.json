@@ -1,4 +1,11 @@
 {
+    "redirects": [
+      {
+        "source": "/api/cron/sync",
+        "destination": "/api/cron/sync",
+        "permanent": false
+      }
+    ],
     "crons": [
       {
         "path": "/api/cron/sync",
