@@ -4,8 +4,7 @@
     "crons": [
       {
         "path": "/api/cron/sync",
-        "schedule": "0 0 * * *",
-        "timezone": "Africa/Johannesburg"
+        "schedule": "0 0 * * *"
       }
     ]
   }
