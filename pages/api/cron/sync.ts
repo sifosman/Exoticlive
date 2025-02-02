@@ -2,16 +2,23 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { syncProducts } from '@/lib/sync/woocommerce';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Verify the request is from a trusted source (e.g., Vercel Cron)
+  // Verify cron secret
   if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
+    // Your sync logic here
     await syncProducts(true);
-    res.status(200).json({ message: 'Sync completed successfully' });
+    
+    return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Sync failed:', error);
-    res.status(500).json({ message: 'Sync failed' });
+    console.error('Cron sync failed:', error);
+    return res.status(500).json({ error: 'Sync failed' });
   }
 }
