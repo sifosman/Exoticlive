@@ -23,8 +23,8 @@ export const revalidate = 0; // Set to 0 for on-demand revalidation instead of c
 const typesenseClient = new Typesense.Client({
   nodes: [{
     host: process.env.NEXT_PUBLIC_TYPESENSE_HOST || 'localhost',
-    port: Number(process.env.NEXT_PUBLIC_TYPESENSE_PORT) || 8108,
-    protocol: process.env.NEXT_PUBLIC_TYPESENSE_PROTOCOL || 'http'
+    port: Number(process.env.NEXT_PUBLIC_TYPESENSE_PORT) || 443,
+    protocol: 'https'
   }],
   apiKey: process.env.NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY || 'xyz123',
   connectionTimeoutSeconds: 2

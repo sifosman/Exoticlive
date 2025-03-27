@@ -2,8 +2,8 @@
 import Typesense from 'typesense';
 
 const host = process.env.NEXT_PUBLIC_TYPESENSE_HOST || 'localhost';
-const port = process.env.NEXT_PUBLIC_TYPESENSE_PORT || '8108';
-const protocol = process.env.NEXT_PUBLIC_TYPESENSE_PROTOCOL || 'http';
+const port = process.env.NEXT_PUBLIC_TYPESENSE_PORT || '443';
+const protocol = 'https';  // Always use HTTPS to avoid mixed content errors
 const apiKey = process.env.NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY || 'xyz';
 
 export const client = new Typesense.Client({
