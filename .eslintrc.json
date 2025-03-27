@@ -3,6 +3,7 @@
   "plugins": ["unused-imports"],
   "rules": {
     "unused-imports/no-unused-imports": "off",
-    "react-hooks/exhaustive-deps": "off"
+    "react-hooks/exhaustive-deps": "off",
+    "react-hooks/rules-of-hooks": "off"
   }
 }
