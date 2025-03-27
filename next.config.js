@@ -1,52 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  images: {
+    domains: ['wp.exoticshoes.co.za', 'exoticlive.co.za'],
   },
-  images: { 
-    unoptimized: true,
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'js.yoco.com',
-      },
-    ],
-  },
-  trailingSlash: true,
-  async headers() {
-    return [
-      {
-        source: '/api/auth/check',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, must-revalidate',
-          },
-        ],
-      },
-      {
-        source: '/api/search',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, must-revalidate',
-          },
-        ],
-      },
-    ];
-  },
-  webpack: (config) => {
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      stream: false,
-      crypto: false,
-      http: false,
-      https: false,
-      os: false,
-      url: false,
-    }
-    return config
-  },
+  // We're now using Edge runtime with direct fetch requests
+  // so we don't need the complex Node.js polyfills anymore
 };
 
-module.exports = nextConfig;
+export default nextConfig;

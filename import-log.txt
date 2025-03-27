@@ -1,0 +1,315 @@
+2025-02-09T15:55:35.004Z: Fetching product from WordPress...
+{
+  "url": "https://wp.exoticshoes.co.za/graphql"
+}
+
+2025-02-09T15:55:37.116Z: WordPress Response:
+{
+  "data": {
+    "product": {
+      "id": "cHJvZHVjdDo1NzY2Mg==",
+      "databaseId": 57662,
+      "name": "Oxford Elastic Ankle Boots",
+      "description": null,
+      "shortDescription": "",
+      "slug": "oxford-elastic-ankle-boots",
+      "image": {
+        "sourceUrl": "https://wp.exoticshoes.co.za/wp-content/uploads/2025/01/IMG-20250203-WA0001-1024x768.jpg",
+        "altText": ""
+      },
+      "galleryImages": {
+        "nodes": [
+          {
+            "sourceUrl": "https://wp.exoticshoes.co.za/wp-content/uploads/2025/01/IMG-20250131-WA0197-1024x768.jpg",
+            "altText": ""
+          }
+        ]
+      }
+    }
+  },
+  "extensions": {
+    "debug": [
+      {
+        "type": "GRAPHQL_DEBUG",
+        "message": "Interface field argument \"ProductVariation.metaData(keysIn:)\" expected to be of type \"\" but got \"[String]\". Please ensure the field arguments match the interface field arguments or rename the argument.",
+        "stack": [
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceTrait.php:258",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceTrait.php:223",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceTrait.php:131",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceType.php:49",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:829",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:718",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:851",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:950",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:406",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Definition/FieldDefinition.php:210",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Utils/TypeInfo.php:213",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:222",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:208",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:448",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:437",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:425",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Utils/QueryAnalyzer.php:566",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Language/Visitor.php:470",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Language/Visitor.php:277",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Utils/QueryAnalyzer.php:579",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Utils/QueryAnalyzer.php:273",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:324",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:348",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/plugin.php:517",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Request.php:592",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Request.php:289",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Request.php:690",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Router.php:464",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Router.php:257",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:324",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:348",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/plugin.php:565",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp.php:418",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp.php:813",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/functions.php:1336",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-blog-header.php:16",
+          "/home/exoticsh/wp.exoticshoes.co.za/index.php:17"
+        ]
+      }
+    ],
+    "queryAnalyzer": {
+      "keys": "038bfe5f40b46b81232757e375e31e34c3c5342dcb25f95515fecf2769931b42 graphql:Query cG9zdDo1NzcxMQ== cG9zdDo1NzcxMg==",
+      "keysLength": 112,
+      "keysCount": 4,
+      "skippedKeys": "",
+      "skippedKeysSize": 0,
+      "skippedKeysCount": 0,
+      "skippedTypes": []
+    }
+  }
+}
+
+2025-02-09T15:55:37.128Z: Typesense Document:
+{
+  "id": "57662",
+  "name": "Oxford Elastic Ankle Boots",
+  "description": "",
+  "short_description": "",
+  "price": 0,
+  "sale_price": 0,
+  "regular_price": 0,
+  "stock_quantity": 0,
+  "stock_status": "outofstock",
+  "image_url": "https://wp.exoticshoes.co.za/wp-content/uploads/2025/01/IMG-20250203-WA0001-1024x768.jpg",
+  "image_alt": "",
+  "slug": "oxford-elastic-ankle-boots",
+  "gallery_images": [
+    "https://wp.exoticshoes.co.za/wp-content/uploads/2025/01/IMG-20250131-WA0197-1024x768.jpg"
+  ],
+  "attributes": []
+}
+
+2025-02-09T15:55:37.131Z: Importing to Typesense...
+null
+
+2025-02-09T15:55:37.238Z: Import failed:
+{
+  "error": "Request failed with HTTP code 400 | Server said: Field `categories` has been declared in the schema, but is not found in the document.",
+  "stack": "RequestMalformed: Request failed with HTTP code 400 | Server said: Field `categories` has been declared in the schema, but is not found in the document.\n    at RequestMalformed.TypesenseError [as constructor] (C:\\Users\\Administrator\\Documents\\exoticlive - production version\\node_modules\\typesense\\lib\\Typesense\\Errors\\TypesenseError.js:23:28)\n    at new RequestMalformed (C:\\Users\\Administrator\\Documents\\exoticlive - production version\\node_modules\\typesense\\lib\\Typesense\\Errors\\RequestMalformed.js:25:42)\n    at ApiCall.customErrorForResponse (C:\\Users\\Administrator\\Documents\\exoticlive - production version\\node_modules\\typesense\\lib\\Typesense\\ApiCall.js:369:21)\n    at C:\\Users\\Administrator\\Documents\\exoticlive - production version\\node_modules\\typesense\\lib\\Typesense\\ApiCall.js:228:98\n    at step (C:\\Users\\Administrator\\Documents\\exoticlive - production version\\node_modules\\typesense\\lib\\Typesense\\ApiCall.js:33:23)\n    at Object.next (C:\\Users\\Administrator\\Documents\\exoticlive - production version\\node_modules\\typesense\\lib\\Typesense\\ApiCall.js:14:53)\n    at step (C:\\Users\\Administrator\\Documents\\exoticlive - production version\\node_modules\\typesense\\lib\\Typesense\\ApiCall.js:18:139)\n    at Object.next (C:\\Users\\Administrator\\Documents\\exoticlive - production version\\node_modules\\typesense\\lib\\Typesense\\ApiCall.js:14:53)\n    at fulfilled (C:\\Users\\Administrator\\Documents\\exoticlive - production version\\node_modules\\typesense\\lib\\Typesense\\ApiCall.js:5:58)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+  "response": null
+}
+
+2025-02-09T15:56:24.737Z: Managing Typesense collection...
+null
+
+2025-02-09T15:56:24.929Z: Deleted existing collection
+null
+
+2025-02-09T15:56:24.949Z: Created new collection with schema
+{
+  "name": "products",
+  "fields": [
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "short_description",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "price",
+      "type": "float"
+    },
+    {
+      "name": "sale_price",
+      "type": "float",
+      "optional": true
+    },
+    {
+      "name": "regular_price",
+      "type": "float",
+      "optional": true
+    },
+    {
+      "name": "stock_quantity",
+      "type": "int32",
+      "optional": true
+    },
+    {
+      "name": "stock_status",
+      "type": "string"
+    },
+    {
+      "name": "image_url",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "image_alt",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "slug",
+      "type": "string"
+    },
+    {
+      "name": "gallery_images",
+      "type": "string[]",
+      "optional": true
+    }
+  ],
+  "default_sorting_field": "price"
+}
+
+2025-02-09T15:56:24.950Z: Fetching product from WordPress...
+{
+  "url": "https://wp.exoticshoes.co.za/graphql"
+}
+
+2025-02-09T15:56:26.977Z: WordPress Response:
+{
+  "data": {
+    "product": {
+      "id": "cHJvZHVjdDo1NzY2Mg==",
+      "databaseId": 57662,
+      "name": "Oxford Elastic Ankle Boots",
+      "description": null,
+      "shortDescription": "",
+      "slug": "oxford-elastic-ankle-boots",
+      "image": {
+        "sourceUrl": "https://wp.exoticshoes.co.za/wp-content/uploads/2025/01/IMG-20250203-WA0001-1024x768.jpg",
+        "altText": ""
+      },
+      "galleryImages": {
+        "nodes": [
+          {
+            "sourceUrl": "https://wp.exoticshoes.co.za/wp-content/uploads/2025/01/IMG-20250131-WA0197-1024x768.jpg",
+            "altText": ""
+          }
+        ]
+      }
+    }
+  },
+  "extensions": {
+    "debug": [
+      {
+        "type": "GRAPHQL_DEBUG",
+        "message": "Interface field argument \"ProductVariation.metaData(keysIn:)\" expected to be of type \"\" but got \"[String]\". Please ensure the field arguments match the interface field arguments or rename the argument.",
+        "stack": [
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceTrait.php:258",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceTrait.php:223",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceTrait.php:131",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceType.php:49",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:829",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:718",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:851",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:950",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:406",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Definition/FieldDefinition.php:210",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Utils/TypeInfo.php:213",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:222",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:208",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:448",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:437",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:425",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Utils/QueryAnalyzer.php:566",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Language/Visitor.php:470",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Language/Visitor.php:277",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Utils/QueryAnalyzer.php:579",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Utils/QueryAnalyzer.php:273",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:324",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:348",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/plugin.php:517",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Request.php:592",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Request.php:289",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Request.php:690",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Router.php:464",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Router.php:257",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:324",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:348",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/plugin.php:565",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp.php:418",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp.php:813",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/functions.php:1336",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-blog-header.php:16",
+          "/home/exoticsh/wp.exoticshoes.co.za/index.php:17"
+        ]
+      }
+    ],
+    "queryAnalyzer": {
+      "keys": "038bfe5f40b46b81232757e375e31e34c3c5342dcb25f95515fecf2769931b42 graphql:Query cG9zdDo1NzcxMQ== cG9zdDo1NzcxMg==",
+      "keysLength": 112,
+      "keysCount": 4,
+      "skippedKeys": "",
+      "skippedKeysSize": 0,
+      "skippedKeysCount": 0,
+      "skippedTypes": []
+    }
+  }
+}
+
+2025-02-09T15:56:26.980Z: Typesense Document:
+{
+  "id": "57662",
+  "name": "Oxford Elastic Ankle Boots",
+  "description": "",
+  "short_description": "",
+  "price": 0,
+  "sale_price": 0,
+  "regular_price": 0,
+  "stock_quantity": 0,
+  "stock_status": "outofstock",
+  "image_url": "https://wp.exoticshoes.co.za/wp-content/uploads/2025/01/IMG-20250203-WA0001-1024x768.jpg",
+  "image_alt": "",
+  "slug": "oxford-elastic-ankle-boots",
+  "gallery_images": [
+    "https://wp.exoticshoes.co.za/wp-content/uploads/2025/01/IMG-20250131-WA0197-1024x768.jpg"
+  ]
+}
+
+2025-02-09T15:56:26.981Z: Importing to Typesense...
+null
+
+2025-02-09T15:56:27.006Z: Import successful:
+{
+  "description": "",
+  "gallery_images": [
+    "https://wp.exoticshoes.co.za/wp-content/uploads/2025/01/IMG-20250131-WA0197-1024x768.jpg"
+  ],
+  "id": "57662",
+  "image_alt": "",
+  "image_url": "https://wp.exoticshoes.co.za/wp-content/uploads/2025/01/IMG-20250203-WA0001-1024x768.jpg",
+  "name": "Oxford Elastic Ankle Boots",
+  "price": 0,
+  "regular_price": 0,
+  "sale_price": 0,
+  "short_description": "",
+  "slug": "oxford-elastic-ankle-boots",
+  "stock_quantity": 0,
+  "stock_status": "outofstock"
+}
+

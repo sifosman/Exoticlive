@@ -25,7 +25,10 @@ const styles = {
     .yoco-payment-overlay {
       z-index: 9999 !important;
     }
-  `
+  `,
+  fontFamily: {
+    lato: 'var(--font-lato)'
+  }
 };
 
 interface OrderLineItem {
@@ -89,6 +92,7 @@ export default function CheckoutPage() {
         payment_method: paymentMethod,
         payment_method_title: paymentMethodTitle,
         set_paid: paymentMethod === 'yoco',
+        status: paymentMethod === 'bank_transfer' ? 'on-hold' : 'processing', // Change to processing for paid orders
         billing: {
           first_name: firstName,
           last_name: lastName,
@@ -134,6 +138,13 @@ export default function CheckoutPage() {
             method_title: 'Flat Rate',
             total: shipping.toString()
           }
+        ],
+        // Add meta data to ensure stock is reduced immediately
+        meta_data: [
+          {
+            key: '_reduce_stock',
+            value: 'yes'
+          }
         ]
       };
 
@@ -160,11 +171,45 @@ export default function CheckoutPage() {
       }
 
       console.log('Order created successfully:', orderData);
+
+      // Explicitly call the reduce stock endpoint after order creation
+      if (orderData.id) {
+        await reduceStockManually(orderData.id);
+      }
+
       clearCart(); // Clear the cart after successful order
       router.push(`/order-success?id=${orderData.id}`);
     } catch (error) {
       console.error('Error creating order:', error);
       setPaymentError('An error occurred while creating the order. Please try again.');
+    }
+  };
+
+  // Function to explicitly reduce stock for an order
+  const reduceStockManually = async (orderId: number) => {
+    try {
+      console.log(`Manually reducing stock for order ${orderId}...`);
+      
+      const response = await fetch(`https://wp.exoticshoes.co.za/wp-json/wc/v3/orders/${orderId}/reduce-stock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`Failed to reduce stock for order ${orderId}:`, errorData);
+        return false;
+      }
+
+      const result = await response.json();
+      console.log(`Successfully reduced stock for order ${orderId}:`, result);
+      return true;
+    } catch (error) {
+      console.error(`Error reducing stock for order ${orderId}:`, error);
+      return false;
     }
   };
 
@@ -197,6 +242,9 @@ export default function CheckoutPage() {
         // Create order directly for bank transfer
         await createWooCommerceOrder('Bank Transfer');
         setIsLoading(false);
+      } else if (paymentMethod === 'ozow') {
+        // Handle Ozow payment flow
+        await handleOzowPayment();
       }
     } catch (error) {
       console.error('Checkout error:', error);
@@ -229,38 +277,90 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleOzowPayment = async () => {
+    try {
+      // Create a transaction ID - typically a unique order reference
+      const transactionId = `EXO-${Date.now()}`;
+      
+      // Prepare Ozow payment request
+      const ozowPayload = {
+        siteCode: process.env.NEXT_PUBLIC_OZOW_SITE_CODE,
+        countryCode: 'ZA',
+        currencyCode: 'ZAR',
+        amount: total,
+        transactionReference: transactionId,
+        bankReference: `EXO-${lastName}`,
+        customer: {
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          mobileNumber: phone
+        },
+        cancelUrl: `${window.location.origin}/checkout?status=cancelled`,
+        errorUrl: `${window.location.origin}/checkout?status=error`,
+        successUrl: `${window.location.origin}/order-success`,
+        notifyUrl: `${window.location.origin}/api/ozow-notification`
+      };
+
+      // Call Ozow API endpoint
+      const response = await fetch('/api/ozow-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ozowPayload)
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.paymentUrl) {
+        // Create WooCommerce order before redirecting
+        await createWooCommerceOrder('Ozow Payment Gateway');
+        // Redirect to Ozow payment page
+        window.location.href = data.paymentUrl;
+      } else {
+        setPaymentError('Failed to initialize Ozow payment. Please try again.');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Ozow payment error:', error);
+      setPaymentError('An error occurred while processing your payment. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className={`min-h-screen bg-white ${lato.className}`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-[60px] pb-8 sm:pb-12">
         <style>{styles.popupOverride}</style>
         
-        <h1 className="text-xl sm:text-2xl font-bold mb-6 text-center">
+        <h1 className="text-xl sm:text-2xl font-bold mb-6 text-center" style={{fontFamily: 'var(--font-lato)'}}>
           Checkout
         </h1>
 
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
           {/* Shipping Information */}
           <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
-            <h2 className="text-lg sm:text-xl font-lato font-semibold mb-4">Shipping Information</h2>
+            <h2 className="text-lg sm:text-xl font-semibold mb-4" style={{fontFamily: 'var(--font-lato)'}}>Shipping Information</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="firstName" className="text-sm">First Name</Label>
+                  <Label htmlFor="firstName" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>First Name</Label>
                   <Input 
                     id="firstName"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="mt-1"
+                    style={{fontFamily: 'var(--font-lato)'}}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="lastName" className="text-sm">Last Name</Label>
+                  <Label htmlFor="lastName" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Last Name</Label>
                   <Input 
                     id="lastName"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="mt-1"
+                    style={{fontFamily: 'var(--font-lato)'}}
                     required
                   />
                 </div>
@@ -268,58 +368,63 @@ export default function CheckoutPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="email" className="text-sm">Email</Label>
+                  <Label htmlFor="email" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Email</Label>
                   <Input 
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="mt-1"
+                    style={{fontFamily: 'var(--font-lato)'}}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone" className="text-sm">Phone</Label>
+                  <Label htmlFor="phone" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Phone</Label>
                   <Input 
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="mt-1"
+                    style={{fontFamily: 'var(--font-lato)'}}
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="address" className="text-sm">Address</Label>
+                <Label htmlFor="address" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Address</Label>
                 <Input 
                   id="address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className="mt-1"
+                  style={{fontFamily: 'var(--font-lato)'}}
                   required
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="city" className="text-sm">City</Label>
+                  <Label htmlFor="city" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>City</Label>
                   <Input 
                     id="city"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     className="mt-1"
+                    style={{fontFamily: 'var(--font-lato)'}}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="postalCode" className="text-sm">Postal Code</Label>
+                  <Label htmlFor="postalCode" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Postal Code</Label>
                   <Input 
                     id="postalCode"
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
                     className="mt-1"
+                    style={{fontFamily: 'var(--font-lato)'}}
                     required
                   />
                 </div>
@@ -329,7 +434,7 @@ export default function CheckoutPage() {
 
           {/* Payment Method Section */}
           <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
-            <h2 className="text-lg sm:text-xl font-lato font-semibold mb-4">Payment Method</h2>
+            <h2 className="text-lg sm:text-xl font-semibold mb-4" style={{fontFamily: 'var(--font-lato)'}}>Payment Method</h2>
             <RadioGroup 
               value={paymentMethod} 
               onValueChange={(value) => {
@@ -341,7 +446,7 @@ export default function CheckoutPage() {
             >
               <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                 <RadioGroupItem value="yoco" id="yoco" />
-                <Label htmlFor="yoco" className="flex items-center space-x-2">
+                <Label htmlFor="yoco" className="flex items-center space-x-2" style={{fontFamily: 'var(--font-lato)'}}>
                   <span>Yoco Payment Gateway</span>
                   <img 
                     src="/yoco-logo.png" 
@@ -350,10 +455,22 @@ export default function CheckoutPage() {
                   />
                 </Label>
               </div>
+              
+              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <RadioGroupItem value="ozow" id="ozow" />
+                <Label htmlFor="ozow" className="flex items-center space-x-2" style={{fontFamily: 'var(--font-lato)'}}>
+                  <span>Ozow Instant EFT</span>
+                  <img 
+                    src="/ozow-logo.png" 
+                    alt="Ozow Payment" 
+                    className="h-5 w-auto object-contain"
+                  />
+                </Label>
+              </div>
 
               <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                 <RadioGroupItem value="bank_transfer" id="bank_transfer" />
-                <Label htmlFor="bank_transfer" className="flex items-center space-x-2">
+                <Label htmlFor="bank_transfer" className="flex items-center space-x-2" style={{fontFamily: 'var(--font-lato)'}}>
                   <span>Bank Transfer</span>
                   <img 
                     src="/eft-logo.png" 
@@ -367,19 +484,20 @@ export default function CheckoutPage() {
             {/* Bank Transfer Details */}
             {paymentMethod === 'bank_transfer' && (
               <div className="mt-4 p-4 bg-gray-50 rounded-lg text-sm">
-                <p className="mb-2">Please note: After placing your order, you will need to make the payment using the banking details below. Your order will be processed once payment is received.</p>
+                <p className="mb-2" style={{fontFamily: 'var(--font-lato)'}}>Please note: After placing your order, you will need to make the payment using the banking details below. Your order will be processed once payment is received.</p>
                 <Button 
                   type="button"
                   variant="outline" 
                   size="sm"
                   onClick={() => setShowBankingDetails(!showBankingDetails)}
                   className="w-full justify-between"
+                  style={{fontFamily: 'var(--font-lato)'}}
                 >
                   {showBankingDetails ? 'Hide Banking Details' : 'Show Banking Details'}
                 </Button>
                 
                 {showBankingDetails && (
-                  <div className="mt-3 p-3 bg-white rounded-lg space-y-1">
+                  <div className="mt-3 p-3 bg-white rounded-lg space-y-1" style={{fontFamily: 'var(--font-lato)'}}>
                     <p className="font-semibold">Banking Details:</p>
                     <p>Account Name: Exotic Shoes</p>
                     <p>Account Number: 60091190369</p>
@@ -394,12 +512,12 @@ export default function CheckoutPage() {
           {/* Order Summary */}
           <div className="bg-[url('/footer-bg.webp')] bg-cover rounded-lg overflow-hidden mb-6">
             <div className="backdrop-blur-sm bg-black/40 p-4 sm:p-6">
-              <h2 className="text-lg sm:text-xl font-lato font-semibold mb-4 text-white">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4 text-white" style={{fontFamily: 'var(--font-lato)'}}>
                 Order Summary
               </h2>
               
               {/* Order Items */}
-              <div className="space-y-2 text-sm sm:text-base">
+              <div className="space-y-2 text-sm sm:text-base" style={{fontFamily: 'var(--font-lato)'}}>
                 {cart.map((item) => (
                   <div key={item.id} className="flex justify-between mb-2 text-white">
                     <span>{item.name} x {item.quantity}</span>
@@ -409,7 +527,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* Totals */}
-              <div className="mt-4 pt-4 border-t border-white/20">
+              <div className="mt-4 pt-4 border-t border-white/20" style={{fontFamily: 'var(--font-lato)'}}>
                 <div className="space-y-2 text-white">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
@@ -433,6 +551,7 @@ export default function CheckoutPage() {
             type="submit" 
             className="w-full py-3 text-base sm:text-lg font-semibold bg-black hover:bg-gray-800 text-white"
             disabled={isLoading}
+            style={{fontFamily: 'var(--font-lato)'}}
           >
             {isLoading ? (
               <span className="flex items-center justify-center">
@@ -445,7 +564,7 @@ export default function CheckoutPage() {
           </Button>
 
           {paymentError && (
-            <p className="mt-2 text-sm text-red-500 text-center">{paymentError}</p>
+            <p className="mt-2 text-sm text-red-500 text-center" style={{fontFamily: 'var(--font-lato)'}}>{paymentError}</p>
           )}
         </form>
 
@@ -459,7 +578,7 @@ export default function CheckoutPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-black/20 flex items-center justify-center">
             <div className="flex items-center space-x-4 px-4 text-white">
               <Truck className="w-8 h-8 sm:w-10 sm:h-10" strokeWidth={1.5} />
-              <span className="text-sm sm:text-base border-l border-white/20 pl-4">
+              <span className="text-sm sm:text-base border-l border-white/20 pl-4" style={{fontFamily: 'var(--font-lato)'}}>
                 Serving 1000s of loyal customers<br />all over the country
               </span>
             </div>

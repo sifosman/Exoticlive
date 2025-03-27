@@ -128,7 +128,7 @@ const NewsletterSignup = () => {
                   fontSize: { xs: '0.9rem', sm: '1rem', md: '1.25rem' }
                 }}
               >
-                Stay updated with our latest products, exclusive offers, and fashion trends!
+                Stay updated with our latest products and exclusive offers!
               </Typography>
 
               <Box 

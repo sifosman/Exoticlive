@@ -116,7 +116,7 @@ const SlidingBanner: React.FC = () => {
             />
           )}
           <div className="absolute inset-0 flex items-end justify-center pb-4 md:pb-8">
-            <Link href="/products" className="group relative">
+            <Link href="/shop" className="group relative">
               <motion.div
                 className="absolute inset-0 bg-white opacity-0 filter blur-md group-hover:opacity-30 transition-opacity duration-300"
                 animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}

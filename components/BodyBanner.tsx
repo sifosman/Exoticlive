@@ -19,7 +19,7 @@ const BodyBanner = () => {
         />
         <div className="absolute inset-0 flex items-center justify-center">
           <Link 
-            href="/products" 
+            href="/shop" 
             className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white 
               font-lato text-md tracking-wider rounded-md transition-all duration-300
               hover:scale-105 px-8 py-2 backdrop-blur-sm"

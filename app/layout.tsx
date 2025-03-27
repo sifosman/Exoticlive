@@ -15,8 +15,9 @@ const playfairDisplay = Playfair_Display({
 });
 const lato = Lato({ 
   subsets: ['latin'],
-  weight: '400',
+  weight: ['100', '300', '400', '700', '900'],
   display: 'swap',
+  variable: '--font-lato',
 });
 
 export const metadata: Metadata = {
@@ -30,14 +31,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${playfairDisplay.variable}`}>
-          <body className={`${inter.className} font-sans ${lato.className} bg-white`}>
+    <html lang="en" className={`${playfairDisplay.variable} ${lato.variable}`}>
+      <body className={`bg-white`}>
         <ThemeRegistry>
           <ApolloWrapper>
             <CartProvider>
               <Header />
               <main className="min-h-screen pt-[36px]">
-                <div className={playfairDisplay.className}>{children}</div>
+                {children}
               </main>
               <Footer />
               <Toaster />

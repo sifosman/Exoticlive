@@ -4,6 +4,7 @@ import SlidingBanner from '@/components/SlidingBanner';
 import CategorySection from '@/components/CategorySection';
 import BodyBanner from '@/components/BodyBanner';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import ResellBanner from '@/components/ResellBanner';
 
 const FastSellingProducts = dynamic(() => import('@/components/FastSellingProducts'), { ssr: false });
 
@@ -16,6 +17,7 @@ export default function Home() {
       <BodyBanner />
       <FastSellingProducts />
       <NewsletterSignup />
+      <ResellBanner />
     </main>
   );
 }

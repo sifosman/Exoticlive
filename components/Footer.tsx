@@ -123,7 +123,7 @@ const Footer = () => {
                       fontSize: { xs: '0.875rem', md: '1rem' }
                     }}
                   >
-                    We are a leading wholesale supplier of ladies shoes, providing quality footwear to businesses worldwide.
+                  At Exotic Shoes, we supply individual customers and wholesale buyers seeking to resell our products.
                   </Typography>
                 </Grid>
 

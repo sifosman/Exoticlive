@@ -23,16 +23,16 @@ export default function AboutPage() {
               paragraph
               sx={{ fontFamily: 'Lato, sans-serif' }}
             >
-              Welcome to Wholesale Ladies Shoes and Clothing, your premier destination for high-quality wholesale footwear and apparel. 
-              Based in KZN, we have been in operation for the past 20 years, supplying happy customers by building long-lasting relationships and providing great service and value for money.
+              This online shoe business was founded in 2012 by two brothers Faraaz and Sameer, bearing the name “Fashion Flair”
+              With a minimal amount of stock and just a few customers, the business gradually expanded and the foundation of “Exotic Shoes” was finally established.
             </Typography>
             <Typography 
               variant="body1" 
               paragraph
               sx={{ fontFamily: 'Lato, sans-serif' }}
             >
-              Our mission is to offer a wide range of stylish and comfortable shoes and clothing for retailers and businesses worldwide. 
-              We pride ourselves on our commitment to quality and customer satisfaction.
+              Over the years we have become well known and service a (both wholesale and retail) customer base nationwide
+              In 2021 we were finally ready to upgrade our website www.exoticshoes.co.za to a fully-fledged online store where customers can now easily make purchases with even more convenience!
             </Typography>
           </Paper>
         </Grid>
