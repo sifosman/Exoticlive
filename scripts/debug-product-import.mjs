@@ -1,4 +1,4 @@
-// scripts/sync-products-to-typesense-cloud.mjs
+// scripts/debug-product-import.mjs
 import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -20,6 +20,7 @@ const requiredEnvVars = [
   'TYPESENSE_CLOUD_HOST',
   'TYPESENSE_CLOUD_API_KEY'
 ];
+
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
@@ -35,39 +36,30 @@ const WooCommerce = new WooCommerceAPI.default({
   version: 'wc/v3'
 });
 
-async function fetchAllProducts() {
-  let page = 1;
-  const perPage = 100;
-  let allProducts = [];
-  
-  while (true) {
-    try {
-      console.log(`📦 Fetching products page ${page}...`);
-      const response = await WooCommerce.get('products', {
-        per_page: perPage,
-        page: page,
-        status: 'publish'
-      });
-      
-      const products = response.data;
-      if (products.length === 0) break;
-      
-      allProducts = allProducts.concat(products);
-      console.log(`✅ Fetched ${products.length} products`);
-      
-      if (products.length < perPage) break;
-      page++;
-    } catch (error) {
-      console.error('❌ Error fetching products:', error.message);
-      break;
-    }
+// Initialize Typesense Cloud client
+const client = new Typesense.Client({
+  nodes: [{
+    host: process.env.TYPESENSE_CLOUD_HOST,
+    port: 443,
+    protocol: 'https'
+  }],
+  apiKey: process.env.TYPESENSE_CLOUD_API_KEY,
+  connectionTimeoutSeconds: 10
+});
+
+// Function to fetch a single product from WooCommerce
+async function fetchProduct(productId) {
+  try {
+    console.log(`🔄 Fetching product ID ${productId} from WooCommerce...`);
+    const response = await WooCommerce.get(`products/${productId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`❌ Error fetching product: ${error.message}`);
+    throw error;
   }
-  
-  console.log(`🔢 Total products fetched: ${allProducts.length}`);
-  return allProducts;
 }
 
-// Transform a product from WooCommerce format to Typesense format
+// Debug transformation function - this is a simplified version 
 function transformProduct(product) {
   // Safe parsing functions
   const safeParseFloat = (value) => {
@@ -157,65 +149,34 @@ function transformProduct(product) {
   };
 }
 
-async function syncProducts() {
+async function debugImport(productId) {
   try {
-    console.log('🔄 Fetching products from WooCommerce...');
-    const products = await fetchAllProducts();
-    console.log(`📊 Total products fetched: ${products.length}`);
+    // 1. Fetch product from WooCommerce
+    const product = await fetchProduct(productId);
+    console.log('\n📦 Raw WooCommerce product:');
+    console.log(JSON.stringify(product, null, 2).substring(0, 500) + '...');
     
-    if (products.length === 0) {
-      console.log('❌ No products fetched from WooCommerce!');
-      return;
+    // 2. Transform product
+    console.log('\n🔄 Transforming product...');
+    const typesenseProduct = transformProduct(product);
+    console.log('📋 Transformed product:');
+    console.log(JSON.stringify(typesenseProduct, null, 2));
+    
+    // 3. Try to add to Typesense
+    console.log('\n📤 Attempting to add to Typesense...');
+    try {
+      const result = await client.collections('products').documents().create(typesenseProduct);
+      console.log('✅ Success! Product added to Typesense:');
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error) {
+      console.error('❌ Error adding to Typesense:', error.message);
     }
     
-    // Process products one by one instead of bulk import
-    console.log('🔄 Processing products one by one...');
-    let successCount = 0;
-    let failureCount = 0;
-    
-    for (let i = 0; i < products.length; i++) {
-      const product = products[i];
-      try {
-        // Transform WooCommerce product to Typesense format
-        const typesenseProduct = transformProduct(product);
-        
-        // Add or update product in Typesense
-        await client.collections('products').documents().upsert(typesenseProduct);
-        
-        successCount++;
-        if (successCount % 10 === 0) {
-          console.log(`✅ Processed ${successCount}/${products.length} products successfully`);
-        }
-      } catch (error) {
-        failureCount++;
-        console.error(`❌ Error processing product ${product.id} (${product.name}):`, error.message);
-        
-        // Only log detailed error for first few failures
-        if (failureCount <= 3) {
-          console.error('Product data:', JSON.stringify(product).substring(0, 300) + '...');
-        }
-      }
-    }
-    
-    console.log(`🎉 Sync complete: ${successCount} products imported successfully, ${failureCount} failed`);
   } catch (error) {
-    console.error('❌ Error syncing products:', error);
+    console.error('❌ Debug process failed:', error);
   }
 }
 
-// Initialize Typesense Cloud client
-const client = new Typesense.Client({
-  nodes: [{
-    host: process.env.TYPESENSE_CLOUD_HOST,
-    port: 443,
-    protocol: 'https'
-  }],
-  apiKey: process.env.TYPESENSE_CLOUD_API_KEY,
-  connectionTimeoutSeconds: 10
-});
-
-// Run sync
-syncProducts().catch(error => {
-  console.error('❌ Unhandled error:', error);
-  process.exit(1);
-});
+// Get product ID from command line or use default
+const productId = process.argv[2] || '11222';  // Use first product ID by default
+debugImport(productId);
