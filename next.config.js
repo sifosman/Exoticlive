@@ -50,4 +50,5 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+// Trigger deployment for latest-version branch
 //
