@@ -85,6 +85,7 @@ const GET_PRODUCTS = gql`
           variations(first: 100) {
             nodes {
               id
+              name
               stockStatus
               stockQuantity
               attributes {
@@ -130,6 +131,8 @@ interface Product {
   };
   variations?: {
     nodes?: Array<{
+      id: string;
+      name: string;
       attributes: {
         nodes: Array<{
           name: string;
