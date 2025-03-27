@@ -1,9 +1,23 @@
 'use client';
 import createCache from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
-import { ThemeProvider } from '@mui/material/styles';
-import theme from './theme.js';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useState, useEffect } from 'react';
+
+// Define theme inline to avoid import issues
+const theme = createTheme({
+  typography: {
+    fontFamily: 'Montserrat',
+  },
+  palette: {
+    primary: {
+      main: '#000000',
+    },
+    secondary: {
+      main: '#f8bbd0',
+    },
+  },
+});
 
 export default function ThemeRegistry({ children }: { children: React.ReactNode }) {
   const [{ cache, flush }] = useState(() => {
