@@ -12,9 +12,11 @@ interface Product {
   sale_price?: number | string;
   regular_price: number | string;
   image_url: string;
-  image_alt: string;
   slug: string;
   stock_status: string;
+  is_on_sale?: boolean;
+  colors?: string[];
+  sizes?: string[];
 }
 
 interface TypesenseProductCardProps {
@@ -39,8 +41,8 @@ const TypesenseProductCard = ({ product, index }: TypesenseProductCardProps) => 
   const regularPrice = parsePrice(product.regular_price) || parsePrice(product.price);
   const salePrice = parsePrice(product.sale_price);
   
-  // Determine if product is on sale and what price to display
-  const isOnSale = salePrice > 0 && salePrice < regularPrice;
+  // Determine if product is on sale
+  const isOnSale = product.is_on_sale || (salePrice > 0 && salePrice < regularPrice);
   const displayPrice = isOnSale ? salePrice : (price || regularPrice);
 
   const formatPrice = (price: number) => {
@@ -90,7 +92,7 @@ const TypesenseProductCard = ({ product, index }: TypesenseProductCardProps) => 
         <div className="relative aspect-square overflow-hidden bg-gray-100">
           <Image
             src={imageError || !product.image_url ? '/cropped-logo11.png' : getImageUrl(product.image_url)}
-            alt={product.image_alt || product.name}
+            alt={product.name || "Product"}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className={`object-contain object-center group-hover:scale-105 transition-transform duration-300 ${
@@ -99,32 +101,49 @@ const TypesenseProductCard = ({ product, index }: TypesenseProductCardProps) => 
             onError={() => setImageError(true)}
             priority={index < 4}
           />
-          {isOnSale && (
-            <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm font-lato">
-              Sale
-            </div>
-          )}
-          {!isInStock && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-              <span className="text-white font-lato">Out of Stock</span>
-            </div>
-          )}
         </div>
-
+        
         <div className="p-4">
-          <h3 className="font-lato text-lg mb-2 text-gray-900 group-hover:text-gray-600 transition-colors line-clamp-2">
+          <h3 className="text-sm font-medium text-gray-900 truncate">
             {product.name}
           </h3>
-          <div className="font-lato">
-            <span className="text-lg font-semibold text-gray-900">
-              {formatPrice(displayPrice)}
-            </span>
-            {isOnSale && (
-              <span className="ml-2 text-sm text-gray-500 line-through">
-                {formatPrice(regularPrice)}
+          
+          <div className="mt-2 flex items-center justify-between">
+            <div>
+              {isOnSale ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-red-600">{formatPrice(displayPrice)}</span>
+                  <span className="text-xs text-gray-500 line-through">{formatPrice(regularPrice)}</span>
+                </div>
+              ) : (
+                <span className="text-sm font-medium text-gray-900">{formatPrice(displayPrice)}</span>
+              )}
+            </div>
+            
+            {isInStock ? (
+              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                In Stock
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                Out of Stock
               </span>
             )}
           </div>
+          
+          {/* Display product colors if available */}
+          {product.colors && product.colors.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {product.colors.map((color, i) => (
+                <span 
+                  key={i} 
+                  className="inline-block px-2 py-1 text-xs bg-gray-100 rounded-full"
+                >
+                  {color}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </Link>
     </motion.div>

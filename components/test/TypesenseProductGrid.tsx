@@ -12,11 +12,12 @@ interface Product {
   sale_price?: number;
   regular_price: number;
   image_url: string;
-  image_alt: string;
   slug: string;
   stock_status: string;
-  attributes: any[];
+  colors: string[];
+  sizes: string[];
   categories: string[];
+  is_on_sale: boolean;
 }
 
 interface Filters {
@@ -47,11 +48,12 @@ interface TypesenseSearchResult {
       sale_price?: string | number;
       regular_price: string | number;
       image_url: string;
-      image_alt?: string;
       slug: string;
       stock_status: string;
-      attributes: any[];
+      colors: string[];
+      sizes: string[];
       categories: string[];
+      is_on_sale: boolean;
     };
   }>;
   page: number;
@@ -67,8 +69,7 @@ const TypesenseProductGrid = ({ filters, searchQuery = '' }: Props) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [facets, setFacets] = useState<any[]>([]);
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(10000);
+  const [typesenseHealth, setTypesenseHealth] = useState({ ok: false });
   const [internalFilters, setFilters] = useState<Filters>({
     categories: [],
     priceRange: [0, 10000],
@@ -76,6 +77,22 @@ const TypesenseProductGrid = ({ filters, searchQuery = '' }: Props) => {
     sizes: [],
     colors: []
   });
+
+  // Check Typesense health
+  useEffect(() => {
+    const checkTypesenseHealth = async () => {
+      try {
+        const health = await typesenseClient.health.retrieve();
+        console.log('Typesense Health:', health);
+        setTypesenseHealth(health);
+      } catch (error) {
+        console.error('Health check failed:', error);
+        setTypesenseHealth({ ok: false });
+      }
+    };
+    
+    checkTypesenseHealth();
+  }, []);
 
   // Update internal filters when props change
   useEffect(() => {
@@ -150,12 +167,13 @@ const TypesenseProductGrid = ({ filters, searchQuery = '' }: Props) => {
         // Create search parameters
         const searchParameters: any = {
           q: searchQuery || '*',
-          query_by: 'name,description,attributes',
+          query_by: 'name,description',
           filter_by: 'stock_status:=instock',
           page: currentPage,
           per_page: ITEMS_PER_PAGE,
           sort_by: '_text_match:desc',
-          include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,image_alt,slug,attributes,categories',
+          include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes,is_on_sale',
+          facet_by: 'categories,colors,sizes',
         };
 
         // Build filter string
@@ -175,205 +193,184 @@ const TypesenseProductGrid = ({ filters, searchQuery = '' }: Props) => {
           console.log('Filtering by categories:', filters.categories);
           
           const categoryFilter = filters.categories
-            .map(cat => {
-              // Ensure exact match with correct case
-              console.log(`Adding category filter for: ${cat}`); 
-              return `categories:=${cat}`;
-            })
+            .map(cat => `categories:=${cat}`)
             .join(' || ');
           
           console.log('Category filter query:', categoryFilter);
           filterString += ` && (${categoryFilter})`;
         }
 
-        // Add color filter through search query instead of filter
+        // Add color filter directly through the colors field
         if (filters?.colors?.length > 0) {
-          // Log color filters for debugging
           console.log('Filtering by colors:', filters.colors);
           
-          // Instead of using color:= filter, we'll incorporate color into the search query
-          // This works by adding color values to the query string with OR operators
-          const colorsQuery = filters.colors.join(' | ');
+          const colorsFilter = filters.colors
+            .map(color => `colors:=${color}`)
+            .join(' || ');
           
-          // Modify the main query to include color search
-          if (searchParameters.q !== '*') {
-            // If there's already a custom search query, append the color query with OR operator
-            searchParameters.q = `${searchParameters.q} | ${colorsQuery}`;
-          } else {
-            // If no custom search query, use just the color query
-            searchParameters.q = colorsQuery;
-          }
-          
-          console.log('Updated search query with colors:', searchParameters.q);
+          filterString += ` && (${colorsFilter})`;
         }
 
-        // Handle size filters through search query instead of filter
+        // Add size filter directly through the sizes field
         if (filters?.sizes?.length > 0) {
-          // Log size filters for debugging
           console.log('Filtering by sizes:', filters.sizes);
           
-          // Instead of using _text_match as a filter, we'll incorporate size into the search query
-          // This works by adding size values to the query string with OR operators
-          const sizesQuery = filters.sizes.join(' | ');
+          const sizesFilter = filters.sizes
+            .map(size => `sizes:=${size}`)
+            .join(' || ');
           
-          // Modify the main query to include size search
-          if (searchQuery) {
-            // If there's already a search query, append the size query with OR operator
-            searchParameters.q = `${searchQuery} | ${sizesQuery}`;
-          } else {
-            // If no search query, use just the size query
-            searchParameters.q = sizesQuery;
-          }
-          
-          console.log('Updated search query with sizes:', searchParameters.q);
+          filterString += ` && (${sizesFilter})`;
         }
 
+        // Set the final filter string
         searchParameters.filter_by = filterString;
 
-        // Log search parameters for debugging
         console.log('Search parameters:', searchParameters);
-
-        // Use Typesense client to search
-        const results = await typesenseClient
+        
+        // Execute search
+        const searchResults = await typesenseClient
           .collections('products')
           .documents()
           .search(searchParameters) as TypesenseSearchResult;
 
-        // Map the results to our Product type
-        const formattedProducts = results.hits.map(hit => {
-          // Parse prices, ensuring they are valid numbers
-          const parsePrice = (price: string | number | undefined | null): number => {
-            if (typeof price === 'string') {
-              const cleanPrice = price.replace(/[^0-9.]/g, '');
-              return cleanPrice ? parseFloat(cleanPrice) : 0;
-            }
-            return typeof price === 'number' ? price : 0;
-          };
-
-          const price = parsePrice(hit.document.price);
-          const sale_price = parsePrice(hit.document.sale_price);
-          const regular_price = parsePrice(hit.document.regular_price);
-
+        // Process products
+        const processedProducts = searchResults.hits.map(hit => {
+          const doc = hit.document;
           return {
-            id: hit.document.id,
-            name: hit.document.name,
-            price: price || regular_price, // Use regular_price as fallback
-            sale_price: sale_price || null,
-            regular_price: regular_price || price, // Use price as fallback
-            image_url: hit.document.image_url,
-            image_alt: hit.document.image_alt || '',
-            slug: hit.document.slug,
-            stock_status: hit.document.stock_status,
-            attributes: hit.document.attributes || [],
-            categories: hit.document.categories || []
+            id: doc.id,
+            name: doc.name,
+            price: typeof doc.price === 'string' ? parseFloat(doc.price) : doc.price,
+            sale_price: doc.sale_price ? (typeof doc.sale_price === 'string' ? parseFloat(doc.sale_price) : doc.sale_price) : undefined,
+            regular_price: typeof doc.regular_price === 'string' ? parseFloat(doc.regular_price) : doc.regular_price,
+            image_url: doc.image_url,
+            slug: doc.slug,
+            stock_status: doc.stock_status,
+            categories: Array.isArray(doc.categories) ? doc.categories : [],
+            colors: Array.isArray(doc.colors) ? doc.colors : [],
+            sizes: Array.isArray(doc.sizes) ? doc.sizes : [],
+            is_on_sale: !!doc.is_on_sale
           };
         });
 
-        setProducts(formattedProducts);
-        setTotalProducts(results.found);
-        setError(null);
+        setProducts(processedProducts);
+        setTotalProducts(searchResults.found);
+        setFacets(searchResults.facet_counts);
+
+        if (processedProducts.length === 0 && searchQuery) {
+          setError(`No products found for "${searchQuery}"`);
+        } else if (processedProducts.length === 0) {
+          setError(`No products found with the selected filters`);
+        } else {
+          setError(null);
+        }
       } catch (err) {
-        console.error('Search error:', err);
-        setError('Failed to load products. Please try again.');
-        setProducts([]);
-        setTotalProducts(0);
+        console.error('Error fetching products:', err);
+        setError('Failed to load products. Please try again later.');
       } finally {
         setIsLoading(false);
       }
     };
-    
-    fetchProducts();
-  }, [currentPage, filters, searchQuery]);
 
-  useEffect(() => {
-    const verifyIndexHealth = async () => {
-      try {
-        const healthCheck = await typesenseClient.health.retrieve();
-        console.log('Typesense Health:', healthCheck);
-        
-        const collectionInfo = await typesenseClient.collections('products').retrieve();
-        console.log('Products Collection Info:', collectionInfo);
-      } catch (error) {
-        console.error('Health Check Failed:', error);
-      }
-    };
-    verifyIndexHealth();
-  }, []);
+    fetchProducts();
+  }, [currentPage, internalFilters, searchQuery, filters]);
+
+  if (error) {
+    return (
+      <div className="w-full md:flex-1">
+        <div className="bg-red-50 p-4 rounded-md">
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex gap-8 bg-white font-lato">
-      {/* Products Grid */}
-      <div className="flex-grow">
-        {error ? (
-          <div className="text-center py-8">
-            <p className="text-red-500 font-lato">{error}</p>
+    <div className="w-full md:flex-1">
+      {/* Loading state */}
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div 
+              key={index} 
+              className="bg-gray-100 animate-pulse rounded-lg h-96"
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && products.length === 0 && (
+        <div className="text-center py-10">
+          <h3 className="text-xl font-medium text-gray-900 mb-2">No products found</h3>
+          <p className="text-gray-500">
+            Try adjusting your search or filter criteria
+          </p>
+        </div>
+      )}
+
+      {/* Product grid */}
+      {!isLoading && products.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {products.map((product, index) => (
+              <TypesenseProductCard key={product.id} product={product} index={index} />
+            ))}
           </div>
-        ) : isLoading ? (
-          <div className="text-center py-8">
-            <p className="font-lato">Loading products...</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-              {products.map((product, index) => (
-                <TypesenseProductCard
-                  key={product.id}
-                  price={(product.price / 100).toFixed(2)}
-                  regularPrice={(product.regular_price / 100).toFixed(2)}
-                  product={product}
-                  index={index}
-                />
-              ))}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-8">
+              <Pagination>
+                <PaginationContent>
+                  {/* Previous page button */}
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) handlePageChange(currentPage - 1);
+                      }}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                    />
+                  </PaginationItem>
+                  
+                  {/* Page numbers */}
+                  {getPageNumbers().map((pageNumber, index) => (
+                    <PaginationItem key={index}>
+                      {pageNumber === '...' ? (
+                        <span className="px-4 py-2 text-sm text-gray-500">...</span>
+                      ) : (
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePageChange(pageNumber as number);
+                          }}
+                          isActive={pageNumber === currentPage}
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      )}
+                    </PaginationItem>
+                  ))}
+                  
+                  {/* Next page button */}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                      }}
+                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
-
-            {/* Pagination */}
-            {totalProducts > 0 && (
-              <div className="mt-8">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="text-sm text-gray-600 font-lato">
-                    Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalProducts)} of {totalProducts} products
-                  </div>
-                </div>
-                <Pagination>
-                  <PaginationContent className="flex flex-wrap gap-2 justify-center">
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                        className="cursor-pointer hover:bg-gray-100 font-lato"
-                      />
-                    </PaginationItem>
-                    
-                    {getPageNumbers().map((page, index) => (
-                      <PaginationItem key={index}>
-                        {page === '...' ? (
-                          <span className="px-4 py-2 font-lato">...</span>
-                        ) : (
-                          <PaginationLink
-                            isActive={page === currentPage}
-                            onClick={() => handlePageChange(Number(page))}
-                            className="min-w-[2rem] justify-center cursor-pointer hover:bg-gray-100 font-lato"
-                          >
-                            {page}
-                          </PaginationLink>
-                        )}
-                      </PaginationItem>
-                    ))}
-
-                    <PaginationItem>
-                      <PaginationNext 
-                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages}
-                        className="cursor-pointer hover:bg-gray-100 font-lato"
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
