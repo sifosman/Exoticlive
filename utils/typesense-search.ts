@@ -5,48 +5,45 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  short_description: string;
   price: number;
   sale_price: number | null;
   regular_price: number;
   stock_status: string;
   stock_quantity: number;
   categories: string[];
-  brand: string;
+  tags: string[];
+  colors: string[];
+  sizes: string[];
   image_url: string;
-  image_alt: string;
   slug: string;
-  gallery_images: Array<{
-    url: string;
-    alt: string;
-  }>;
-  attributes: Array<{
-    name: string;
-    options: string[];
-  }>;
-  variations?: Array<{
-    id: string;
-    price: number;
-    sale_price: number | null;
-    stock_status: string;
-    stock_quantity: number;
-    attributes: Array<{
-      name: string;
-      value: string;
-    }>;
-  }>;
+  gallery_images: string[];
+  is_featured: boolean;
+  is_on_sale: boolean;
+  average_rating: number;
 }
 
 // Create Typesense client
 const typesenseClient = new Typesense.Client({
   nodes: [{
     host: process.env.NEXT_PUBLIC_TYPESENSE_HOST || 'localhost',
-    port: Number(process.env.NEXT_PUBLIC_TYPESENSE_PORT) || 8108,
-    protocol: 'http'
+    port: Number(process.env.NEXT_PUBLIC_TYPESENSE_PORT) || 443,
+    protocol: 'https'
   }],
-  apiKey: process.env.NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY || 'xyz123',
+  apiKey: process.env.NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY || '',
   connectionTimeoutSeconds: 2
 });
+
+// Function to check if Typesense is healthy
+export async function checkTypesenseHealth() {
+  try {
+    const health = await typesenseClient.health.retrieve();
+    console.log('Typesense Health:', health);
+    return health;
+  } catch (error) {
+    console.error('Health Check Failed:', error);
+    return { ok: false };
+  }
+}
 
 // Search parameters type
 export interface SearchParams {
@@ -58,20 +55,24 @@ export interface SearchParams {
   per_page?: number;
   facet_by?: string;
   max_facet_values?: number;
+  include_fields?: string;
 }
 
 // Search function
 export async function searchProducts(params: SearchParams) {
   const searchParameters = {
     q: params.q || '*',
-    query_by: params.query_by || 'name,description,brand',
+    query_by: params.query_by || 'name,description',
     filter_by: params.filter_by || '',
     sort_by: params.sort_by || '_text_match:desc,price:asc',
     page: params.page || 1,
     per_page: params.per_page || 12,
-    facet_by: params.facet_by || 'categories,brand',
-    max_facet_values: params.max_facet_values || 10
+    facet_by: params.facet_by || 'categories,colors,sizes',
+    max_facet_values: params.max_facet_values || 10,
+    include_fields: params.include_fields || 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
   };
+  
+  console.log('Search parameters:', searchParameters);
 
   try {
     const searchResults = await typesenseClient
@@ -86,7 +87,7 @@ export async function searchProducts(params: SearchParams) {
       facets: searchResults.facet_counts || [],
     };
   } catch (error) {
-    console.error('Typesense search error:', error);
+    console.error('Search error:', error);
     throw error;
   }
 }
@@ -100,7 +101,7 @@ export async function getProductById(id: string): Promise<Product | null> {
       .retrieve();
     return product as Product;
   } catch (error) {
-    console.error('Error fetching product:', error);
+    console.error(`Error fetching product ${id}:`, error);
     return null;
   }
 }

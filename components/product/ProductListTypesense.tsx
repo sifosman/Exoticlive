@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ProductCardSkeleton } from '../ui/LoadingSkeleton';
 import ProductCardTypesense from '../ProductCardTypesense';
-import { searchProducts, type Product } from '../../utils/typesense-search';
+import { searchProducts, checkTypesenseHealth, type Product } from '../../utils/typesense-search';
 import {
   Pagination,
   PaginationContent,
@@ -45,20 +45,47 @@ const ProductListTypesense = () => {
     return pageNumbers;
   };
 
+  // Check Typesense health
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const health = await checkTypesenseHealth();
+        console.log('Typesense Health:', health);
+      } catch (error) {
+        console.error('Health check error:', error);
+      }
+    };
+    
+    checkHealth();
+  }, []);
+
   // Fetch products from Typesense
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
+      console.log('Search parameters:', {
+        q: '*',
+        sort_by: 'price:asc',
+        filter_by: 'stock_status:=instock',
+        page: currentPage,
+        per_page: ITEMS_PER_PAGE,
+        query_by: 'name,description',
+        include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
+      });
+      
       const result = await searchProducts({
         q: '*',
         sort_by: 'price:asc',
         filter_by: 'stock_status:=instock',
         page: currentPage,
         per_page: ITEMS_PER_PAGE,
-        query_by: 'name,description,brand'
+        query_by: 'name,description',
+        include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
       });
       
-      // Filter out products without valid images
+      console.log('Search results:', result);
+      
+      // Filter out products without valid images if needed
       const validProducts = result.products.filter(product => 
         product.image_url && 
         !product.image_url.includes('placeholder') &&

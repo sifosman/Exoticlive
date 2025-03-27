@@ -33,8 +33,15 @@ const ProductCardTypesense: React.FC<ProductCardProps> = ({ product, index }) =>
     }).format(price);
   };
 
-  const isOnSale = product.sale_price && product.sale_price < product.regular_price;
-  const displayPrice = isOnSale ? product.sale_price : product.regular_price;
+  // Safely check if product is on sale
+  const isOnSale = product.is_on_sale || 
+                  (product.sale_price && product.regular_price && 
+                   product.sale_price < product.regular_price);
+                   
+  // Use the right price (handle potential missing fields gracefully)
+  const displayPrice = isOnSale && product.sale_price ? 
+                      product.sale_price : 
+                      (product.price || product.regular_price || 0);
 
   return (
     <motion.div
@@ -45,7 +52,7 @@ const ProductCardTypesense: React.FC<ProductCardProps> = ({ product, index }) =>
     >
       <Link href={`/product/${product.slug}`}>
         <div className="relative w-full h-[250px] overflow-hidden rounded-lg bg-white mb-4">
-          {imageError || !product.image_url || product.image_url.includes('placeholder') ? (
+          {imageError || !product.image_url ? (
             // Fallback to logo image when there's an error or no valid product image
             <div className="flex items-center justify-center h-full w-full">
               <Image
@@ -61,7 +68,7 @@ const ProductCardTypesense: React.FC<ProductCardProps> = ({ product, index }) =>
             <div className="w-full h-full flex items-center justify-center">
               <Image
                 src={product.image_url}
-                alt={product.image_alt || product.name}
+                alt={product.name || "Product"}
                 width={250}
                 height={250}
                 className="object-contain max-h-[230px] group-hover:opacity-75"
@@ -79,7 +86,7 @@ const ProductCardTypesense: React.FC<ProductCardProps> = ({ product, index }) =>
               <p className={isOnSale ? "text-sm font-medium text-red-600 font-sans" : "text-sm font-medium text-gray-900 font-sans"}>
                 {formatPrice(displayPrice)}
               </p>
-              {isOnSale && (
+              {isOnSale && product.regular_price && (
                 <p className="text-sm text-gray-500 line-through font-sans">
                   {formatPrice(product.regular_price)}
                 </p>
