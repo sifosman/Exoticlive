@@ -18,15 +18,173 @@ const HIGHLIGHT_STOCK_STATUS = true; // Highlight stock status for debugging
 const STOCK_STATUS_IN_STOCK = 'instock';
 const STOCK_STATUS_OUT_OF_STOCK = 'outofstock';
 
+// Test product data for local development
+const TEST_PRODUCT = {
+  id: 9999,
+  name: 'Test Product',
+  price: '99.99',
+  regular_price: '129.99',
+  sale_price: '99.99',
+  stock_status: 'instock',
+  images: [
+    { src: 'https://via.placeholder.com/500x500?text=Test+Product' },
+    { src: 'https://via.placeholder.com/500x500?text=Test+Product+View+2' }
+  ],
+  attributes: [
+    {
+      id: 1,
+      name: 'Color',
+      position: 0,
+      visible: true,
+      variation: true,
+      options: ['Black', 'Olive', 'Blue']
+    },
+    {
+      id: 2,
+      name: 'Size',
+      position: 1,
+      visible: true,
+      variation: true,
+      options: ['3', '5', '8']
+    }
+  ],
+  variations: [
+    {
+      id: 10001,
+      price: '99.99',
+      regular_price: '129.99',
+      sale_price: '99.99',
+      attributes: [
+        { name: 'Color', option: 'Black' },
+        { name: 'Size', option: '3' }
+      ],
+      stock_status: 'instock',
+      manage_stock: true,
+      stock_quantity: 1
+    },
+    {
+      id: 10002,
+      price: '99.99',
+      regular_price: '129.99',
+      sale_price: '99.99',
+      attributes: [
+        { name: 'Color', option: 'Black' },
+        { name: 'Size', option: '5' }
+      ],
+      stock_status: 'instock',
+      manage_stock: true,
+      stock_quantity: 10
+    },
+    {
+      id: 10003,
+      price: '109.99',
+      regular_price: '139.99',
+      sale_price: '109.99',
+      attributes: [
+        { name: 'Color', option: 'Black' },
+        { name: 'Size', option: '8' }
+      ],
+      stock_status: 'instock',
+      manage_stock: true,
+      stock_quantity: 5
+    },
+    {
+      id: 10004,
+      price: '99.99',
+      regular_price: '129.99',
+      sale_price: '99.99',
+      attributes: [
+        { name: 'Color', option: 'Olive' },
+        { name: 'Size', option: '3' }
+      ],
+      stock_status: 'instock',
+      manage_stock: false,
+      stock_quantity: null
+    },
+    {
+      id: 10005,
+      price: '99.99',
+      regular_price: '129.99',
+      sale_price: '99.99',
+      attributes: [
+        { name: 'Color', option: 'Olive' },
+        { name: 'Size', option: '5' }
+      ],
+      stock_status: 'instock',
+      manage_stock: true,
+      stock_quantity: 3
+    },
+    {
+      id: 10006,
+      price: '99.99',
+      regular_price: '129.99',
+      sale_price: '99.99',
+      attributes: [
+        { name: 'Color', option: 'Olive' },
+        { name: 'Size', option: '8' }
+      ],
+      stock_status: 'instock',
+      manage_stock: true,
+      stock_quantity: 0
+    },
+    {
+      id: 10007,
+      price: '99.99',
+      regular_price: '129.99',
+      sale_price: '99.99',
+      attributes: [
+        { name: 'Color', option: 'Blue' },
+        { name: 'Size', option: '3' }
+      ],
+      stock_status: 'outofstock',
+      manage_stock: false,
+      stock_quantity: null
+    },
+    {
+      id: 10008,
+      price: '99.99',
+      regular_price: '129.99',
+      sale_price: '99.99',
+      attributes: [
+        { name: 'Color', option: 'Blue' },
+        { name: 'Size', option: '5' }
+      ],
+      stock_status: 'instock',
+      manage_stock: true,
+      stock_quantity: 2
+    },
+    {
+      id: 10009,
+      price: '99.99',
+      regular_price: '129.99',
+      sale_price: '99.99',
+      attributes: [
+        { name: 'Color', option: 'Blue' },
+        { name: 'Size', option: '8' }
+      ],
+      stock_status: 'instock',
+      manage_stock: true,
+      stock_quantity: 7
+    }
+  ]
+};
+
+// Flag to use test product data for local testing - change to true to enable
+const USE_TEST_PRODUCT = false;
+
 interface ProductContentTypesenseProps {
   product: TypesenseProduct;
+  related_products?: any[];
 }
 
-const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
-  if (!product) {
-    return <div>Loading...</div>;
-  }
-
+const ProductContentTypesense = ({ product: initialProduct, related_products }: ProductContentTypesenseProps) => {
+  const [product, setProduct] = useState(initialProduct);
+  const { addToCart } = useCart();
+  const toast = useToast();
+  
+  // State for showing test product in development
+  const [useTestProduct, setUseTestProduct] = useState(USE_TEST_PRODUCT);
+  
   // Debug information for product data
   if (DEBUG_MODE) {
     console.log('DEBUG: ProductContentTypesense rendered with:');
@@ -76,17 +234,15 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
   const hasVariations = !!product.variations && Array.isArray(product.variations) && product.variations.length > 0 && product.variations.some(variation => variation.id !== product.id);
   const isVariableProduct = hasVariations;
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
-  const [quantity, setQuantity] = useState<number>(1);
-  const [maxQuantity, setMaxQuantity] = useState<number>(0); // Default to 0 instead of 10
-  const [currentPrice, setCurrentPrice] = useState<number>(parseFloat(product?.price || '0'));
-  const [currentSalePrice, setCurrentSalePrice] = useState<number | null>(product?.sale_price ? parseFloat(product.sale_price) : null);
-  const [currentRegularPrice, setCurrentRegularPrice] = useState<number>(parseFloat(product?.regular_price || product?.price || '0'));
-  const [currentStockStatus, setCurrentStockStatus] = useState<string>(product?.stock_status || STOCK_STATUS_OUT_OF_STOCK); // Default to out of stock
-  const [currentQuantity, setCurrentQuantity] = useState<number | null>(product?.stock_quantity || null); // Don't default to any specific quantity
+  const [quantity, setQuantity] = useState(1);
+  const [maxQuantity, setMaxQuantity] = useState(99);
+  const [currentPrice, setCurrentPrice] = useState(parseFloat(product?.price || '0'));
+  const [currentSalePrice, setCurrentSalePrice] = useState(product?.sale_price ? parseFloat(product.sale_price) : null);
+  const [currentRegularPrice, setCurrentRegularPrice] = useState(product?.regular_price ? parseFloat(product.regular_price) : null);
+  const [currentStockStatus, setCurrentStockStatus] = useState(product?.stock_status || STOCK_STATUS_IN_STOCK);
+  const [currentQuantity, setCurrentQuantity] = useState<number | null>(product?.stock_quantity || null);
   const [derivedAttributeOptions, setDerivedAttributeOptions] = useState<Record<string, string[]>>({});
-
-  const { addToCart } = useCart();
-  const { toast } = useToast();
+  
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
@@ -123,49 +279,54 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
     setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
   };
 
-  // Check if variation is in stock based on WooCommerce data
-  const isVariationInStock = (variation) => {
-    if (!variation) return false;
-    
-    // Check stock status directly from WooCommerce
-    let inStock = false;
-    
-    if (typeof variation.stock_status === 'string') {
-      // Standard WooCommerce statuses
-      const status = variation.stock_status.toLowerCase();
-      inStock = status === 'instock' || status === 'in_stock';
-    }
-    
-    // If manage_stock is enabled, also check quantity
-    if (variation.manage_stock === true) {
-      const stockQty = typeof variation.stock_quantity === 'number' 
-        ? variation.stock_quantity 
-        : parseInt(String(variation.stock_quantity || '0'), 10);
-      
-      // Zero or negative quantity means out of stock
-      if (stockQty <= 0) {
-        inStock = false;
-      }
-    }
-    
-    return inStock;
-  };
-
   // Get stock quantity from a variation
   const getVariationStockQuantity = (variation) => {
     if (!variation) return null;
     
-    // Return null for variations that don't manage stock
-    if (variation.manage_stock !== true) return null;
-    
-    // Parse the stock quantity
-    if (variation.stock_quantity === undefined || variation.stock_quantity === null) {
-      return 0;
+    // For WooCommerce, if manage_stock is true, always use the stock_quantity
+    if (variation.manage_stock === true) {
+      // Parse the stock quantity
+      if (variation.stock_quantity === undefined || variation.stock_quantity === null) {
+        return 0;
+      }
+      
+      return typeof variation.stock_quantity === 'number'
+        ? variation.stock_quantity
+        : parseInt(String(variation.stock_quantity), 10);
     }
     
-    return typeof variation.stock_quantity === 'number'
-      ? variation.stock_quantity
-      : parseInt(String(variation.stock_quantity), 10);
+    // If manage_stock is false, check the stock_status to determine availability
+    if (typeof variation.stock_status === 'string') {
+      const status = variation.stock_status.toLowerCase();
+      if (status === 'instock' || status === 'in_stock') {
+        // Return null to indicate "unlimited" for display, but it's still in stock
+        return null;
+      }
+    }
+    
+    // Default to 0 for anything else
+    return 0;
+  };
+
+  // Check if variation is in stock based on WooCommerce data
+  const isVariationInStock = (variation) => {
+    if (!variation) return false;
+    
+    // Primary check: If manage_stock is true, check the quantity
+    if (variation.manage_stock === true) {
+      const stockQty = getVariationStockQuantity(variation);
+      // Must have quantity > 0 to be in stock
+      return stockQty > 0;
+    }
+    
+    // Secondary check: If not managing stock, rely on the stock_status field
+    if (typeof variation.stock_status === 'string') {
+      const status = variation.stock_status.toLowerCase();
+      return status === 'instock' || status === 'in_stock';
+    }
+    
+    // Default to out of stock if we can't determine
+    return false;
   };
 
   // Function to find the variation that matches the selected attributes
@@ -246,6 +407,10 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
     if (matchingVariation) {
       if (DEBUG_MODE) {
         console.log('DEBUG: Matching variation found:', matchingVariation);
+        console.log('  - ID:', matchingVariation.id);
+        console.log('  - Stock status:', matchingVariation.stock_status);
+        console.log('  - Manage stock:', matchingVariation.manage_stock);
+        console.log('  - Stock quantity:', matchingVariation.stock_quantity);
       }
       
       // Update current price
@@ -265,7 +430,7 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
         setCurrentRegularPrice(parseFloat(matchingVariation.regular_price));
       }
       
-      // Determine stock status
+      // Determine stock status - WooCommerce standard
       const inStock = isVariationInStock(matchingVariation);
       const stockStatus = inStock ? STOCK_STATUS_IN_STOCK : STOCK_STATUS_OUT_OF_STOCK;
       
@@ -285,15 +450,15 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       setCurrentQuantity(stockQuantity);
       
       // Adjust max quantity based on stock
-      if (stockStatus === STOCK_STATUS_IN_STOCK && (stockQuantity === null || stockQuantity > 0)) {
-        if (matchingVariation.manage_stock === true && typeof stockQuantity === 'number' && stockQuantity > 0) {
+      if (stockStatus === STOCK_STATUS_IN_STOCK) {
+        if (typeof stockQuantity === 'number' && stockQuantity > 0) {
           // Use exact WooCommerce quantity
           setMaxQuantity(stockQuantity);
         } else if (stockQuantity === null) {
-          // When manage_stock is false but status is in stock
+          // When manage_stock is false but status is in stock (unlimited)
           setMaxQuantity(99);
         } else {
-          // Handle case where manage_stock is true but quantity is 0 or less
+          // Handle case where quantity is 0 or less
           setMaxQuantity(0);
         }
         setQuantity(1); // Set to 1 to show it's in stock and can be added
@@ -301,6 +466,15 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
         setMaxQuantity(0);
         setQuantity(0); // Set to 0 to show it's out of stock
       }
+    } else {
+      // No matching variation found, reset to default status
+      if (DEBUG_MODE) {
+        console.log('DEBUG: No matching variation found for the selected attributes');
+      }
+      setCurrentStockStatus(STOCK_STATUS_OUT_OF_STOCK);
+      setCurrentQuantity(0);
+      setMaxQuantity(0);
+      setQuantity(0);
     }
   }, [selectedAttributes, product]);
 
@@ -472,6 +646,24 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       setDerivedAttributeOptions(derivedAttributes);
     }
   }, [product, hasVariations]);
+
+  useEffect(() => {
+    if (useTestProduct && process.env.NODE_ENV === 'development') {
+      console.log('Using test product data for local development');
+      setProduct(TEST_PRODUCT);
+      
+      // Initialize with default selections to test variation handling
+      if (TEST_PRODUCT.attributes && TEST_PRODUCT.attributes.length > 0) {
+        const defaultAttrs: Record<string, string> = {};
+        TEST_PRODUCT.attributes.forEach(attr => {
+          if (attr.options && attr.options.length > 0) {
+            defaultAttrs[normalizeAttributeName(attr.name)] = attr.options[0];
+          }
+        });
+        setSelectedAttributes(defaultAttrs);
+      }
+    }
+  }, [useTestProduct]);
 
   useEffect(() => {
     if (DEBUG_MODE) {
@@ -707,6 +899,16 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 mt-6 sm:py-16 sm:mt-8 font-lato">
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 px-4 sm:px-6 lg:px-8">
+          <button
+            onClick={() => setUseTestProduct(!useTestProduct)}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded"
+          >
+            {useTestProduct ? 'Using Test Product' : 'Use Real Product Data'}
+          </button>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 xl:gap-20">
         {/* Image Gallery Column */}
         <div className="flex flex-col sm:flex-row lg:flex-row gap-4">
@@ -968,7 +1170,7 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
               {/* Stock information next to quantity control */}
               {currentStockStatus === STOCK_STATUS_IN_STOCK && (
                 <span className="ml-3 text-sm text-gray-500">
-                  {currentQuantity === null ? 'Unlimited' : currentQuantity} available
+                  {currentQuantity === null ? 'Unlimited' : `${currentQuantity} available`}
                 </span>
               )}
             </div>
