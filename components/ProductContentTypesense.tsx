@@ -285,13 +285,16 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       setCurrentQuantity(stockQuantity);
       
       // Adjust max quantity based on stock
-      if (stockStatus === STOCK_STATUS_IN_STOCK) {
-        if (matchingVariation.manage_stock === true && typeof stockQuantity === 'number') {
+      if (stockStatus === STOCK_STATUS_IN_STOCK && (stockQuantity === null || stockQuantity > 0)) {
+        if (matchingVariation.manage_stock === true && typeof stockQuantity === 'number' && stockQuantity > 0) {
           // Use exact WooCommerce quantity
           setMaxQuantity(stockQuantity);
-        } else {
+        } else if (stockQuantity === null) {
           // When manage_stock is false but status is in stock
           setMaxQuantity(99);
+        } else {
+          // Handle case where manage_stock is true but quantity is 0 or less
+          setMaxQuantity(0);
         }
         setQuantity(1); // Set to 1 to show it's in stock and can be added
       } else {
@@ -813,10 +816,12 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
               </div>
               
               {/* Show quantity if managed and available */}
-              {currentStockStatus === STOCK_STATUS_IN_STOCK && currentQuantity !== null && (
+              {currentStockStatus === STOCK_STATUS_IN_STOCK && (
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-sm font-medium">Available Quantity:</span>
-                  <span className="text-sm font-medium">{currentQuantity}</span>
+                  <span className="text-sm font-medium">
+                    {currentQuantity === null ? 'Unlimited' : currentQuantity}
+                  </span>
                 </div>
               )}
             </div>
@@ -881,12 +886,9 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
                                   isSelected
                                     ? 'bg-black text-white border-black'
                                     : 'bg-white text-black hover:bg-gray-100'
-                                } ${!inStock && isSelected ? 'border-red-300' : ''}`}
+                                }`}
                               >
                                 {optionNormalized}
-                                {!inStock && isSelected && (
-                                  <span className="ml-1 text-xs text-red-500">(Out of Stock)</span>
-                                )}
                               </button>
                             );
                           })}
@@ -964,9 +966,9 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
               </div>
               
               {/* Stock information next to quantity control */}
-              {currentStockStatus === STOCK_STATUS_IN_STOCK && currentQuantity !== null && (
+              {currentStockStatus === STOCK_STATUS_IN_STOCK && (
                 <span className="ml-3 text-sm text-gray-500">
-                  {currentQuantity} available
+                  {currentQuantity === null ? 'Unlimited' : currentQuantity} available
                 </span>
               )}
             </div>
