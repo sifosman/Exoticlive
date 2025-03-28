@@ -528,25 +528,6 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
   }, [selectedAttributes, product]);
 
   useEffect(() => {
-    // For debugging, log all variations when the component mounts
-    if (DEBUG_MODE) {
-      console.log('------- PRODUCT VARIATIONS DEBUG -------');
-      console.log('Product has variations:', hasVariations);
-      console.log('Total variations:', product?.variations?.length || 0);
-      
-      if (product.variations && Array.isArray(product.variations)) {
-        console.log('Available variations:');
-        product.variations.forEach((variation: any, index: number) => {
-          console.log(`Variation #${index + 1}:`);
-          console.log('  ID:', variation.variation_id);
-          console.log('  Stock Status:', variation.stock_status);
-          console.log('  Stock Quantity:', variation.stock_quantity);
-          console.log('  Attributes:', variation.attributes);
-        });
-      }
-      console.log('---------------------------------------');
-    }
-    
     // Extract available attribute options from existing variations only
     if (product.variations && Array.isArray(product.variations) && product.variations.length > 0) {
       // Create a derived set of attributes based only on what's in the variations
@@ -555,20 +536,21 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       // Loop through each variation
       product.variations.forEach((variation: any) => {
         if (variation.attributes) {
-          // For each attribute in this variation
-          for (const attrName in variation.attributes) {
+          // For each attribute in the variation
+          Object.entries(variation.attributes).forEach(([attrName, attrValue]) => {
+            if (!attrValue) return;
+            
             const normalizedName = normalizeAttributeName(attrName);
-            const value = variation.attributes[attrName];
             
             if (!derivedAttributes[normalizedName]) {
               derivedAttributes[normalizedName] = [];
             }
             
             // Add this value if it's not already in our list
-            if (value && !derivedAttributes[normalizedName].includes(value)) {
-              derivedAttributes[normalizedName].push(value);
+            if (!derivedAttributes[normalizedName].includes(attrValue)) {
+              derivedAttributes[normalizedName].push(attrValue);
             }
-          }
+          });
         }
       });
       
@@ -1036,15 +1018,18 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
                   if (attribute && attribute.name && Array.isArray(attribute.options) && attribute.options.length > 0) {
                     const normalizedName = normalizeAttributeName(attribute.name);
                     
-                    // Get only the options that exist in actual variations
-                    const availableOptions = derivedAttributeOptions[normalizedName] || [];
+                    // Use either derived options or fall back to the original options
+                    const availableOptions = 
+                      derivedAttributeOptions[normalizedName]?.length > 0
+                        ? derivedAttributeOptions[normalizedName]
+                        : attribute.options;
                     
-                    // Skip rendering this attribute if no options are available
-                    if (availableOptions.length === 0) {
-                      if (DEBUG_MODE) {
-                        console.log(`Skipping attribute ${attribute.name} - no options available in variations`);
-                      }
-                      return null;
+                    if (DEBUG_MODE) {
+                      console.log(`Attribute ${attribute.name}:`, { 
+                        derived: derivedAttributeOptions[normalizedName] || [],
+                        original: attribute.options,
+                        display: availableOptions
+                      });
                     }
                     
                     return (
