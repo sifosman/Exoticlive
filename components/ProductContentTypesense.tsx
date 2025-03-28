@@ -184,7 +184,66 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
   
   // State for showing test product in development
   const [useTestProduct, setUseTestProduct] = useState(USE_TEST_PRODUCT);
-  
+
+  // Function to safely process attributes with error handling
+  const safelyProcessAttributes = (attributes, callback) => {
+    if (!attributes || !Array.isArray(attributes)) return;
+    try {
+      attributes.forEach(callback);
+    } catch (error) {
+      console.error('Error processing attributes:', error);
+    }
+  };
+
+  // Function to safely process variations with error handling
+  const safelyProcessVariations = (variations, callback) => {
+    if (!variations || !Array.isArray(variations)) return;
+    try {
+      variations.forEach(callback);
+    } catch (error) {
+      console.error('Error processing variations:', error);
+    }
+  };
+
+  // Function to normalize attribute names for consistent comparison
+  const normalizeAttributeName = (name: string): string => {
+    if (!name) return '';
+    
+    // Convert to lowercase, trim spaces, and remove all non-alphanumeric characters
+    let normalized = name.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    
+    // Remove 'pa_' prefix if present (WooCommerce specific)
+    if (normalized.startsWith('pa')) {
+      normalized = normalized.substring(2);
+    }
+    
+    return normalized;
+  };
+
+  // Format attribute name for display
+  const formatAttributeName = (name: string): string => {
+    if (!name) return 'Option';
+    
+    // Remove 'pa_' prefix if it exists
+    let formattedName = name.replace(/^pa_/i, '');
+    
+    // Replace hyphens with spaces and capitalize each word
+    formattedName = formattedName
+      .split(/[-_]/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    return formattedName;
+  };
+
+  // Function to normalize attribute values for consistent comparison
+  const normalizeAttributeValue = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    // Convert to string first to handle numeric values
+    const stringValue = String(value);
+    return stringValue.toLowerCase().trim();
+  };
+
   // Debug information for product data
   if (DEBUG_MODE) {
     console.log('DEBUG: ProductContentTypesense rendered with:');
@@ -196,7 +255,7 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
     
     // Verify attribute structure
     if (product?.attributes?.length > 0) {
-      product.attributes.forEach((attr, i) => {
+      safelyProcessAttributes(product.attributes, (attr, i) => {
         console.log(`DEBUG: Attribute ${i} structure:`, {
           name: attr.name,
           options: attr.options,
@@ -209,20 +268,25 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
     // Log variations detail if any
     if (product?.variations?.length > 0) {
       console.log('DEBUG: First 3 variations:');
-      product.variations.slice(0, 3).forEach((variation, index) => {
-        console.log(`  Variation ${index}:`);
-        console.log(`    - ID: ${variation.id || 'Unknown'}`);
-        console.log(`    - Stock Status: ${variation.stock_status || 'Unknown'}`);
-        console.log(`    - Stock Quantity: ${variation.stock_quantity || 'Unknown'}`);
-        console.log(`    - Manage Stock: ${variation.manage_stock}`);
-        console.log(`    - In Stock: ${isVariationInStock(variation)}`);
-      });
+      try {
+        const variationsToLog = product.variations.slice(0, 3);
+        safelyProcessVariations(variationsToLog, (variation, index) => {
+          console.log(`  Variation ${index}:`);
+          console.log(`    - ID: ${variation.id || 'Unknown'}`);
+          console.log(`    - Stock Status: ${variation.stock_status || 'Unknown'}`);
+          console.log(`    - Stock Quantity: ${variation.stock_quantity || 'Unknown'}`);
+          console.log(`    - Manage Stock: ${variation.manage_stock}`);
+          console.log(`    - In Stock: ${isVariationInStock(variation)}`);
+        });
+      } catch (error) {
+        console.error('Error logging variations:', error);
+      }
     }
     
     // Log attributes detail if any
     if (product?.attributes?.length > 0) {
       console.log('DEBUG: Attributes:');
-      product.attributes.forEach((attribute, index) => {
+      safelyProcessAttributes(product.attributes, (attribute, index) => {
         console.log(`  Attribute ${index}:`);
         console.log(`    - Name: ${attribute.name || 'Unknown'}`);
         console.log(`    - Options: ${JSON.stringify(attribute.options || [])}`);
@@ -592,45 +656,6 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
     return matchingVariations.some(variation => isVariationInStock(variation));
   };
 
-  // Function to normalize attribute names for consistent comparison
-  const normalizeAttributeName = (name: string): string => {
-    if (!name) return '';
-    
-    // Convert to lowercase, trim spaces, and remove all non-alphanumeric characters
-    let normalized = name.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-    
-    // Remove 'pa_' prefix if present (WooCommerce specific)
-    if (normalized.startsWith('pa')) {
-      normalized = normalized.substring(2);
-    }
-    
-    return normalized;
-  };
-
-  // Format attribute name for display
-  const formatAttributeName = (name: string): string => {
-    if (!name) return 'Option';
-    
-    // Remove 'pa_' prefix if it exists
-    let formattedName = name.replace(/^pa_/i, '');
-    
-    // Replace hyphens with spaces and capitalize each word
-    formattedName = formattedName
-      .split(/[-_]/)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-    
-    return formattedName;
-  };
-
-  // Function to normalize attribute values for consistent comparison
-  const normalizeAttributeValue = (value: any): string => {
-    if (value === null || value === undefined) return '';
-    // Convert to string first to handle numeric values
-    const stringValue = String(value);
-    return stringValue.toLowerCase().trim();
-  };
-
   // Handle attribute selections
   const handleAttributeSelection = (attributeName: string, attributeValue: string) => {
     const newAttributes = { ...selectedAttributes };
@@ -659,36 +684,46 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
   useEffect(() => {
     // Extract available attribute options from existing variations only
     if (product.variations && Array.isArray(product.variations) && product.variations.length > 0) {
-      // Create a derived set of attributes based only on what's in the variations
-      const derivedAttributes: Record<string, string[]> = {};
-      
-      // Loop through each variation
-      product.variations.forEach((variation: any) => {
-        if (variation.attributes) {
+      try {
+        // Create a derived set of attributes based only on what's in the variations
+        const derivedAttributes: Record<string, string[]> = {};
+        
+        // Loop through each variation
+        safelyProcessVariations(product.variations, (variation: any) => {
+          if (!variation || !variation.attributes) return;
+          
           // For each attribute in the variation
-          Object.entries(variation.attributes).forEach(([attrName, attrValue]) => {
-            if (!attrValue) return;
-            
-            const normalizedName = normalizeAttributeName(attrName);
-            
-            if (!derivedAttributes[normalizedName]) {
-              derivedAttributes[normalizedName] = [];
-            }
-            
-            // Add this value if it's not already in our list
-            if (!derivedAttributes[normalizedName].includes(attrValue)) {
-              derivedAttributes[normalizedName].push(attrValue);
-            }
-          });
+          try {
+            const entries = Object.entries(variation.attributes);
+            entries.forEach(([attrName, attrValue]) => {
+              // Skip if the attribute value is invalid
+              if (!attrValue) return;
+              
+              const normalizedName = normalizeAttributeName(attrName);
+              
+              if (!derivedAttributes[normalizedName]) {
+                derivedAttributes[normalizedName] = [];
+              }
+              
+              // Add this value if it's not already in our list
+              if (!derivedAttributes[normalizedName].includes(attrValue)) {
+                derivedAttributes[normalizedName].push(attrValue);
+              }
+            });
+          } catch (error) {
+            console.error('Error processing variation attributes:', error);
+          }
+        });
+        
+        if (DEBUG_MODE) {
+          console.log('Derived attributes from variations:', derivedAttributes);
         }
-      });
-      
-      if (DEBUG_MODE) {
-        console.log('Derived attributes from variations:', derivedAttributes);
+        
+        // Store the derived attributes for use in rendering
+        setDerivedAttributeOptions(derivedAttributes);
+      } catch (error) {
+        console.error('Error extracting attribute options:', error);
       }
-      
-      // Store the derived attributes for use in rendering
-      setDerivedAttributeOptions(derivedAttributes);
     }
   }, [product, hasVariations]);
 
