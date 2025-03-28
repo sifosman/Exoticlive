@@ -178,7 +178,44 @@ interface ProductContentTypesenseProps {
 }
 
 const ProductContentTypesense = ({ product: initialProduct, related_products }: ProductContentTypesenseProps) => {
-  const [product, setProduct] = useState(initialProduct);
+  // Process JSON string fields if they exist
+  const processProduct = (product) => {
+    if (!product) return product;
+    
+    const processedProduct = { ...product };
+    
+    // Parse variations_json if it exists
+    if (typeof processedProduct.variations_json === 'string' && !processedProduct.variations) {
+      try {
+        processedProduct.variations = JSON.parse(processedProduct.variations_json);
+        if (DEBUG_MODE) {
+          console.log(`DEBUG: Parsed variations_json, found ${processedProduct.variations.length} variations`);
+        }
+      } catch (error) {
+        console.error('Error parsing variations_json:', error);
+        processedProduct.variations = [];
+      }
+    }
+    
+    // Parse attributes_json if it exists
+    if (typeof processedProduct.attributes_json === 'string' && !processedProduct.attributes) {
+      try {
+        processedProduct.attributes = JSON.parse(processedProduct.attributes_json);
+        if (DEBUG_MODE) {
+          console.log(`DEBUG: Parsed attributes_json, found ${processedProduct.attributes.length} attributes`);
+        }
+      } catch (error) {
+        console.error('Error parsing attributes_json:', error);
+        processedProduct.attributes = [];
+      }
+    }
+    
+    return processedProduct;
+  };
+  
+  // Process the initial product data to handle JSON string fields
+  const processedInitialProduct = processProduct(initialProduct);
+  const [product, setProduct] = useState(processedInitialProduct);
   const { addToCart } = useCart();
   const toast = useToast();
   
