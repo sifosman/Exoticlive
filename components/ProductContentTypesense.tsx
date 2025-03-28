@@ -214,7 +214,8 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
         console.log(`    - ID: ${variation.id || 'Unknown'}`);
         console.log(`    - Stock Status: ${variation.stock_status || 'Unknown'}`);
         console.log(`    - Stock Quantity: ${variation.stock_quantity || 'Unknown'}`);
-        console.log(`    - Attributes:`, variation.attributes || []);
+        console.log(`    - Manage Stock: ${variation.manage_stock}`);
+        console.log(`    - In Stock: ${isVariationInStock(variation)}`);
       });
     }
     
@@ -398,6 +399,50 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
       setCurrentSalePrice(product?.sale_price ? parseFloat(product.sale_price) : null);
       setCurrentStockStatus(product?.stock_status || STOCK_STATUS_IN_STOCK);
       setCurrentQuantity(product?.stock_quantity || null);
+      return;
+    }
+    
+    // New logic: If only partial attributes are selected, show as in stock if ANY combination exists that's in stock
+    const allAttrsSelected = variationAttributes.every(attr => 
+      Object.keys(selectedAttributes).some(selectedAttr => 
+        normalizeAttributeName(selectedAttr) === normalizeAttributeName(attr)
+      )
+    );
+    
+    // If not all attributes are selected yet, check if any matching variations are in stock
+    if (!allAttrsSelected) {
+      // Find all variations that match the currently selected attributes
+      const partialMatches = product.variations.filter(variation => {
+        if (!variation.attributes) return false;
+        
+        // Check if all currently selected attributes match this variation
+        return Object.entries(selectedAttributes).every(([attrName, attrValue]) => {
+          const normalizedName = normalizeAttributeName(attrName);
+          const normalizedValue = normalizeAttributeValue(attrValue);
+          
+          return variation.attributes.some(varAttr => 
+            normalizeAttributeName(varAttr.name) === normalizedName && 
+            normalizeAttributeValue(varAttr.option) === normalizedValue
+          );
+        });
+      });
+      
+      // If any matching variation is in stock, show as in stock during selection
+      const anyInStock = partialMatches.some(variation => isVariationInStock(variation));
+      
+      if (DEBUG_MODE) {
+        console.log(`DEBUG: Partial attribute selection - found ${partialMatches.length} matching variations`);
+        console.log(`DEBUG: Any partial matches in stock: ${anyInStock}`);
+      }
+      
+      // Set status based on partial matches
+      setCurrentStockStatus(anyInStock ? STOCK_STATUS_IN_STOCK : STOCK_STATUS_OUT_OF_STOCK);
+      
+      // Don't set a specific quantity yet since we don't have a fully selected variation
+      setCurrentQuantity(null);
+      setQuantity(1);
+      setMaxQuantity(anyInStock ? 99 : 0);
+      
       return;
     }
     
@@ -715,6 +760,7 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
       setCurrentStockStatus(product.stock_status || STOCK_STATUS_IN_STOCK);
       setCurrentQuantity(product.stock_quantity || null);
       setQuantity(1);
+      setMaxQuantity(99); // Reset to default max
     }
   };
 
@@ -767,6 +813,29 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
             stockStatus = selectedVariation.stock_status;
           }
         }
+      }
+      
+      // Standard e-commerce check: Do not proceed if variation is out of stock
+      if (selectedVariation && !isVariationInStock(selectedVariation)) {
+        toast({
+          title: 'Out of Stock',
+          description: 'This product variation is currently out of stock.',
+          status: 'error'
+        });
+        return;
+      }
+      
+      // Standard e-commerce check: Do not allow adding more than available stock
+      if (selectedVariation && 
+          selectedVariation.manage_stock && 
+          typeof stockQuantity === 'number' && 
+          quantity > stockQuantity) {
+        toast({
+          title: 'Quantity Limit Exceeded',
+          description: `Only ${stockQuantity} units available in stock.`,
+          status: 'error'
+        });
+        return;
       }
       
       // Format attribute selections for display
