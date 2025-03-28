@@ -187,7 +187,23 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
     // Parse variations_json if it exists
     if (typeof processedProduct.variations_json === 'string' && !processedProduct.variations) {
       try {
-        processedProduct.variations = JSON.parse(processedProduct.variations_json);
+        // Initialize variations as a safe empty array first
+        processedProduct.variations = [];
+        
+        // Then try to parse the JSON
+        const parsedVariations = JSON.parse(processedProduct.variations_json);
+        
+        // Only assign if parsing succeeded and result is an array
+        if (Array.isArray(parsedVariations)) {
+          processedProduct.variations = parsedVariations.map(variation => ({
+            ...variation,
+            // Ensure these critical fields always exist
+            stock_status: variation.stock_status || 'outofstock',
+            stock_quantity: typeof variation.stock_quantity === 'number' ? variation.stock_quantity : 0,
+            attributes: Array.isArray(variation.attributes) ? variation.attributes : []
+          }));
+        }
+        
         if (DEBUG_MODE) {
           console.log(`DEBUG: Parsed variations_json, found ${processedProduct.variations.length} variations`);
         }
@@ -200,7 +216,23 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
     // Parse attributes_json if it exists
     if (typeof processedProduct.attributes_json === 'string' && !processedProduct.attributes) {
       try {
-        processedProduct.attributes = JSON.parse(processedProduct.attributes_json);
+        // Initialize attributes as a safe empty array first
+        processedProduct.attributes = [];
+        
+        // Then try to parse the JSON
+        const parsedAttributes = JSON.parse(processedProduct.attributes_json);
+        
+        // Only assign if parsing succeeded and result is an array
+        if (Array.isArray(parsedAttributes)) {
+          processedProduct.attributes = parsedAttributes.map(attr => ({
+            ...attr,
+            // Ensure these critical fields always exist
+            name: attr.name || '',
+            options: Array.isArray(attr.options) ? attr.options : [],
+            variation: attr.variation !== false // Default to true if not specified
+          }));
+        }
+        
         if (DEBUG_MODE) {
           console.log(`DEBUG: Parsed attributes_json, found ${processedProduct.attributes.length} attributes`);
         }
