@@ -654,33 +654,36 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
   };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    
-    if (isNaN(value) || value < 1) {
+    const newQuantity = parseInt(e.target.value);
+    if (isNaN(newQuantity) || newQuantity < 1) {
       setQuantity(1);
-    } else if (value > maxQuantity) {
+    } else if (maxQuantity && newQuantity > maxQuantity) {
+      // Cap at max quantity available
       setQuantity(maxQuantity);
+      
+      // Show warning if they try to exceed stock level
+      if (currentQuantity !== null && currentQuantity > 0) {
+        toast({
+          title: "Maximum stock reached",
+          description: `Only ${currentQuantity} units available in stock.`,
+          variant: "destructive",
+        });
+      }
     } else {
-      setQuantity(value);
-    }
-    
-    if (DEBUG_MODE) {
-      console.log(`DEBUG: Quantity changed to ${value}, set to ${isNaN(value) || value < 1 ? 1 : value > maxQuantity ? maxQuantity : value}`);
+      setQuantity(newQuantity);
     }
   };
 
   const handleIncreaseQuantity = () => {
-    console.log("Increase quantity clicked");
-    // Allow increasing if we're below the current quantity limit
-    if (quantity < maxQuantity) {
-      setQuantity(prev => prev + 1);
-      if (DEBUG_MODE) {
-        console.log(`DEBUG: Increased quantity to ${quantity + 1}`);
-      }
-    } else {
-      if (DEBUG_MODE) {
-        console.log(`DEBUG: Cannot increase quantity above ${maxQuantity}`);
-      }
+    if (maxQuantity && quantity < maxQuantity) {
+      setQuantity(quantity + 1);
+    } else if (currentQuantity !== null && currentQuantity > 0) {
+      // Show warning if they try to exceed stock level
+      toast({
+        title: "Maximum stock reached",
+        description: `Only ${currentQuantity} units available in stock.`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -790,6 +793,35 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
             </div>
           </div>
 
+          {/* Stock Status Display - Show this after all required variations are selected */}
+          {product?.attributes?.filter(attr => attr.variation).length > 0 && 
+           Object.keys(selectedAttributes).length === product.attributes.filter(attr => attr.variation).length && (
+            <div className="mb-4 p-3 border rounded-md bg-gray-50">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Stock Status:</span>
+                {currentStockStatus === STOCK_STATUS_IN_STOCK ? (
+                  <span className="text-sm font-medium text-green-600 flex items-center">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    In Stock
+                  </span>
+                ) : (
+                  <span className="text-sm font-medium text-red-500 flex items-center">
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Out of Stock
+                  </span>
+                )}
+              </div>
+              
+              {/* Show quantity if managed and available */}
+              {currentStockStatus === STOCK_STATUS_IN_STOCK && currentQuantity !== null && (
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm font-medium">Available Quantity:</span>
+                  <span className="text-sm font-medium">{currentQuantity}</span>
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* Product Attributes (Size, Color, etc) */}
           {hasAttributes && (
             <div className="mt-6 space-y-4">
@@ -849,11 +881,10 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
                                   isSelected
                                     ? 'bg-black text-white border-black'
                                     : 'bg-white text-black hover:bg-gray-100'
-                                } ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                disabled={!inStock}
+                                } ${!inStock && isSelected ? 'border-red-300' : ''}`}
                               >
                                 {optionNormalized}
-                                {!inStock && (
+                                {!inStock && isSelected && (
                                   <span className="ml-1 text-xs text-red-500">(Out of Stock)</span>
                                 )}
                               </button>
@@ -887,43 +918,57 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
           )}
           
           {/* Quantity Selector */}
-          <div className="mt-6 space-y-2">
-            <h3 className="text-sm font-medium font-lato">Quantity</h3>
-            <div className="flex items-center w-full max-w-[150px]">
-              <button 
-                onClick={handleDecreaseQuantity}
-                disabled={quantity <= 1}
-                className={`px-3 py-2 border border-gray-300 rounded-l flex items-center justify-center ${
-                  quantity <= 1 
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                    : 'bg-white hover:bg-gray-50'
-                }`}
-                aria-label="Decrease quantity"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <input
-                type="number"
-                id="quantity"
-                name="quantity"
-                value={quantity}
-                min="1"
-                max={maxQuantity}
-                onChange={handleQuantityChange}
-                className="w-full border-y border-gray-300 py-2 text-center font-lato"
-              />
-              <button 
-                onClick={handleIncreaseQuantity}
-                disabled={quantity >= maxQuantity}
-                className={`px-3 py-2 border border-gray-300 rounded-r flex items-center justify-center ${
-                  quantity >= maxQuantity
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                    : 'bg-white hover:bg-gray-50'
-                }`}
-                aria-label="Increase quantity"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
+          <div className="mt-6">
+            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2 font-lato">
+              Quantity
+            </label>
+            <div className="flex items-center">
+              <div className="flex items-center border border-gray-300 rounded w-32">
+                <button 
+                  onClick={handleDecreaseQuantity}
+                  disabled={quantity <= 1 || currentStockStatus !== STOCK_STATUS_IN_STOCK}
+                  className={`px-3 py-2 border-r border-gray-300 rounded-l flex items-center justify-center ${
+                    quantity <= 1 || currentStockStatus !== STOCK_STATUS_IN_STOCK
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : 'bg-white hover:bg-gray-50'
+                  }`}
+                  aria-label="Decrease quantity"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <input
+                  type="number"
+                  id="quantity"
+                  name="quantity"
+                  value={quantity}
+                  min="1"
+                  max={maxQuantity}
+                  onChange={handleQuantityChange}
+                  disabled={currentStockStatus !== STOCK_STATUS_IN_STOCK}
+                  className={`w-full border-y border-gray-300 py-2 text-center font-lato ${
+                    currentStockStatus !== STOCK_STATUS_IN_STOCK ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
+                />
+                <button 
+                  onClick={handleIncreaseQuantity}
+                  disabled={quantity >= maxQuantity || currentStockStatus !== STOCK_STATUS_IN_STOCK}
+                  className={`px-3 py-2 border-l border-gray-300 rounded-r flex items-center justify-center ${
+                    quantity >= maxQuantity || currentStockStatus !== STOCK_STATUS_IN_STOCK
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : 'bg-white hover:bg-gray-50'
+                  }`}
+                  aria-label="Increase quantity"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              
+              {/* Stock information next to quantity control */}
+              {currentStockStatus === STOCK_STATUS_IN_STOCK && currentQuantity !== null && (
+                <span className="ml-3 text-sm text-gray-500">
+                  {currentQuantity} available
+                </span>
+              )}
             </div>
           </div>
           
@@ -931,9 +976,16 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
           <div className="mt-4">
             <button
               onClick={handleAddToCart}
-              disabled={currentStockStatus !== STOCK_STATUS_IN_STOCK}
+              disabled={
+                currentStockStatus !== STOCK_STATUS_IN_STOCK || 
+                // Also check if all required attributes are selected
+                (product?.attributes?.filter(attr => attr.variation).length > 0 && 
+                 Object.keys(selectedAttributes).length < product.attributes.filter(attr => attr.variation).length)
+              }
               className={`w-full py-3 px-4 flex items-center justify-center gap-2 rounded-lg font-medium transition-all ${
-                currentStockStatus !== STOCK_STATUS_IN_STOCK
+                currentStockStatus !== STOCK_STATUS_IN_STOCK || 
+                (product?.attributes?.filter(attr => attr.variation).length > 0 && 
+                 Object.keys(selectedAttributes).length < product.attributes.filter(attr => attr.variation).length)
                   ? 'bg-gray-300 text-white cursor-not-allowed'
                   : 'bg-[#0f172a] text-white hover:bg-[#1e293b] transition-colors duration-200'
               }`}
@@ -948,7 +1000,11 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
               ) : (
                 <>
                   <XCircle className="h-5 w-5 mr-2" />
-                  Out of Stock
+                  {product?.attributes?.filter(attr => attr.variation).length > 0 && 
+                   Object.keys(selectedAttributes).length < product.attributes.filter(attr => attr.variation).length
+                    ? 'Select Options'
+                    : 'Out of Stock'
+                  }
                 </>
               )}
             </button>
