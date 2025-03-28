@@ -466,46 +466,59 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
       return;
     }
     
-    // New logic: If only partial attributes are selected, show as in stock if ANY combination exists that's in stock
+    // Check if all required attributes are selected
     const allAttrsSelected = variationAttributes.every(attr => 
       Object.keys(selectedAttributes).some(selectedAttr => 
         normalizeAttributeName(selectedAttr) === normalizeAttributeName(attr)
       )
     );
     
-    // If not all attributes are selected yet, check if any matching variations are in stock
+    // If not all attributes are selected yet, don't update stock status
     if (!allAttrsSelected) {
-      // Find all variations that match the currently selected attributes
-      const partialMatches = product.variations.filter(variation => {
-        if (!variation.attributes) return false;
-        
-        // Check if all currently selected attributes match this variation
-        return Object.entries(selectedAttributes).every(([attrName, attrValue]) => {
-          const normalizedName = normalizeAttributeName(attrName);
-          const normalizedValue = normalizeAttributeValue(attrValue);
-          
-          return variation.attributes.some(varAttr => 
-            normalizeAttributeName(varAttr.name) === normalizedName && 
-            normalizeAttributeValue(varAttr.option) === normalizedValue
-          );
-        });
-      });
-      
-      // If any matching variation is in stock, show as in stock during selection
-      const anyInStock = partialMatches.some(variation => isVariationInStock(variation));
-      
       if (DEBUG_MODE) {
-        console.log(`DEBUG: Partial attribute selection - found ${partialMatches.length} matching variations`);
-        console.log(`DEBUG: Any partial matches in stock: ${anyInStock}`);
+        console.log('DEBUG: Not all attributes selected yet, maintaining default stock status');
       }
       
-      // Set status based on partial matches
-      setCurrentStockStatus(anyInStock ? STOCK_STATUS_IN_STOCK : STOCK_STATUS_OUT_OF_STOCK);
-      
-      // Don't set a specific quantity yet since we don't have a fully selected variation
-      setCurrentQuantity(null);
-      setQuantity(1);
-      setMaxQuantity(anyInStock ? 99 : 0);
+      // Don't show out of stock during partial selection - maintain default/neutral state
+      // For multi-attribute products, we'll show stock status only after all attributes are selected
+      if (variationAttributes.length > 1) {
+        // For multi-attribute products, keep showing "in stock" during selection process
+        setCurrentStockStatus(STOCK_STATUS_IN_STOCK);
+        setCurrentQuantity(null);
+        setMaxQuantity(99);
+        setQuantity(1);
+      } else {
+        // For single attribute products, we can check stock immediately
+        // Find all variations that match the currently selected attributes
+        const partialMatches = product.variations.filter(variation => {
+          if (!variation.attributes) return false;
+          
+          // Check if all currently selected attributes match this variation
+          return Object.entries(selectedAttributes).every(([attrName, attrValue]) => {
+            const normalizedName = normalizeAttributeName(attrName);
+            const normalizedValue = normalizeAttributeValue(attrValue);
+            
+            return variation.attributes.some(varAttr => 
+              normalizeAttributeName(varAttr.name) === normalizedName && 
+              normalizeAttributeValue(varAttr.option) === normalizedValue
+            );
+          });
+        });
+        
+        // If any matching variation is in stock, show as in stock during selection
+        const anyInStock = partialMatches.some(variation => isVariationInStock(variation));
+        
+        if (DEBUG_MODE) {
+          console.log(`DEBUG: Partial attribute selection - found ${partialMatches.length} matching variations`);
+          console.log(`DEBUG: Any partial matches in stock: ${anyInStock}`);
+        }
+        
+        // Set status based on partial matches for single-attribute products
+        setCurrentStockStatus(anyInStock ? STOCK_STATUS_IN_STOCK : STOCK_STATUS_OUT_OF_STOCK);
+        setCurrentQuantity(null);
+        setQuantity(1);
+        setMaxQuantity(anyInStock ? 99 : 0);
+      }
       
       return;
     }
@@ -1081,12 +1094,22 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
             </div>
             
             <div className="mt-3">
-              {currentStockStatus === STOCK_STATUS_IN_STOCK ? (
+              {(currentStockStatus === STOCK_STATUS_IN_STOCK || 
+                !isVariableProduct || 
+                (product?.attributes?.filter(attr => attr.variation).length <= 
+                  Object.keys(selectedAttributes).length)) ? (
                 <div>
-                  <span className="text-green-600 font-medium font-lato">
-                    <CheckCircle className="inline w-5 h-5 mr-1" />
-                    In Stock • Ready to Ship
-                  </span>
+                  {currentStockStatus === STOCK_STATUS_IN_STOCK ? (
+                    <span className="text-green-600 font-medium font-lato">
+                      <CheckCircle className="inline w-5 h-5 mr-1" />
+                      In Stock • Ready to Ship
+                    </span>
+                  ) : (
+                    <span className="text-red-600 font-medium font-lato">
+                      <XCircle className="inline w-5 h-5 mr-1" />
+                      Out of Stock
+                    </span>
+                  )}
                   {currentQuantity > 0 && (
                     <div className="mt-1 text-sm text-gray-600 font-lato">
                       {currentQuantity} {currentQuantity === 1 ? 'item' : 'items'} left in stock
@@ -1094,10 +1117,12 @@ const ProductContentTypesense = ({ product: initialProduct, related_products }: 
                   )}
                 </div>
               ) : (
-                <span className="text-red-600 font-medium font-lato">
-                  <XCircle className="inline w-5 h-5 mr-1" />
-                  Out of Stock
-                </span>
+                <div>
+                  <span className="text-gray-600 font-medium font-lato">
+                    <Info className="inline w-5 h-5 mr-1" />
+                    Please select all options
+                  </span>
+                </div>
               )}
             </div>
           </div>
