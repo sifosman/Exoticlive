@@ -35,6 +35,30 @@ const WooCommerce = new WooCommerceAPI.default({
   version: 'wc/v3'
 });
 
+// Helper functions for safe parsing
+const safeParseFloat = (value) => {
+  if (value === null || value === undefined || value === '') return 0;
+  const num = parseFloat(value);
+  return isNaN(num) ? 0 : num;
+};
+
+const safeParseInt = (value) => {
+  if (value === null || value === undefined || value === '') return 0;
+  const num = parseInt(value, 10);
+  return isNaN(num) ? 0 : num;
+};
+
+const safeBool = (value) => {
+  if (value === true || value === 'true' || value === 1) return true;
+  return false;
+};
+
+// Safe array mapping
+const safeMap = (arr, mapFn) => {
+  if (!arr || !Array.isArray(arr)) return [];
+  return arr.map(mapFn);
+};
+
 async function fetchAllProducts() {
   let page = 1;
   const perPage = 100;
@@ -67,32 +91,56 @@ async function fetchAllProducts() {
   return allProducts;
 }
 
+// Fetch variations for a specific product
+async function fetchProductVariations(productId) {
+  try {
+    console.log(`📦 Fetching variations for product ${productId}...`);
+    const response = await WooCommerce.get(`products/${productId}/variations`, {
+      per_page: 100
+    });
+    
+    const variations = response.data;
+    console.log(`✅ Fetched ${variations.length} variations for product ${productId}`);
+    return variations;
+  } catch (error) {
+    console.error(`❌ Error fetching variations for product ${productId}:`, error.message);
+    return [];
+  }
+}
+
+// Transform a product variation from WooCommerce format to Typesense format
+function transformVariation(variation, parentProduct) {
+  // Extract variation attributes
+  const attributes = {};
+  if (variation.attributes && Array.isArray(variation.attributes)) {
+    variation.attributes.forEach(attr => {
+      if (attr.name && attr.option) {
+        // Store both raw and normalized attribute names
+        const normalizedName = attr.name.replace(/^pa_/i, '').toLowerCase();
+        attributes[attr.name] = attr.option;
+        attributes[normalizedName] = attr.option;
+      }
+    });
+  }
+
+  return {
+    id: variation.id.toString(),
+    parent_id: parentProduct.id.toString(),
+    variation_id: variation.id.toString(),
+    name: variation.name || parentProduct.name,
+    sku: variation.sku || '',
+    price: safeParseFloat(variation.price || 0),
+    regular_price: safeParseFloat(variation.regular_price || variation.price || 0),
+    sale_price: variation.sale_price ? safeParseFloat(variation.sale_price) : null,
+    stock_status: variation.stock_status || 'outofstock',
+    stock_quantity: safeParseInt(variation.stock_quantity),
+    manage_stock: safeBool(variation.manage_stock),
+    attributes: attributes
+  };
+}
+
 // Transform a product from WooCommerce format to Typesense format
-function transformProduct(product) {
-  // Safe parsing functions
-  const safeParseFloat = (value) => {
-    if (value === null || value === undefined || value === '') return 0;
-    const num = parseFloat(value);
-    return isNaN(num) ? 0 : num;
-  };
-  
-  const safeParseInt = (value) => {
-    if (value === null || value === undefined || value === '') return 0;
-    const num = parseInt(value, 10);
-    return isNaN(num) ? 0 : num;
-  };
-  
-  const safeBool = (value) => {
-    if (value === true || value === 'true' || value === 1) return true;
-    return false;
-  };
-  
-  // Safe array mapping
-  const safeMap = (arr, mapFn) => {
-    if (!arr || !Array.isArray(arr)) return [];
-    return arr.map(mapFn);
-  };
-  
+function transformProduct(product, variations = []) {
   // Extract basic product info with safety checks
   const name = product.name || 'Unknown Product';
   const description = product.description || '';
@@ -106,22 +154,45 @@ function transformProduct(product) {
   const categories = safeMap(product.categories || [], cat => cat.name || '');
   const tags = safeMap(product.tags || [], tag => tag.name || '');
   
-  // Safe extraction of colors and sizes
-  let colors = [];
-  let sizes = [];
+  // Extract and normalize product attributes
+  const attributes = [];
+  const attributeMap = {};
   
   if (product.attributes && Array.isArray(product.attributes)) {
     product.attributes.forEach(attr => {
       if (!attr) return;
       
-      const name = (attr.name || '').toLowerCase();
-      if (name === 'color' || name === 'colour') {
-        colors = Array.isArray(attr.options) ? attr.options : [];
-      } else if (name === 'size') {
-        sizes = Array.isArray(attr.options) ? attr.options : [];
+      // Store normalized attribute name
+      const name = attr.name || '';
+      const normalizedName = name.replace(/^pa_/i, '').toLowerCase();
+      
+      // Store options array
+      const options = Array.isArray(attr.options) ? attr.options : [];
+      
+      // Add to attributes array
+      attributes.push({
+        name: name,
+        normalizedName: normalizedName,
+        options: options,
+        variation: attr.variation || false
+      });
+      
+      // Special handling for color and size
+      if (normalizedName === 'color' || normalizedName === 'colour') {
+        attributeMap['color'] = options;
+      } else if (normalizedName === 'size') {
+        attributeMap['size'] = options;
       }
+      
+      // Store all attribute options in the map for easy access
+      attributeMap[normalizedName] = options;
     });
   }
+  
+  // Format variations data
+  const formattedVariations = variations.map(variation => 
+    transformVariation(variation, product)
+  );
   
   // Safe image extraction
   const image_url = product.images && product.images.length > 0 ? 
@@ -144,16 +215,20 @@ function transformProduct(product) {
     regular_price,
     categories,
     tags,
-    colors,
-    sizes,
+    colors: attributeMap['color'] || [],
+    sizes: attributeMap['size'] || [],
     image_url,
     gallery_images,
     slug: product.slug || '',
     stock_status: product.stock_status || 'outofstock',
     stock_quantity: safeParseInt(product.stock_quantity),
+    manage_stock: safeBool(product.manage_stock),
     is_featured,
     is_on_sale,
-    average_rating: safeParseFloat(product.average_rating)
+    average_rating: safeParseFloat(product.average_rating),
+    attributes: attributes,
+    variations: formattedVariations,
+    product_type: product.type || 'simple'
   };
 }
 
@@ -172,18 +247,26 @@ async function syncProducts() {
     console.log('🔄 Processing products one by one...');
     let successCount = 0;
     let failureCount = 0;
+    let variationCount = 0;
     
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
       try {
+        // Fetch variations if this is a variable product
+        let variations = [];
+        if (product.type === 'variable') {
+          variations = await fetchProductVariations(product.id);
+          variationCount += variations.length;
+        }
+        
         // Transform WooCommerce product to Typesense format
-        const typesenseProduct = transformProduct(product);
+        const typesenseProduct = transformProduct(product, variations);
         
         // Add or update product in Typesense
         await client.collections('products').documents().upsert(typesenseProduct);
         
         successCount++;
-        if (successCount % 10 === 0) {
+        if (successCount % 10 === 0 || i === products.length - 1) {
           console.log(`✅ Processed ${successCount}/${products.length} products successfully`);
         }
       } catch (error) {
@@ -197,9 +280,12 @@ async function syncProducts() {
       }
     }
     
-    console.log(`🎉 Sync complete: ${successCount} products imported successfully, ${failureCount} failed`);
+    console.log(`🎉 Sync complete:`);
+    console.log(`✅ ${successCount} products imported successfully`);
+    console.log(`✅ ${variationCount} product variations processed`);
+    console.log(`❌ ${failureCount} products failed to import`);
   } catch (error) {
-    console.error('❌ Error syncing products:', error);
+    console.error('❌ Error syncing products:', error.message);
   }
 }
 
@@ -214,8 +300,56 @@ const client = new Typesense.Client({
   connectionTimeoutSeconds: 10
 });
 
-// Run sync
-syncProducts().catch(error => {
-  console.error('❌ Unhandled error:', error);
-  process.exit(1);
-});
+// Create or update Typesense schema
+async function setupTypesenseSchema() {
+  try {
+    // Check if collection exists first
+    const collections = await client.collections().retrieve();
+    const exists = collections.some(collection => collection.name === 'products');
+    
+    if (exists) {
+      console.log('✅ Products collection already exists in Typesense');
+      return;
+    }
+    
+    // Create the collection if it doesn't exist
+    const schema = {
+      name: 'products',
+      fields: [
+        { name: 'name', type: 'string' },
+        { name: 'description', type: 'string' },
+        { name: 'slug', type: 'string' },
+        { name: 'categories', type: 'string[]' },
+        { name: 'tags', type: 'string[]' },
+        { name: 'colors', type: 'string[]' },
+        { name: 'sizes', type: 'string[]' },
+        { name: 'price', type: 'float' },
+        { name: 'sale_price', type: 'float', optional: true },
+        { name: 'regular_price', type: 'float' },
+        { name: 'stock_status', type: 'string' },
+        { name: 'stock_quantity', type: 'int32', optional: true },
+        { name: 'is_featured', type: 'bool' },
+        { name: 'is_on_sale', type: 'bool' },
+        { name: 'average_rating', type: 'float' },
+        { name: 'product_type', type: 'string', optional: true },
+      ],
+      default_sorting_field: 'average_rating'
+    };
+    
+    await client.collections().create(schema);
+    console.log('✅ Created products collection in Typesense');
+  } catch (error) {
+    console.error('❌ Error setting up Typesense schema:', error.message);
+  }
+}
+
+async function main() {
+  try {
+    await setupTypesenseSchema();
+    await syncProducts();
+  } catch (error) {
+    console.error('❌ Sync error:', error);
+  }
+}
+
+main();
