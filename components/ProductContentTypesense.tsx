@@ -77,12 +77,12 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
   const isVariableProduct = hasVariations;
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState<number>(1);
-  const [maxQuantity, setMaxQuantity] = useState<number>(10); // Maximum allowed quantity based on stock
+  const [maxQuantity, setMaxQuantity] = useState<number>(0); // Default to 0 instead of 10
   const [currentPrice, setCurrentPrice] = useState<number>(parseFloat(product?.price || '0'));
   const [currentSalePrice, setCurrentSalePrice] = useState<number | null>(product?.sale_price ? parseFloat(product.sale_price) : null);
   const [currentRegularPrice, setCurrentRegularPrice] = useState<number>(parseFloat(product?.regular_price || product?.price || '0'));
-  const [currentStockStatus, setCurrentStockStatus] = useState<string>(product?.stock_status || '');
-  const [currentQuantity, setCurrentQuantity] = useState<number | null>(null);
+  const [currentStockStatus, setCurrentStockStatus] = useState<string>(product?.stock_status || STOCK_STATUS_OUT_OF_STOCK); // Default to out of stock
+  const [currentQuantity, setCurrentQuantity] = useState<number | null>(product?.stock_quantity || null); // Don't default to any specific quantity
   const [derivedAttributeOptions, setDerivedAttributeOptions] = useState<Record<string, string[]>>({});
 
   const { addToCart } = useCart();
@@ -340,12 +340,8 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
         console.log(`DEBUG: Found ${sizeMatches.length} variations with size "${sizeValue}"`);
         
         // Log the first few matches for debugging
-        sizeMatches.slice(0, 2).forEach((match, i) => {
-          console.log(`DEBUG: Size match ${i}: {id: ${match.id}, stock_status: '${match.stock_status}', attributes: '${
-            Object.entries(match.attributes)
-              .map(([k, v]) => `${k}=${v}`)
-              .join(', ')
-          }'}`);
+        sizeMatches.slice(0, 2).forEach((match, i) => { // Log just 2 to avoid spam
+          console.log(`DEBUG: Size match ${i}: {id: ${match.id}, stock=${match.stock_status}, qty=${match.stock_quantity}`);
         });
       }
     }
@@ -363,15 +359,20 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
         candidates = candidates.filter(variation => {
           if (!variation.attributes) return false;
           
-          // Check if this variation has the selected attribute
-          return Object.entries(variation.attributes).some(([varAttrName, varAttrValue]) => {
-            const varNormalizedName = normalizeAttributeName(varAttrName);
-            const varNormalizedValue = normalizeAttributeValue(varAttrValue);
-            const selectedNormalizedName = normalizeAttributeName(attrName);
-            const selectedNormalizedValue = normalizeAttributeValue(attrValue);
-            
-            return varNormalizedName === selectedNormalizedName && 
-                   varNormalizedValue === selectedNormalizedValue;
+          // Check if this variation has the attribute value we're looking for
+          const hasAttributeValue = Object.entries(variation.attributes).some(([varAttrName, varAttrValue]) => 
+            normalizeAttributeName(varAttrName) === normalizeAttributeName(attrName) && 
+            normalizeAttributeValue(varAttrValue) === normalizeAttributeValue(attrValue)
+          );
+          
+          if (!hasAttributeValue) return false;
+          
+          // Check if this variation matches all other currently selected attributes
+          return Object.entries(selectedAttrs).every(([selectedAttrName, selectedAttrValue]) => {
+            return Object.entries(variation.attributes).some(([varAttrName, varAttrValue]) => 
+              normalizeAttributeName(varAttrName) === normalizeAttributeName(selectedAttrName) && 
+              normalizeAttributeValue(varAttrValue) === normalizeAttributeValue(selectedAttrValue)
+            );
           });
         });
         
@@ -445,7 +446,7 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       setCurrentPrice(parseFloat(product?.price || '0'));
       setCurrentSalePrice(product?.sale_price ? parseFloat(product.sale_price) : null);
       setCurrentStockStatus(product?.stock_status || STOCK_STATUS_IN_STOCK);
-      setCurrentQuantity(product?.stock_quantity || 10);
+      setCurrentQuantity(product?.stock_quantity || null);
       return;
     }
     
@@ -589,7 +590,7 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       setCurrentPrice(parseFloat(product.price || '0'));
       setCurrentSalePrice(product.sale_price ? parseFloat(product.sale_price) : null);
       setCurrentStockStatus(product.stock_status || STOCK_STATUS_IN_STOCK);
-      setCurrentQuantity(product.stock_quantity || 10);
+      setCurrentQuantity(product.stock_quantity || null);
       setQuantity(1);
     }
   };
@@ -599,96 +600,104 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
     return `R${price.toFixed(2)}`;
   };
 
-  // Determine if an attribute value is in stock and has available variations
-  const isAttributeValueInStock = (attributeName: string, attributeValue: string) => {
-    // Consider already selected attributes when checking stock
-    const validVariations = findValidVariationsForAttributeCombination(attributeName, attributeValue);
-    
-    if (validVariations.length === 0) {
-      if (DEBUG_MODE) {
-        console.log(`DEBUG: No variations found for ${attributeName}=${attributeValue} with current selections, marking as out of stock`);
-      }
-      return { inStock: false, hasVariations: false };
+  // Function to find variations that have a specific attribute value
+  const findValidVariationsForAttribute = (attrName: string, attrValue: string) => {
+    if (!product?.variations || !Array.isArray(product.variations)) {
+      return [];
     }
     
-    // Check if any variation with this attribute combination is in stock
-    const anyInStock = validVariations.some(v => {
-      // Check stock status string
-      const hasValidStockStatus = v.stock_status?.toLowerCase() === 'in_stock' || 
-                                  v.stock_status?.toLowerCase() === 'instock' || 
-                                  v.stock_status === 'STOCK';
-      
-      // Check stock quantity if manage_stock is true
-      if (v.manage_stock && typeof v.stock_quantity !== 'undefined') {
-        const qty = parseInt(v.stock_quantity, 10);
-        return hasValidStockStatus && qty > 0;
-      }
-      
-      return hasValidStockStatus;
-    });
-    
-    if (DEBUG_MODE) {
-      console.log(`DEBUG: ${attributeName}=${attributeValue} has ${validVariations.length} valid variations, any in stock: ${anyInStock}`);
-    }
-    
-    return { inStock: anyInStock, hasVariations: true };
-  };
-
-  // Find all valid variations for a specific attribute + current selections
-  const findValidVariationsForAttributeCombination = (attrName: string, attrValue: string) => {
-    if (!product?.variations || !Array.isArray(product.variations)) return [];
-    
+    // Normalize names for consistent comparison
     const normalizedName = normalizeAttributeName(attrName);
     const normalizedValue = normalizeAttributeValue(attrValue);
     
-    // Start with all variations
-    let candidates = [...product.variations];
+    // Get current selections except for the attribute we're checking
+    const currentSelections = { ...selectedAttributes };
+    delete currentSelections[attrName];
     
-    // Filter by the attribute we're checking
-    candidates = candidates.filter(variation => 
-      variation.attributes && 
-      variation.attributes.some((attr: any) => 
-        normalizeAttributeName(attr.name) === normalizedName && 
-        normalizeAttributeValue(attr.value) === normalizedValue
-      )
-    );
-    
-    // Further filter by any already selected attributes (except the one we're checking)
-    if (Object.keys(selectedAttributes).length > 0) {
-      for (const [selectedName, selectedValue] of Object.entries(selectedAttributes)) {
-        // Skip if this is the attribute we're currently checking
-        if (normalizeAttributeName(selectedName) === normalizedName) {
-          continue;
-        }
-        
-        const selectedNormalizedName = normalizeAttributeName(selectedName);
-        const selectedNormalizedValue = normalizeAttributeValue(selectedValue);
-        
-        // Filter out variations that don't match this selected attribute
-        candidates = candidates.filter(variation => 
-          variation.attributes && 
-          variation.attributes.some((attr: any) => 
-            normalizeAttributeName(attr.name) === selectedNormalizedName && 
-            normalizeAttributeValue(attr.value) === selectedNormalizedValue
-          )
+    // Filter variations that match current selections and the attribute value we're checking
+    return product.variations.filter((variation: any) => {
+      if (!variation.attributes) return false;
+      
+      // Check if this variation has the attribute value we're looking for
+      const hasAttributeValue = Object.entries(variation.attributes).some(([varAttrName, varAttrValue]) => 
+        normalizeAttributeName(varAttrName) === normalizedName && 
+        normalizeAttributeValue(varAttrValue) === normalizedValue
+      );
+      
+      if (!hasAttributeValue) return false;
+      
+      // Check if this variation matches all other currently selected attributes
+      return Object.entries(currentSelections).every(([selectedAttrName, selectedAttrValue]) => {
+        return Object.entries(variation.attributes).some(([varAttrName, varAttrValue]) => 
+          normalizeAttributeName(varAttrName) === normalizeAttributeName(selectedAttrName) && 
+          normalizeAttributeValue(varAttrValue) === normalizeAttributeValue(selectedAttrValue)
         );
-      }
-    }
-    
-    if (DEBUG_MODE && candidates.length > 0) {
-      console.log(`DEBUG: Found ${candidates.length} variations for ${attrName}=${attrValue} with current selections`);
-      candidates.slice(0, 2).forEach((v, i) => { // Log just 2 to avoid spam
-        console.log(`  Variation ${i}: id=${v.id}, stock=${v.stock_status}, qty=${v.stock_quantity}`);
       });
-    }
-    
-    return candidates;
+    });
   };
 
-  // Legacy function for backward compatibility - replaced by the combination method above
-  const findValidVariationsForAttribute = (attrName: string, attrValue: string) => {
-    return findValidVariationsForAttributeCombination(attrName, attrValue);
+  // Check if an attribute option should be considered in stock
+  const isAttributeOptionInStock = (attrName: string, attrValue: string) => {
+    // First, check if this option even exists in any variations
+    const hasValidVariations = findValidVariationsForAttribute(attrName, attrValue).length > 0;
+    
+    // If there are no variations with this option, it can't be in stock
+    if (!hasValidVariations) {
+      if (DEBUG_MODE) {
+        console.log(`DEBUG: ${attrName}=${attrValue} has no valid variations, marking as out of stock`);
+      }
+      return false;
+    }
+    
+    // For partially selected state (e.g., only color selected, no size)
+    if (Object.keys(selectedAttributes).length < (product?.attributes?.filter(attr => attr.variation)?.length || 0)) {
+      return hasValidVariations; // If valid variations exist, show as in stock until all attributes are selected
+    }
+    
+    // For fully selected attributes, check if specific variation is in stock
+    if (attrName in selectedAttributes && selectedAttributes[attrName] === attrValue) {
+      // This is the selected attribute value, show stockStatus from selected variation
+      return currentStockStatus === STOCK_STATUS_IN_STOCK;
+    }
+    
+    // Check if any variation with this attribute is in stock
+    const variations = findValidVariationsForAttribute(attrName, attrValue);
+    return variations.some((v: any) => 
+      (v.stock_status?.toLowerCase() === 'in_stock' || 
+       v.stock_status?.toLowerCase() === 'instock' || 
+       v.stock_status === 'STOCK')
+    );
   };
+
+  // Handle clearing all attribute selections
+  const handleClearAllAttributes = () => {
+    if (DEBUG_MODE) {
+      console.log('DEBUG: Clearing all attribute selections');
+    }
+    
+    // Reset selected attributes
+    setSelectedAttributes({});
+    
+    // Reset to default product state
+    if (product) {
+      setCurrentPrice(parseFloat(product.price || '0'));
+      setCurrentSalePrice(product.sale_price ? parseFloat(product.sale_price) : null);
+      setCurrentStockStatus(product.stock_status || STOCK_STATUS_IN_STOCK);
+      setCurrentQuantity(product.stock_quantity || null);
+      setQuantity(1);
+    }
+  };
+
+  // Check if this product has attributes that we should display
+  const hasAttributes = product?.attributes && 
+                       Array.isArray(product.attributes) && 
+                       product.attributes.length > 0 && 
+                       product.attributes.some((attr: any) => 
+                         attr && 
+                         attr.name && 
+                         Array.isArray(attr.options) && 
+                         attr.options.length > 0
+                       );
 
   const handleAddToCart = async () => {
     console.log("Add to cart clicked");
@@ -707,8 +716,8 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       // Find the selected variation
       let selectedVariation;
       let variationPrice = rawProductPrice; // Default to product price
-      let stockQuantity = 10; // Default stock if not specified
-      let stockStatus = currentStockStatus || 'instock';
+      let stockQuantity = 0; // Default stock to 0
+      let stockStatus = currentStockStatus || 'outofstock';
       
       if (product?.variations && Array.isArray(product.variations)) {
         selectedVariation = findMatchingVariation(product.variations, selectedAttributes);
@@ -776,7 +785,7 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       // Determine stock quantity for simple product
       const stockQuantity = product?.stock_quantity !== undefined 
         ? parseInt(product.stock_quantity.toString(), 10) 
-        : 10;
+        : null;
       
       // Create cart item for simple product
       const cartItem = {
@@ -854,68 +863,6 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       }
     }
   };
-
-  // Handle clearing all attribute selections
-  const handleClearAllAttributes = () => {
-    if (DEBUG_MODE) {
-      console.log('DEBUG: Clearing all attribute selections');
-    }
-    
-    // Reset selected attributes
-    setSelectedAttributes({});
-    
-    // Reset to default product state
-    if (product) {
-      setCurrentPrice(parseFloat(product.price || '0'));
-      setCurrentSalePrice(product.sale_price ? parseFloat(product.sale_price) : null);
-      setCurrentStockStatus(product.stock_status || STOCK_STATUS_IN_STOCK);
-      setCurrentQuantity(product.stock_quantity || 10);
-      setQuantity(1);
-    }
-  };
-
-  const isAttributeOptionInStock = (attrName: string, attrValue: string) => {
-    // First, check if this option even exists in any variations
-    const hasValidVariations = findValidVariationsForAttribute(attrName, attrValue).length > 0;
-    
-    // If there are no variations with this option, it can't be in stock
-    if (!hasValidVariations) {
-      if (DEBUG_MODE) {
-        console.log(`DEBUG: ${attrName}=${attrValue} has no valid variations, marking as out of stock`);
-      }
-      return false;
-    }
-    
-    // For partially selected state (e.g., only color selected, no size)
-    if (Object.keys(selectedAttributes).length < (product?.attributes?.filter(attr => attr.variation)?.length || 0)) {
-      return hasValidVariations; // If valid variations exist, show as in stock until all attributes are selected
-    }
-    
-    // For fully selected attributes, check if specific variation is in stock
-    if (attrName in selectedAttributes && selectedAttributes[attrName] === attrValue) {
-      // This is the selected attribute value, show stockStatus from selected variation
-      return currentStockStatus === STOCK_STATUS_IN_STOCK;
-    }
-    
-    // Check if any variation with this attribute is in stock
-    const variations = findValidVariationsForAttribute(attrName, attrValue);
-    return variations.some(v => 
-      (v.stock_status?.toLowerCase() === 'in_stock' || 
-       v.stock_status?.toLowerCase() === 'instock' || 
-       v.stock_status === 'STOCK')
-    );
-  };
-
-  // Check if this product has attributes that we should display
-  const hasAttributes = product?.attributes && 
-                       Array.isArray(product.attributes) && 
-                       product.attributes.length > 0 && 
-                       product.attributes.some(attr => 
-                         attr && 
-                         attr.name && 
-                         Array.isArray(attr.options) && 
-                         attr.options.length > 0
-                       );
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 mt-6 sm:py-16 sm:mt-8 font-lato">
@@ -1049,7 +996,7 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
                             const optionNormalized = option.trim();
                             
                             // Check if this option is in stock
-                            const inStock = isAttributeValueInStock(attribute.name, optionNormalized);
+                            const inStock = isAttributeOptionInStock(attribute.name, optionNormalized);
                             
                             // Check if this option is currently selected
                             const isSelected = selectedAttributes[attribute.name] === optionNormalized;
