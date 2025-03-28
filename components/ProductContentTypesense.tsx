@@ -184,22 +184,35 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
         // Determine stock status from the variation - respect WooCommerce value
         if (typeof matchingVariation.stock_status === 'string') {
           const rawStatus = matchingVariation.stock_status.toLowerCase();
-          if (rawStatus === 'instock' || rawStatus === 'in_stock') {
+          if (rawStatus === 'instock' || rawStatus === 'in_stock' || rawStatus === 'in stock') {
             stockStatus = STOCK_STATUS_IN_STOCK;
+          }
+        } else if (DEBUG_MODE) {
+          console.log(`DEBUG: No stock_status string found: ${matchingVariation.stock_status}`);
+        }
+        
+        // Override status based on quantity only if manage_stock is true
+        if (matchingVariation.manage_stock === true) {
+          if (DEBUG_MODE) {
+            console.log(`DEBUG: manage_stock is true, checking quantity: ${stockQuantity}`);
+          }
+          
+          // Only override to out of stock if we explicitly have 0 or negative stock
+          if (stockQuantity !== null && stockQuantity <= 0) {
+            stockStatus = STOCK_STATUS_OUT_OF_STOCK;
+            if (DEBUG_MODE) {
+              console.log(`DEBUG: Setting to OUT_OF_STOCK because quantity is ${stockQuantity}`);
+            }
           }
         }
         
-        // Override status based on quantity if manage_stock is true
-        if (matchingVariation.manage_stock === true && stockQuantity <= 0) {
-          stockStatus = STOCK_STATUS_OUT_OF_STOCK;
-        }
-        
         if (DEBUG_MODE) {
-          console.log('DEBUG: Stock data for variation', matchingVariation.id);
-          console.log('  - Raw status:', matchingVariation.stock_status);
-          console.log('  - Computed status:', stockStatus);
-          console.log('  - Raw quantity:', rawStockQuantity);
-          console.log('  - Computed quantity:', stockQuantity); 
+          console.log('DEBUG: Final stock determination:');
+          console.log(`  - Raw status: ${matchingVariation.stock_status}`);
+          console.log(`  - manage_stock: ${matchingVariation.manage_stock}`);
+          console.log(`  - Raw quantity: ${rawStockQuantity}`);
+          console.log(`  - Computed quantity: ${stockQuantity}`);
+          console.log(`  - FINAL status: ${stockStatus}`);
         }
         
         // Update stock status and quantity
@@ -505,22 +518,35 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       // Determine stock status from the variation - respect WooCommerce value
       if (typeof matchingVariation.stock_status === 'string') {
         const rawStatus = matchingVariation.stock_status.toLowerCase();
-        if (rawStatus === 'instock' || rawStatus === 'in_stock') {
+        if (rawStatus === 'instock' || rawStatus === 'in_stock' || rawStatus === 'in stock') {
           stockStatus = STOCK_STATUS_IN_STOCK;
+        }
+      } else if (DEBUG_MODE) {
+        console.log(`DEBUG: No stock_status string found: ${matchingVariation.stock_status}`);
+      }
+      
+      // Override status based on quantity only if manage_stock is true
+      if (matchingVariation.manage_stock === true) {
+        if (DEBUG_MODE) {
+          console.log(`DEBUG: manage_stock is true, checking quantity: ${stockQuantity}`);
+        }
+        
+        // Only override to out of stock if we explicitly have 0 or negative stock
+        if (stockQuantity !== null && stockQuantity <= 0) {
+          stockStatus = STOCK_STATUS_OUT_OF_STOCK;
+          if (DEBUG_MODE) {
+            console.log(`DEBUG: Setting to OUT_OF_STOCK because quantity is ${stockQuantity}`);
+          }
         }
       }
       
-      // Override status based on quantity if manage_stock is true
-      if (matchingVariation.manage_stock === true && stockQuantity <= 0) {
-        stockStatus = STOCK_STATUS_OUT_OF_STOCK;
-      }
-      
       if (DEBUG_MODE) {
-        console.log('DEBUG: Stock data for variation', matchingVariation.id);
-        console.log('  - Raw status:', matchingVariation.stock_status);
-        console.log('  - Computed status:', stockStatus);
-        console.log('  - Raw quantity:', rawStockQuantity);
-        console.log('  - Computed quantity:', stockQuantity); 
+        console.log('DEBUG: Final stock determination:');
+        console.log(`  - Raw status: ${matchingVariation.stock_status}`);
+        console.log(`  - manage_stock: ${matchingVariation.manage_stock}`);
+        console.log(`  - Raw quantity: ${rawStockQuantity}`);
+        console.log(`  - Computed quantity: ${stockQuantity}`);
+        console.log(`  - FINAL status: ${stockStatus}`);
       }
       
       // Update stock status and quantity
