@@ -249,9 +249,11 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
   };
 
   // Function to normalize attribute values for consistent comparison
-  const normalizeAttributeValue = (value: string): string => {
-    if (!value) return '';
-    return value.toLowerCase().trim();
+  const normalizeAttributeValue = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    // Convert to string first to handle numeric values
+    const stringValue = String(value);
+    return stringValue.toLowerCase().trim();
   };
 
   // Function to find the variation that matches the selected attributes
