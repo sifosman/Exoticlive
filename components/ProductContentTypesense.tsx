@@ -168,8 +168,15 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
         // Get stock quantity - respect the actual value from WooCommerce
         const rawStockQuantity = matchingVariation.stock_quantity;
         const stockQuantity = matchingVariation.manage_stock === true
-          ? (typeof rawStockQuantity === 'number' ? rawStockQuantity : 0) 
+          ? (rawStockQuantity !== undefined && rawStockQuantity !== null 
+              ? parseInt(String(rawStockQuantity), 10) 
+              : 0) 
           : null;
+        
+        if (DEBUG_MODE) {
+          console.log(`DEBUG: Raw stock quantity type: ${typeof rawStockQuantity}, value: ${rawStockQuantity}`);
+          console.log(`DEBUG: Parsed stock quantity: ${stockQuantity}`);
+        }
         
         // Normalize stock status
         let stockStatus = STOCK_STATUS_OUT_OF_STOCK;
@@ -482,8 +489,15 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       // Get stock quantity - respect the actual value from WooCommerce
       const rawStockQuantity = matchingVariation.stock_quantity;
       const stockQuantity = matchingVariation.manage_stock === true
-        ? (typeof rawStockQuantity === 'number' ? rawStockQuantity : 0) 
+        ? (rawStockQuantity !== undefined && rawStockQuantity !== null 
+            ? parseInt(String(rawStockQuantity), 10) 
+            : 0) 
         : null;
+      
+      if (DEBUG_MODE) {
+        console.log(`DEBUG: Raw stock quantity type: ${typeof rawStockQuantity}, value: ${rawStockQuantity}`);
+        console.log(`DEBUG: Parsed stock quantity: ${stockQuantity}`);
+      }
       
       // Normalize stock status
       let stockStatus = STOCK_STATUS_OUT_OF_STOCK;
