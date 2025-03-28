@@ -164,33 +164,53 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
           ? parseFloat(matchingVariation.sale_price) 
           : parseFloat(matchingVariation.price || '0'));
         
-        // Check the stock status - handle both string formats 'instock' and 'IN_STOCK'
-        let stockStatus;
+        // Get stock quantity - respect the actual value from WooCommerce
+        const rawStockQuantity = matchingVariation.stock_quantity;
+        const stockQuantity = matchingVariation.manage_stock === true
+          ? (typeof rawStockQuantity === 'number' ? rawStockQuantity : 0) 
+          : null;
         
-        // Check stock status
-        stockStatus = matchingVariation.stock_status.toLowerCase() === 'in_stock' || 
-                     matchingVariation.stock_status.toLowerCase() === 'instock' || 
-                     matchingVariation.stock_status === 'STOCK' ? 
-                         STOCK_STATUS_IN_STOCK : STOCK_STATUS_OUT_OF_STOCK;
+        // Normalize stock status
+        let stockStatus = STOCK_STATUS_OUT_OF_STOCK;
         
-        // Check stock quantity as well
-        const stockQuantity = parseInt(matchingVariation.stock_quantity || '0', 10);
+        // Determine stock status from the variation - respect WooCommerce value
+        if (typeof matchingVariation.stock_status === 'string') {
+          const rawStatus = matchingVariation.stock_status.toLowerCase();
+          if (rawStatus === 'instock' || rawStatus === 'in_stock') {
+            stockStatus = STOCK_STATUS_IN_STOCK;
+          }
+        }
         
-        // Even if status says "in stock", require a positive quantity if managed stock
-        if (stockStatus === STOCK_STATUS_IN_STOCK && matchingVariation.manage_stock && stockQuantity <= 0) {
-          if (DEBUG_MODE) console.log('DEBUG: Marking as out of stock due to zero quantity with manage_stock');
+        // Override status based on quantity if manage_stock is true
+        if (matchingVariation.manage_stock === true && stockQuantity <= 0) {
           stockStatus = STOCK_STATUS_OUT_OF_STOCK;
         }
         
+        if (DEBUG_MODE) {
+          console.log('DEBUG: Stock data for variation', matchingVariation.id);
+          console.log('  - Raw status:', matchingVariation.stock_status);
+          console.log('  - Computed status:', stockStatus);
+          console.log('  - Raw quantity:', rawStockQuantity);
+          console.log('  - Computed quantity:', stockQuantity); 
+        }
+        
+        // Update stock status and quantity
         setCurrentStockStatus(stockStatus);
         setCurrentQuantity(stockQuantity);
-        setMaxQuantity(Math.max(1, stockQuantity)); // Always allow at least 1 if in stock
         
-        // Set quantity to 1 if there's stock available, or 0 if out of stock
-        if (stockStatus === STOCK_STATUS_IN_STOCK && stockQuantity > 0) {
-          setQuantity(1);
+        // Adjust max quantity based on stock
+        if (stockStatus === STOCK_STATUS_IN_STOCK) {
+          if (matchingVariation.manage_stock === true && typeof stockQuantity === 'number') {
+            // Use exact WooCommerce quantity
+            setMaxQuantity(stockQuantity);
+          } else {
+            // When manage_stock is false but status is in stock
+            setMaxQuantity(99);
+          }
+          setQuantity(1); // Set to 1 to show it's in stock and can be added
         } else {
-          setQuantity(0);
+          setMaxQuantity(0);
+          setQuantity(0); // Set to 0 to show it's out of stock
         }
       }
     }
@@ -485,24 +505,34 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
         setCurrentRegularPrice(parseFloat(matchingVariation.regular_price));
       }
       
+      // Get stock quantity - respect the actual value from WooCommerce
+      const rawStockQuantity = matchingVariation.stock_quantity;
+      const stockQuantity = matchingVariation.manage_stock === true
+        ? (typeof rawStockQuantity === 'number' ? rawStockQuantity : 0) 
+        : null;
+      
       // Normalize stock status
       let stockStatus = STOCK_STATUS_OUT_OF_STOCK;
       
-      // Determine stock status from the variation
+      // Determine stock status from the variation - respect WooCommerce value
       if (typeof matchingVariation.stock_status === 'string') {
-        // Normalize stock status format 
         const rawStatus = matchingVariation.stock_status.toLowerCase();
         if (rawStatus === 'instock' || rawStatus === 'in_stock') {
           stockStatus = STOCK_STATUS_IN_STOCK;
         }
       }
       
-      // Get stock quantity
-      const stockQuantity = parseInt(matchingVariation.stock_quantity || '0', 10);
-      
       // Override status based on quantity if manage_stock is true
       if (matchingVariation.manage_stock === true && stockQuantity <= 0) {
         stockStatus = STOCK_STATUS_OUT_OF_STOCK;
+      }
+      
+      if (DEBUG_MODE) {
+        console.log('DEBUG: Stock data for variation', matchingVariation.id);
+        console.log('  - Raw status:', matchingVariation.stock_status);
+        console.log('  - Computed status:', stockStatus);
+        console.log('  - Raw quantity:', rawStockQuantity);
+        console.log('  - Computed quantity:', stockQuantity); 
       }
       
       // Update stock status and quantity
@@ -510,21 +540,19 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
       setCurrentQuantity(stockQuantity);
       
       // Adjust max quantity based on stock
-      if (stockStatus === STOCK_STATUS_IN_STOCK && stockQuantity > 0) {
-        setMaxQuantity(stockQuantity);
+      if (stockStatus === STOCK_STATUS_IN_STOCK) {
+        if (matchingVariation.manage_stock === true && typeof stockQuantity === 'number') {
+          // Use exact WooCommerce quantity
+          setMaxQuantity(stockQuantity);
+        } else {
+          // When manage_stock is false but status is in stock
+          setMaxQuantity(99);
+        }
         setQuantity(1); // Set to 1 to show it's in stock and can be added
       } else {
         setMaxQuantity(0);
         setQuantity(0); // Set to 0 to show it's out of stock
       }
-    } else {
-      // No matching variation, reset to default values
-      if (DEBUG_MODE) {
-        console.log('DEBUG: No matching variation found, resetting to defaults');
-      }
-      
-      // Don't reset prices and status if we have a partial match (e.g., only color selected)
-      // This provides a better UX when selecting attributes one by one
     }
   }, [selectedAttributes, product]);
 

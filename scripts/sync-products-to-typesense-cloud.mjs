@@ -123,6 +123,28 @@ function transformVariation(variation, parentProduct) {
     });
   }
 
+  // Get stock status directly from WooCommerce, preserve exact format
+  const stockStatus = variation.stock_status || 'outofstock';
+  
+  // Get exact stock quantity from WooCommerce
+  // Important: Don't convert empty/null to 0 if manage_stock is false
+  const manageStock = safeBool(variation.manage_stock);
+  let stockQuantity = null;
+  
+  if (manageStock) {
+    // Only use the exact number from WooCommerce when manage_stock is true
+    stockQuantity = variation.stock_quantity !== undefined && variation.stock_quantity !== null 
+      ? parseInt(variation.stock_quantity, 10) 
+      : 0;  // Default to 0 only when manage_stock is true but no quantity is provided
+  }
+
+  // Debug logging for stock data
+  console.log(`  - Variation ${variation.id} stock data:`, {
+    status: stockStatus,
+    quantity: stockQuantity,
+    manage_stock: manageStock
+  });
+
   return {
     id: variation.id.toString(),
     parent_id: parentProduct.id.toString(),
@@ -132,10 +154,16 @@ function transformVariation(variation, parentProduct) {
     price: safeParseFloat(variation.price || 0),
     regular_price: safeParseFloat(variation.regular_price || variation.price || 0),
     sale_price: variation.sale_price ? safeParseFloat(variation.sale_price) : null,
-    stock_status: variation.stock_status || 'outofstock',
-    stock_quantity: safeParseInt(variation.stock_quantity),
-    manage_stock: safeBool(variation.manage_stock),
-    attributes: attributes
+    stock_status: stockStatus,
+    stock_quantity: stockQuantity,
+    manage_stock: manageStock,
+    attributes: attributes,
+    // Store raw stock data for debugging
+    _raw_stock_data: {
+      status: variation.stock_status,
+      quantity: variation.stock_quantity,
+      manage_stock: variation.manage_stock
+    }
   };
 }
 
