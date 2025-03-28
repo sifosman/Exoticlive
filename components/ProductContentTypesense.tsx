@@ -83,6 +83,7 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
   const [currentRegularPrice, setCurrentRegularPrice] = useState<number>(parseFloat(product?.regular_price || product?.price || '0'));
   const [currentStockStatus, setCurrentStockStatus] = useState<string>(product?.stock_status || '');
   const [currentQuantity, setCurrentQuantity] = useState<number | null>(null);
+  const [derivedAttributeOptions, setDerivedAttributeOptions] = useState<Record<string, string[]>>({});
 
   const { addToCart } = useCart();
   const { toast } = useToast();
@@ -254,186 +255,157 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
   };
 
   // Function to find the variation that matches the selected attributes
-  const findMatchingVariation = (variations: any[], selectedAttrs: Record<string, string>) => {
+  const findMatchingVariation = (variations, selectedAttrs) => {
     if (DEBUG_MODE) {
       console.log('========= VARIATION MATCHING STARTED =========');
       console.log('DEBUG: Finding matching variation...');
       console.log('DEBUG: Selected attributes:', selectedAttrs);
       
-      // Count total colors and sizes
-      const uniqueColors = new Set();
-      const uniqueSizes = new Set();
+      // Count attributes for easier debugging
+      const colorOptions = [...new Set(variations.map(v => 
+        v.attributes?.pa_color || v.attributes?.color || null).filter(Boolean))];
+      const sizeOptions = [...new Set(variations.map(v => 
+        v.attributes?.pa_size || v.attributes?.size || null).filter(Boolean))];
       
-      variations.forEach(variation => {
-        if (variation.attributes && Array.isArray(variation.attributes)) {
-          variation.attributes.forEach((attr: any) => {
-            const normalizedName = normalizeAttributeName(attr.name);
-            if (normalizedName === 'color') {
-              uniqueColors.add(normalizeAttributeValue(attr.value));
-            } else if (normalizedName === 'size') {
-              uniqueSizes.add(normalizeAttributeValue(attr.value));
-            }
-          });
-        }
-      });
-      
-      console.log(`DEBUG: Product has ${uniqueColors.size} colors and ${uniqueSizes.size} sizes`);
-      console.log(`DEBUG: Total possible variations: ${uniqueColors.size * uniqueSizes.size}`);
+      console.log(`DEBUG: Product has ${colorOptions.length} colors and ${sizeOptions.length} sizes`);
+      console.log(`DEBUG: Total possible variations: ${colorOptions.length * sizeOptions.length}`);
       console.log(`DEBUG: Actual variations provided: ${variations.length}`);
       
-      // List all available colors
-      console.log('DEBUG: Available colors:', Array.from(uniqueColors));
-      console.log('DEBUG: Available sizes:', Array.from(uniqueSizes));
+      console.log('DEBUG: Available colors:', colorOptions);  
+      console.log('DEBUG: Available sizes:', sizeOptions);
+
+      // Check what we've actually selected
+      const selectedColor = selectedAttrs['pa_color'] || selectedAttrs['color'];
+      const selectedSize = selectedAttrs['pa_size'] || selectedAttrs['size'];
+      console.log(`DEBUG: Selected color: "${selectedColor}", Selected size: "${selectedSize}"`);
     }
-    
-    // Guard against empty variations
-    if (!variations || !Array.isArray(variations) || variations.length === 0) {
-      if (DEBUG_MODE) console.log('DEBUG: No variations to match against');
+
+    // If no attributes selected or no variations, return null
+    if (!selectedAttrs || Object.keys(selectedAttrs).length === 0 || !variations || !Array.isArray(variations)) {
+      if (DEBUG_MODE) console.log('DEBUG: No attributes selected or no variations available');
       return null;
     }
-    
-    // Convert selectedAttrs to entries for easier processing
-    const selectedAttrsEntries = Object.entries(selectedAttributes);
-    
-    // If no attributes selected, return null
-    if (selectedAttrsEntries.length === 0) {
-      if (DEBUG_MODE) console.log('DEBUG: No attributes selected, returning null');
-      return null;
-    }
-    
-    // Extract selected color and size for special debugging
-    let selectedColor = '';
-    let selectedSize = '';
-    
-    selectedAttrsEntries.forEach(([name, value]) => {
-      const normalizedName = normalizeAttributeName(name);
-      if (normalizedName === 'color') {
-        selectedColor = normalizeAttributeValue(value);
-      } else if (normalizedName === 'size') {
-        selectedSize = normalizeAttributeValue(value);
-      }
+
+    // First, check if we have the exact combination
+    const exactMatch = variations.find(variation => {
+      // Skip if no attributes
+      if (!variation.attributes) return false;
+      
+      // Check if all selected attributes match this variation
+      return Object.entries(selectedAttrs).every(([attrName, attrValue]) => {
+        const normalizedName = normalizeAttributeName(attrName);
+        const normalizedValue = normalizeAttributeValue(attrValue);
+        
+        // Check if this attribute exists in the variation with matching value
+        return Object.entries(variation.attributes).some(([varAttrName, varAttrValue]) => {
+          return normalizeAttributeName(varAttrName) === normalizedName && 
+                 normalizeAttributeValue(varAttrValue) === normalizedValue;
+        });
+      });
     });
     
-    if (DEBUG_MODE) {
-      console.log(`DEBUG: Selected color: "${selectedColor}", Selected size: "${selectedSize}"`);
-      
-      // Find all variations with the selected color
-      if (selectedColor) {
-        const colorMatches = variations.filter(variation => 
-          variation.attributes && 
-          variation.attributes.some((attr: any) => 
-            normalizeAttributeName(attr.name) === 'color' && 
-            normalizeAttributeValue(attr.value) === selectedColor
-          )
-        );
-        
-        console.log(`DEBUG: Found ${colorMatches.length} variations with color "${selectedColor}"`);
-        
-        // Detail the first few color matches
-        colorMatches.slice(0, 3).forEach((v, i) => {
-          console.log(`DEBUG: Color match ${i}:`, {
-            id: v.id,
-            stock_status: v.stock_status,
-            attributes: v.attributes.map((a: any) => `${a.name}=${a.value}`).join(', ')
-          });
+    if (exactMatch) {
+      if (DEBUG_MODE) {
+        console.log(`DEBUG: ✅ FOUND EXACT MATCH:`, {
+          id: exactMatch.id,
+          stock_status: exactMatch.stock_status,
+          attributes: Object.entries(exactMatch.attributes)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(', ')
         });
       }
+      return exactMatch;
+    }
+    
+    // Check for size/color matches to debug
+    if (DEBUG_MODE) {
+      const colorValue = selectedAttrs['pa_color'] || selectedAttrs['color'];
+      const sizeValue = selectedAttrs['pa_size'] || selectedAttrs['size'];
       
-      // Find all variations with the selected size
-      if (selectedSize) {
-        const sizeMatches = variations.filter(variation => 
-          variation.attributes && 
-          variation.attributes.some((attr: any) => 
-            normalizeAttributeName(attr.name) === 'size' && 
-            normalizeAttributeValue(attr.value) === selectedSize
-          )
+      if (colorValue) {
+        const colorMatches = variations.filter(v => 
+          v.attributes && 
+          (v.attributes.pa_color === colorValue || v.attributes.color === colorValue)
         );
+        console.log(`DEBUG: Found ${colorMatches.length} variations with color "${colorValue}"`);
+      }
+      
+      if (sizeValue) {
+        const sizeMatches = variations.filter(v => 
+          v.attributes && 
+          (v.attributes.pa_size === sizeValue || v.attributes.size === sizeValue)
+        );
+        console.log(`DEBUG: Found ${sizeMatches.length} variations with size "${sizeValue}"`);
         
-        console.log(`DEBUG: Found ${sizeMatches.length} variations with size "${selectedSize}"`);
-        
-        // Detail the first few size matches
-        sizeMatches.slice(0, 3).forEach((v, i) => {
-          console.log(`DEBUG: Size match ${i}:`, {
-            id: v.id,
-            stock_status: v.stock_status,
-            attributes: v.attributes.map((a: any) => `${a.name}=${a.value}`).join(', ')
-          });
+        // Log the first few matches for debugging
+        sizeMatches.slice(0, 2).forEach((match, i) => {
+          console.log(`DEBUG: Size match ${i}: {id: ${match.id}, stock_status: '${match.stock_status}', attributes: '${
+            Object.entries(match.attributes)
+              .map(([k, v]) => `${k}=${v}`)
+              .join(', ')
+          }'}`);
         });
       }
     }
     
-    // Create a list of candidate variations that could match
+    // Try to find a match using filter approach
     let candidates = [...variations];
     
-    // For each selected attribute, filter the candidates to only include those with matching attributes
-    for (const [attrName, attrValue] of selectedAttrsEntries) {
-      const normalizedName = normalizeAttributeName(attrName);
-      const normalizedValue = normalizeAttributeValue(attrValue);
-      
-      if (DEBUG_MODE) {
-        console.log(`DEBUG: Filtering by attribute: ${normalizedName}=${normalizedValue}`);
-        console.log(`DEBUG: Starting with ${candidates.length} candidates`);
-      }
-      
-      // Filter candidates that match this attribute
-      candidates = candidates.filter(variation => {
-        // Skip if no attributes array
-        if (!variation.attributes || !Array.isArray(variation.attributes)) {
-          return false;
-        }
-        
-        // Find if variation has a matching attribute
-        const matchingAttrs = variation.attributes.filter((attr: any) => {
-          const varAttrName = normalizeAttributeName(attr.name);
-          return varAttrName === normalizedName;
-        });
-        
-        // No matching attribute found
-        if (matchingAttrs.length === 0) {
-          return false;
-        }
-        
-        // Check if any of the matching attributes have the selected value
-        return matchingAttrs.some((attr: any) => {
-          const varAttrValue = normalizeAttributeValue(attr.value);
-          return varAttrValue === normalizedValue;
-        });
-      });
-      
-      if (DEBUG_MODE) {
-        console.log(`DEBUG: After filtering by ${normalizedName}, ${candidates.length} candidates left`);
-      }
-    }
-    
-    // Log the final candidates
+    // For debugging
     if (DEBUG_MODE) {
-      console.log(`DEBUG: Final candidates: ${candidates.length}`);
-      candidates.forEach((c, i) => {
-        if (i < 3) { // Only log first 3 to avoid spam
-          console.log(`DEBUG: Candidate ${i}:`, {
-            id: c.id,
-            stock_status: c.stock_status,
-            stock_quantity: c.stock_quantity,
-            attributes: c.attributes?.map((a: any) => `${a.name}=${a.value}`).join(', ')
+      Object.entries(selectedAttrs).forEach(([attrName, attrValue]) => {
+        console.log(`DEBUG: Filtering by attribute: ${normalizeAttributeName(attrName)}=${attrValue}`);
+        console.log(`DEBUG: Starting with ${candidates.length} candidates`);
+        
+        const beforeCount = candidates.length;
+        candidates = candidates.filter(variation => {
+          if (!variation.attributes) return false;
+          
+          // Check if this variation has the selected attribute
+          return Object.entries(variation.attributes).some(([varAttrName, varAttrValue]) => {
+            const varNormalizedName = normalizeAttributeName(varAttrName);
+            const varNormalizedValue = normalizeAttributeValue(varAttrValue);
+            const selectedNormalizedName = normalizeAttributeName(attrName);
+            const selectedNormalizedValue = normalizeAttributeValue(attrValue);
+            
+            return varNormalizedName === selectedNormalizedName && 
+                   varNormalizedValue === selectedNormalizedValue;
           });
-        }
+        });
+        
+        console.log(`DEBUG: After filtering by ${normalizeAttributeName(attrName)}, ${candidates.length} candidates left`);
+      });
+      
+      console.log(`DEBUG: Final candidates: ${candidates.length}`);
+      
+      if (candidates.length === 0) {
+        console.log('DEBUG: ❌ NO MATCHING VARIATION FOUND');
+      } else {
+        console.log(`DEBUG: ✅ FOUND ${candidates.length} MATCHING VARIATIONS`);
+        // Take the first match
+        console.log('DEBUG: Using first match:', candidates[0]);
+      }
+    } else {
+      // Filter silently in production mode
+      candidates = candidates.filter(variation => {
+        if (!variation.attributes) return false;
+        
+        return Object.entries(selectedAttrs).every(([attrName, attrValue]) => {
+          const normalizedName = normalizeAttributeName(attrName);
+          const normalizedValue = normalizeAttributeValue(attrValue);
+          
+          return Object.entries(variation.attributes).some(([varAttrName, varAttrValue]) => {
+            return normalizeAttributeName(varAttrName) === normalizedName && 
+                   normalizeAttributeValue(varAttrValue) === normalizedValue;
+          });
+        });
       });
     }
     
-    // Get the best match - should be only one if all attributes are selected
-    const bestMatch = candidates.length > 0 ? candidates[0] : null;
+    if (DEBUG_MODE) console.log('========= VARIATION MATCHING COMPLETED =========');
     
-    if (bestMatch && DEBUG_MODE) {
-      console.log(`DEBUG: ✅ FOUND MATCHING VARIATION: ${bestMatch.id}`);
-      console.log(`DEBUG: Stock status: ${bestMatch.stock_status}`);
-      console.log(`DEBUG: Stock quantity: ${bestMatch.stock_quantity || 'not specified'}`);
-      console.log('========= VARIATION MATCHING COMPLETED =========');
-    } else if (DEBUG_MODE) {
-      console.log('DEBUG: ❌ NO MATCHING VARIATION FOUND');
-      console.log('========= VARIATION MATCHING COMPLETED =========');
-    }
-    
-    return bestMatch;
+    // Return the first matching variation, or null if none found
+    return candidates.length > 0 ? candidates[0] : null;
   };
 
   // This effect runs when selected attributes change
@@ -470,9 +442,8 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
     if (Object.keys(selectedAttributes).length === 0) {
       setCurrentPrice(parseFloat(product?.price || '0'));
       setCurrentSalePrice(product?.sale_price ? parseFloat(product.sale_price) : null);
-      setCurrentRegularPrice(parseFloat(product?.regular_price || product?.price || '0'));
-      setCurrentStockStatus(product?.stock_status || STOCK_STATUS_OUT_OF_STOCK);
-      setCurrentQuantity(parseFloat(product?.stock_quantity || '0'));
+      setCurrentStockStatus(product?.stock_status || STOCK_STATUS_IN_STOCK);
+      setCurrentQuantity(product?.stock_quantity || 10);
       return;
     }
     
@@ -574,6 +545,39 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
         });
       }
       console.log('---------------------------------------');
+    }
+    
+    // Extract available attribute options from existing variations only
+    if (product.variations && Array.isArray(product.variations) && product.variations.length > 0) {
+      // Create a derived set of attributes based only on what's in the variations
+      const derivedAttributes: Record<string, string[]> = {};
+      
+      // Loop through each variation
+      product.variations.forEach((variation: any) => {
+        if (variation.attributes) {
+          // For each attribute in this variation
+          for (const attrName in variation.attributes) {
+            const normalizedName = normalizeAttributeName(attrName);
+            const value = variation.attributes[attrName];
+            
+            if (!derivedAttributes[normalizedName]) {
+              derivedAttributes[normalizedName] = [];
+            }
+            
+            // Add this value if it's not already in our list
+            if (value && !derivedAttributes[normalizedName].includes(value)) {
+              derivedAttributes[normalizedName].push(value);
+            }
+          }
+        }
+      });
+      
+      if (DEBUG_MODE) {
+        console.log('Derived attributes from variations:', derivedAttributes);
+      }
+      
+      // Store the derived attributes for use in rendering
+      setDerivedAttributeOptions(derivedAttributes);
     }
   }, [product, hasVariations]);
 
@@ -1027,66 +1031,83 @@ const ProductContentTypesense = ({ product }: ProductContentTypesenseProps) => {
               
               {/* Check if we have valid attribute data before rendering */}
               {product.attributes && product.attributes.some(attr => attr && attr.name && Array.isArray(attr.options) && attr.options.length > 0) ? (
-                product.attributes.map((attribute, index) => (
-                  attribute && attribute.name && Array.isArray(attribute.options) && attribute.options.length > 0 && (
-                    <div key={`${attribute.name}-${index}`} className="space-y-2">
-                      <h3 className="text-sm font-medium text-gray-900 font-lato">
-                        {formatAttributeName(attribute.name || '')}
-                        {selectedAttributes[attribute.name || ''] && (
-                          <span className="ml-1 text-gray-500">: {selectedAttributes[attribute.name || '']}</span>
-                        )}
-                      </h3>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {attribute.options.map((option: string, optionIndex: number) => {
-                          // Normalize option - avoid duplicates with different case
-                          const optionNormalized = option.trim();
-                          
-                          // Check if this option is in stock
-                          const inStock = isAttributeValueInStock(attribute.name, optionNormalized);
-                          
-                          // Check if this option is currently selected
-                          const isSelected = selectedAttributes[attribute.name] === optionNormalized;
-                          
-                          if (DEBUG_MODE) {
-                            console.log(`Option ${attribute.name}=${optionNormalized}: inStock=${inStock}, selected=${isSelected}`);
-                          }
-                          
-                          // Display the option pill
-                          return (
-                            <button
-                              key={optionIndex}
-                              onClick={() => handleAttributeSelection(attribute.name, optionNormalized)}
-                              className={`px-3 py-1 rounded-full border transition-all ${
-                                isSelected
-                                  ? 'bg-black text-white border-black'
-                                  : 'bg-white text-black hover:bg-gray-100'
-                              } ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
-                              disabled={!inStock}
-                            >
-                              {optionNormalized}
-                              {!inStock && (
-                                <span className="ml-1 text-xs text-red-500">(Out of Stock)</span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      
-                      {/* Clear All Selections Button - Moved below variation options */}
-                      {index === (product.attributes?.length || 0) - 1 && Object.keys(selectedAttributes).some(key => selectedAttributes[key]) && (
-                        <div className="mt-2">
-                          <button 
-                            onClick={handleClearAllAttributes}
-                            className="inline-flex items-center text-xs text-gray-500 hover:text-black font-lato"
-                          >
-                            <RefreshCcw className="h-3 w-3 mr-1" />
-                            Clear all selections
-                          </button>
+                product.attributes.map((attribute, index) => {
+                  // Only process if attribute exists and has options
+                  if (attribute && attribute.name && Array.isArray(attribute.options) && attribute.options.length > 0) {
+                    const normalizedName = normalizeAttributeName(attribute.name);
+                    
+                    // Get only the options that exist in actual variations
+                    const availableOptions = derivedAttributeOptions[normalizedName] || [];
+                    
+                    // Skip rendering this attribute if no options are available
+                    if (availableOptions.length === 0) {
+                      if (DEBUG_MODE) {
+                        console.log(`Skipping attribute ${attribute.name} - no options available in variations`);
+                      }
+                      return null;
+                    }
+                    
+                    return (
+                      <div key={`${attribute.name}-${index}`} className="space-y-2">
+                        <h3 className="text-sm font-medium text-gray-900 font-lato">
+                          {formatAttributeName(attribute.name || '')}
+                          {selectedAttributes[attribute.name || ''] && (
+                            <span className="ml-1 text-gray-500">: {selectedAttributes[attribute.name || '']}</span>
+                          )}
+                        </h3>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {/* Show only options that exist in actual variations */}
+                          {availableOptions.map((option: string, optionIndex: number) => {
+                            // Normalize option - avoid duplicates with different case
+                            const optionNormalized = option.trim();
+                            
+                            // Check if this option is in stock
+                            const inStock = isAttributeValueInStock(attribute.name, optionNormalized);
+                            
+                            // Check if this option is currently selected
+                            const isSelected = selectedAttributes[attribute.name] === optionNormalized;
+                            
+                            if (DEBUG_MODE) {
+                              console.log(`Option ${attribute.name}=${optionNormalized}: inStock=${inStock}, selected=${isSelected}`);
+                            }
+                            
+                            // Display the option pill
+                            return (
+                              <button
+                                key={optionIndex}
+                                onClick={() => handleAttributeSelection(attribute.name, optionNormalized)}
+                                className={`px-3 py-1 rounded-full border transition-all ${
+                                  isSelected
+                                    ? 'bg-black text-white border-black'
+                                    : 'bg-white text-black hover:bg-gray-100'
+                                } ${!inStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                disabled={!inStock}
+                              >
+                                {optionNormalized}
+                                {!inStock && (
+                                  <span className="ml-1 text-xs text-red-500">(Out of Stock)</span>
+                                )}
+                              </button>
+                            );
+                          })}
                         </div>
-                      )}
-                    </div>
-                  )
-                ))
+                        
+                        {/* Clear All Selections Button - Moved below variation options */}
+                        {index === (product.attributes?.length || 0) - 1 && Object.keys(selectedAttributes).some(key => selectedAttributes[key]) && (
+                          <div className="mt-2">
+                            <button 
+                              onClick={handleClearAllAttributes}
+                              className="inline-flex items-center text-xs text-gray-500 hover:text-black font-lato"
+                            >
+                              <RefreshCcw className="h-3 w-3 mr-1" />
+                              Clear all selections
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                })
               ) : (
                 // Fallback message when no valid attributes exist
                 <div className="p-4 bg-gray-50 rounded-md">

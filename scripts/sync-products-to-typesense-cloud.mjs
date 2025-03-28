@@ -95,13 +95,34 @@ async function fetchAllProducts() {
 async function fetchProductVariations(productId) {
   try {
     console.log(`📦 Fetching variations for product ${productId}...`);
-    const response = await WooCommerce.get(`products/${productId}/variations`, {
-      per_page: 100
-    });
     
-    const variations = response.data;
-    console.log(`✅ Fetched ${variations.length} variations for product ${productId}`);
-    return variations;
+    // Implement pagination to fetch all variations
+    let page = 1;
+    const perPage = 100;
+    let allVariations = [];
+    
+    while (true) {
+      const response = await WooCommerce.get(`products/${productId}/variations`, {
+        per_page: perPage,
+        page: page
+      });
+      
+      const variations = response.data;
+      if (variations.length === 0) break;
+      
+      allVariations = allVariations.concat(variations);
+      
+      if (variations.length < perPage) break;
+      page++;
+      
+      // Log progress if we need to fetch multiple pages
+      if (page > 1) {
+        console.log(`📦 Fetching more variations for product ${productId} (page ${page})...`);
+      }
+    }
+    
+    console.log(`✅ Fetched ${allVariations.length} variations for product ${productId}`);
+    return allVariations;
   } catch (error) {
     console.error(`❌ Error fetching variations for product ${productId}:`, error.message);
     return [];
@@ -185,7 +206,8 @@ function transformProduct(product, variations = []) {
   // Extract and normalize product attributes
   const attributes = [];
   const attributeMap = {};
-  
+
+  // First, extract attributes from the product's global attributes
   if (product.attributes && Array.isArray(product.attributes)) {
     product.attributes.forEach(attr => {
       if (!attr) return;
@@ -215,6 +237,58 @@ function transformProduct(product, variations = []) {
       // Store all attribute options in the map for easy access
       attributeMap[normalizedName] = options;
     });
+  }
+
+  // Now extract all attributes used in variations to ensure we include everything
+  if (variations && Array.isArray(variations) && variations.length > 0) {
+    // Used to track attribute values we've already included
+    const variationAttributeValues = {};
+    
+    variations.forEach(variation => {
+      if (variation.attributes) {
+        // For each attribute in the variation
+        variation.attributes.forEach(attr => {
+          if (!attr.name || !attr.option) return;
+          
+          const name = attr.name;
+          const normalizedName = name.replace(/^pa_/i, '').toLowerCase();
+          const value = attr.option;
+          
+          // Initialize tracking for this attribute if needed
+          if (!variationAttributeValues[name]) {
+            variationAttributeValues[name] = new Set();
+          }
+          
+          // Add the attribute value to our set
+          variationAttributeValues[name].add(value);
+          
+          // Update the attribute map
+          if (!attributeMap[normalizedName]) {
+            attributeMap[normalizedName] = [];
+          }
+          
+          if (!attributeMap[normalizedName].includes(value)) {
+            attributeMap[normalizedName].push(value);
+          }
+          
+          // Special handling for color/size
+          if (normalizedName === 'color' || normalizedName === 'colour') {
+            if (!attributeMap['color']) attributeMap['color'] = [];
+            if (!attributeMap['color'].includes(value)) {
+              attributeMap['color'].push(value);
+            }
+          } else if (normalizedName === 'size') {
+            if (!attributeMap['size']) attributeMap['size'] = [];
+            if (!attributeMap['size'].includes(value)) {
+              attributeMap['size'].push(value);
+            }
+          }
+        });
+      }
+    });
+    
+    // Log the complete map of attributes from variations
+    console.log(`📊 Product ${product.id} (${product.name}) variation attributes:`, variationAttributeValues);
   }
   
   // Format variations data
