@@ -77,7 +77,7 @@ const SlidingBanner: React.FC = () => {
         overflow: 'hidden',
         marginTop: { 
           xs: '0',
-          md: '70px',
+          md: '50px',
           lg: '72px' 
         },
         marginX: 'auto',

@@ -392,6 +392,18 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
     });
   };
   
+  // Reset all attribute selections
+  const handleClearSelections = () => {
+    setSelectedAttributes({});
+    setCurrentStockStatus(STOCK_STATUS_IN_STOCK);
+    setCurrentStockQuantity(null);
+    setMaxQuantity(99);
+    
+    if (DEBUG_MODE) {
+      console.log('SIMPLIFIED: Cleared all attribute selections');
+    }
+  };
+
   // Handle quantity changes
   const incrementQuantity = () => {
     if (currentStockQuantity !== null && quantity >= currentStockQuantity) {
@@ -569,6 +581,18 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
               {/* Attribute selection - small, mobile friendly */}
               {product.attributes && product.attributes.length > 0 && (
                 <div className="mt-6 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-sm font-medium text-gray-900">Product Options</h3>
+                    {Object.keys(selectedAttributes).length > 0 && (
+                      <button 
+                        onClick={handleClearSelections}
+                        className="text-xs font-lato text-gray-500 hover:text-black underline decoration-dotted underline-offset-2"
+                      >
+                        Clear Selections
+                      </button>
+                    )}
+                  </div>
+                  
                   {product.attributes.map((attribute, attrIndex) => (
                     <div key={attrIndex}>
                       <h3 className="text-sm font-medium text-gray-900 mb-1.5">

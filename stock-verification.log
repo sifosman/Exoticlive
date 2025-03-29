@@ -1,0 +1,108 @@
+Stock Verification - 2025-03-29T14:00:22.489Z
+
+================================================================================
+Searching for product with slug: zig-zag
+================================================================================
+Found product: Zig Zag (ID: 25093)
+================================================================================
+Analyzing variations for Zig Zag
+================================================================================
+Using already parsed variations array with 18 variations
+Using already parsed attributes array with 2 attributes
+================================================================================
+Product Attributes
+================================================================================
+1. Color: Black, Olive, Tan
+2. Size: 3, 4, 5, 6, 7, 8
+================================================================================
+Variation Stock Status
+================================================================================
+1. Color: Black, Size: 3 - Stock: instock (1)
+2. Color: Black, Size: 4 - Stock: outofstock (0)
+3. Color: Black, Size: 5 - Stock: outofstock (0)
+4. Color: Black, Size: 6 - Stock: outofstock (0)
+5. Color: Black, Size: 7 - Stock: outofstock (0)
+6. Color: Black, Size: 8 - Stock: outofstock (0)
+7. Color: Olive, Size: 3 - Stock: outofstock (0)
+8. Color: Olive, Size: 4 - Stock: outofstock (0)
+9. Color: Olive, Size: 5 - Stock: outofstock (0)
+10. Color: Olive, Size: 6 - Stock: outofstock (0)
+11. Color: Olive, Size: 7 - Stock: outofstock (0)
+12. Color: Olive, Size: 8 - Stock: outofstock (0)
+13. Color: Tan, Size: 3 - Stock: outofstock (0)
+14. Color: Tan, Size: 4 - Stock: outofstock (0)
+15. Color: Tan, Size: 5 - Stock: outofstock (0)
+16. Color: Tan, Size: 6 - Stock: outofstock (0)
+17. Color: Tan, Size: 7 - Stock: outofstock (0)
+18. Color: Tan, Size: 8 - Stock: outofstock (0)
+================================================================================
+Stock Status Summary
+================================================================================
+Total variations: 18
+In stock: 1
+Out of stock: 17
+================================================================================
+Black/Size 3 Variation
+================================================================================
+{
+  "attributes": [
+    {
+      "name": "Color",
+      "option": "Black"
+    },
+    {
+      "name": "Size",
+      "option": "3"
+    }
+  ],
+  "id": "25093-1",
+  "price": 3090,
+  "regular_price": 3090,
+  "sale_price": null,
+  "stock_quantity": 1,
+  "stock_status": "instock"
+}
+
+================================================================================
+Component Data Structure
+================================================================================
+{
+  "productName": "Zig Zag",
+  "productId": "25093",
+  "productSlug": "zig-zag",
+  "hasAttributes": true,
+  "hasVariations": true,
+  "attributeExample": {
+    "id": 1,
+    "name": "Color",
+    "options": [
+      "Black",
+      "Olive",
+      "Tan"
+    ],
+    "variation": true
+  },
+  "variationExample": {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Black"
+      },
+      {
+        "name": "Size",
+        "option": "3"
+      }
+    ],
+    "id": "25093-1",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 1,
+    "stock_status": "instock"
+  }
+}
+
+================================================================================
+Checking another product for comparison
+================================================================================
+Fatal error: Request failed with HTTP code 400 | Server said: Error with filter field `variations_json`: Filter value cannot be empty.

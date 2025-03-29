@@ -1,0 +1,19 @@
+Typesense Collection Recreation - 2025-03-29T14:34:50.771Z
+
+================================================================================
+STARTING TYPESENSE COLLECTION RECREATION
+================================================================================
+Creating Typesense Collection...
+No existing 'products' collection found. Will create new one.
+Successfully created 'products' collection in Typesense
+Adding sample product to verify collection is working...
+Successfully added sample product to Typesense
+Verifying collection...
+Collection 'products' exists with 1 documents
+Search returned 1 total documents
+Found sample document: Test Product
+================================================================================
+COLLECTION RECREATION COMPLETED SUCCESSFULLY
+================================================================================
+
+You can now run the complete-woocommerce-sync.mjs script to import all products.
