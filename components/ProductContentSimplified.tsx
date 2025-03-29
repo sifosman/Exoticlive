@@ -598,7 +598,7 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                       <h3 className="text-sm font-medium text-gray-900 mb-1.5">
                         {formatAttributeName(attribute.name)}
                       </h3>
-                      <div className="flex flex-wrap gap-1.5 md:gap-2">
+                      <div className="flex flex-wrap gap-2 md:gap-2">
                         {attribute.options.map((option, optIndex) => {
                           const isSelected = selectedAttributes[attribute.name] === option;
                           const isAvailable = isAttributeOptionAvailable(attribute.name, option);
@@ -607,12 +607,13 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                             <button
                               key={optIndex}
                               className={`
-                                px-3 py-2 md:px-3 md:py-1.5 
+                                px-4 py-3 md:px-3 md:py-1.5 
                                 rounded-md 
-                                text-sm md:text-sm 
+                                text-base md:text-sm 
                                 font-medium
                                 border transition-all
-                                min-w-[45px] min-h-[40px] md:min-h-[32px]
+                                min-w-[60px] min-h-[50px] md:min-h-[32px]
+                                mb-2 md:mb-1
                                 ${isSelected 
                                   ? 'bg-black text-white border-black' 
                                   : isAvailable 
