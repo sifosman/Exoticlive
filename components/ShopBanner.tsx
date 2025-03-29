@@ -75,13 +75,13 @@ const ShopBanner = ({ heading = "Shop" }: ShopBannerProps) => {
           <Typography
             variant="h1"
             sx={{
-              fontSize: { xs: '2.5rem', sm: '3rem', md: '3.5rem' },
-              fontWeight: 700,
-              color: '#222',
+              fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.5rem' },
+              fontWeight: 600,
+              color: 'white',
               textAlign: 'center',
-              fontFamily: 'Playfair Display, serif',
-              textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              letterSpacing: '0.02em',
+              fontFamily: 'Lato, sans-serif',
+              textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              letterSpacing: '0.03em',
             }}
           >
             {heading}

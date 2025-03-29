@@ -309,37 +309,7 @@ const ProductSearchTypesense = ({ isOpen, onClose }: ProductSearchProps) => {
                     }
                     secondary={
                       <>
-                        <Typography
-                          component="span"
-                          variant="body2"
-                          sx={{ 
-                            display: 'block',
-                            mb: 0.5,
-                            fontFamily: 'Lato, sans-serif',
-                            fontWeight: 700,
-                          }}
-                        >
-                          {product.sale_price ? (
-                            <>
-                              <span style={{ color: '#d32f2f', fontSize: '0.95rem' }}>
-                                {formatPrice(product.sale_price)}
-                              </span>
-                              <span style={{ 
-                                textDecoration: 'line-through', 
-                                color: 'text.secondary',
-                                marginLeft: '10px',
-                                fontSize: '0.85rem',
-                                fontWeight: 400
-                              }}>
-                                {formatPrice(product.price)}
-                              </span>
-                            </>
-                          ) : (
-                            <span style={{ color: '#333', fontSize: '0.95rem' }}>
-                              {formatPrice(product.price)}
-                            </span>
-                          )}
-                        </Typography>
+                        {/* Price display removed as requested */}
                         {product.description && (
                           <Typography
                             variant="body2"

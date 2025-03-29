@@ -77,7 +77,7 @@ const ResellBanner = () => {
             gap: { xs: 4, md: 6 },
           }}
         >
-          {/* Video section - basic HTML5 video implementation */}
+          {/* Video container - preserve mobile styling but fix desktop view */}
           <Box
             component={motion.div}
             initial={{ opacity: 0, x: 30 }}
@@ -85,35 +85,75 @@ const ResellBanner = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             viewport={{ once: true }}
             sx={{
-              flex: { xs: '1', md: '0 0 45%' },
+              flex: { xs: '1', md: '0 0 auto' },
               position: 'relative',
-              height: { xs: '180px', sm: '220px', md: '400px' },
-              width: { xs: '100%', sm: '100%' },
-              maxWidth: { xs: '280px', sm: '300px', md: '500px' },
+              height: { xs: '180px', sm: '220px', md: '350px' },
+              width: { xs: '100%', sm: '100%', md: 'auto' },
+              maxWidth: { xs: '280px', sm: '300px', md: '380px' },
               mx: 'auto',
               order: { xs: 1, md: 2 },
               mb: { xs: 1, md: 0 },
               borderRadius: '12px',
               overflow: 'hidden',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#f8f8f8',
             }}
           >
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              width="100%"
-              height="100%"
-              style={{
-                objectFit: 'contain',
-                display: 'block',
-                borderRadius: '12px',
-                backgroundColor: '#f8f8f8',
+            {/* Desktop video with proper sizing */}
+            <Box
+              sx={{
+                display: { xs: 'none', md: 'block' },
+                width: '100%',
+                height: '100%',
+                position: 'relative',
               }}
             >
-              <source src="/video.mp4" type="video/mp4" />
-            </video>
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                  display: 'block',
+                  borderRadius: '12px',
+                }}
+              >
+                <source src="/video.mp4" type="video/mp4" />
+              </video>
+            </Box>
+
+            {/* Mobile video - preserved exactly as it was */}
+            <Box
+              sx={{
+                display: { xs: 'block', md: 'none' },
+                width: '100%',
+                height: '100%',
+                position: 'relative',
+              }}
+            >
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                width="100%"
+                height="100%"
+                style={{
+                  objectFit: 'cover',
+                  display: 'block',
+                  borderRadius: '12px',
+                }}
+              >
+                <source src="/video.mp4" type="video/mp4" />
+              </video>
+            </Box>
           </Box>
           
           {/* Content section */}
