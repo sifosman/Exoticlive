@@ -2,13 +2,11 @@
 
 import { Box, Button, Container, Typography, useTheme, useMediaQuery } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 
 const ResellBanner = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   
   const handleWhatsAppClick = () => {
     // Format the phone number properly for WhatsApp
@@ -79,7 +77,45 @@ const ResellBanner = () => {
             gap: { xs: 4, md: 6 },
           }}
         >
-          {/* Left side: Content */}
+          {/* Video section - like an animated GIF */}
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+            sx={{
+              flex: { xs: '1', md: '0 0 40%' },
+              position: 'relative',
+              height: { xs: '180px', sm: '220px', md: '280px' }, // Same as original image size
+              width: { xs: '100%', sm: '100%' },
+              maxWidth: { xs: '280px', sm: '300px', md: '400px' }, // Same as original image max-width
+              mx: 'auto',
+              order: { xs: 1, md: 2 },
+              mb: { xs: 1, md: 0 },
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            }}
+          >
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                objectPosition: 'center',
+              }}
+            >
+              <source src="/video.mp4" type="video/mp4" />
+            </video>
+          </Box>
+          
+          {/* Content section - bottom on mobile, left on desktop */}
           <Box 
             component={motion.div}
             initial={{ opacity: 0, x: -30 }}
@@ -91,7 +127,8 @@ const ResellBanner = () => {
               textAlign: { xs: 'center', md: 'left' },
               width: '100%',
               maxWidth: { xs: '100%', md: '60%' },
-              order: { xs: 2, md: 1 }, // Change order on mobile
+              order: { xs: 2, md: 1 }, 
+              mt: { xs: 0, md: 0 },
             }}
           >
             <Typography 
@@ -133,7 +170,7 @@ const ResellBanner = () => {
               startIcon={<WhatsAppIcon />}
               size={isMobile ? "medium" : "large"}
               sx={{
-                backgroundColor: '#25D366', // WhatsApp green
+                backgroundColor: '#25D366', 
                 color: 'white',
                 py: { xs: 1, sm: 1.5, md: 2 },
                 px: { xs: 2, sm: 3, md: 4 },
@@ -145,44 +182,13 @@ const ResellBanner = () => {
                 textTransform: 'none',
                 whiteSpace: 'nowrap',
                 '&:hover': {
-                  backgroundColor: '#128C7E', // Darker WhatsApp green on hover
+                  backgroundColor: '#128C7E', 
                   boxShadow: '0 6px 20px rgba(37, 211, 102, 0.6)',
                 }
               }}
             >
               {isMobile ? "WhatsApp Us" : "Chat with Us on WhatsApp"}
             </Button>
-          </Box>
-          
-          {/* Right side: Image */}
-          <Box
-            component={motion.div}
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            viewport={{ once: true }}
-            sx={{
-              flex: { xs: '1', md: '0 0 40%' },
-              position: 'relative',
-              height: { xs: '180px', sm: '220px', md: '280px' },
-              width: { xs: '100%', sm: '100%' },
-              maxWidth: { xs: '280px', sm: '300px', md: '400px' },
-              mx: 'auto',
-              order: { xs: 1, md: 2 }, // Change order on mobile
-              mb: { xs: 1, md: 0 },
-            }}
-          >
-            <Image
-              src="/about.webp" // Using an existing image as placeholder until reseller-banner.webp is added
-              alt="Become a reseller"
-              fill
-              style={{ 
-                objectFit: 'contain',
-                objectPosition: 'center'
-              }}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              priority={false}
-            />
           </Box>
         </Box>
       </Container>
