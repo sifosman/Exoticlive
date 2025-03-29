@@ -7,6 +7,7 @@ import ProductFilters from '@/components/test/ProductFilters';
 import ProductSearch from '@/components/test/ProductSearch';
 import { Button } from '@/components/ui/button';
 import { X, SlidersHorizontal } from 'lucide-react';
+import ShopBanner from '@/components/ShopBanner';
 
 // Map of category slugs to proper category names
 const CATEGORY_MAP: Record<string, string> = {
@@ -17,7 +18,8 @@ const CATEGORY_MAP: Record<string, string> = {
   'pumps': 'Pumps',
   'sandals': 'Sandals',
   'takkies': 'Takkies',
-  'bargain-box': 'Bargain Box'
+  'bargain-box': 'Bargain Box',
+  'safety-boots': 'Safety Boots'
 };
 
 export default function ShopPage() {
@@ -75,11 +77,8 @@ export default function ShopPage() {
 
   return (
     <main className="min-h-screen bg-white font-sans">
+      <ShopBanner heading={getHeadingText()} />
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 pt-10 text-center font-sans">
-          {getHeadingText()}
-        </h1>
-        
         {/* Search Bar */}
         <ProductSearch onSearch={setSearchQuery} />
         

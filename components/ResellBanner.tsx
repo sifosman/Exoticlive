@@ -3,6 +3,7 @@
 import { Box, Button, Container, Typography, useTheme, useMediaQuery } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const ResellBanner = () => {
   const theme = useTheme();
@@ -77,7 +78,7 @@ const ResellBanner = () => {
             gap: { xs: 4, md: 6 },
           }}
         >
-          {/* Video section - like an animated GIF */}
+          {/* Video section with fallback image */}
           <Box
             component={motion.div}
             initial={{ opacity: 0, x: 30 }}
@@ -87,32 +88,67 @@ const ResellBanner = () => {
             sx={{
               flex: { xs: '1', md: '0 0 40%' },
               position: 'relative',
-              height: { xs: '180px', sm: '220px', md: '280px' }, // Same as original image size
+              height: { xs: '180px', sm: '220px', md: '280px' },
               width: { xs: '100%', sm: '100%' },
-              maxWidth: { xs: '280px', sm: '300px', md: '400px' }, // Same as original image max-width
+              maxWidth: { xs: '280px', sm: '300px', md: '400px' },
               mx: 'auto',
               order: { xs: 1, md: 2 },
               mb: { xs: 1, md: 0 },
               borderRadius: '12px',
               overflow: 'hidden',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              bgcolor: '#f5f5f5', // Light background in case video doesn't load
             }}
           >
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="auto"
-              style={{
+            <Box 
+              sx={{ 
+                position: 'relative',
                 width: '100%',
                 height: '100%',
-                objectFit: 'contain',
-                objectPosition: 'center',
               }}
             >
-              <source src="/video.mp4" type="video/mp4" />
-            </video>
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                poster="/about.webp"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center',
+                  zIndex: 1
+                }}
+              >
+                <source src="/video.mp4" type="video/mp4" />
+              </video>
+              
+              {/* Fallback image if video fails to load */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  zIndex: 0
+                }}
+              >
+                <Image
+                  src="/about.webp"
+                  alt="Become a reseller"
+                  fill
+                  style={{ 
+                    objectFit: 'cover',
+                    objectPosition: 'center'
+                  }}
+                />
+              </Box>
+            </Box>
           </Box>
           
           {/* Content section - bottom on mobile, left on desktop */}
@@ -167,8 +203,6 @@ const ResellBanner = () => {
             <Button
               variant="contained"
               onClick={handleWhatsAppClick}
-              startIcon={<WhatsAppIcon />}
-              size={isMobile ? "medium" : "large"}
               sx={{
                 backgroundColor: '#25D366', 
                 color: 'white',
@@ -184,9 +218,13 @@ const ResellBanner = () => {
                 '&:hover': {
                   backgroundColor: '#128C7E', 
                   boxShadow: '0 6px 20px rgba(37, 211, 102, 0.6)',
+                },
+                '& .MuiButton-startIcon': {
+                  marginRight: { xs: 1, sm: 1.5 },
                 }
               }}
             >
+              <WhatsAppIcon style={{ marginRight: '8px' }} />
               {isMobile ? "WhatsApp Us" : "Chat with Us on WhatsApp"}
             </Button>
           </Box>

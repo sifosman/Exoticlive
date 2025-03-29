@@ -50,6 +50,7 @@ const categories: Category[] = [
   { id: "dGVybToxNDU=", name: "Sandals", slug: "sandals" },
   { id: "dGVybToxNDc=", name: "Takkies", slug: "takkies" },
   { id: "dGVybToxNDk=", name: "Bargain Box", slug: "bargain-box" },
+  { id: "dGVybToyOTA=", name: "Safety Boots", slug: "safety-boots" },
 ];
 
 const Header = () => {
@@ -123,7 +124,7 @@ const Header = () => {
         />
         <BottomNavigationAction
           label="Categories"
-          icon={<CategoryIcon />}
+          icon={<MenuIcon />}
           onClick={handleCategoryClick}
         />
         <BottomNavigationAction

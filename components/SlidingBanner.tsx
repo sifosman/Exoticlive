@@ -60,24 +60,35 @@ const SlidingBanner: React.FC = () => {
   }, []);
 
   return (
-    <Box 
+    <Box
       sx={{
         position: 'relative',
         width: '100%',
-        maxWidth: { 
-          xs: '100%',
-          md: '85%',
-          lg: '75%'
+        height: {
+          xs: '220px',
+          sm: '250px',
+          md: '300px',
+          lg: '350px'
         },
-        height: { 
-          xs: 'calc(100vh - 60px)',
-          md: '500px',
-          lg: '600px'
+        maxWidth: {
+          xs: '100%',
+          md: '90%',
+          lg: '1200px'
         },
         overflow: 'hidden',
-        marginTop: { 
-          xs: '0',
-          md: '50px',
+        mb: {
+          xs: 2,
+          md: 3,
+          lg: 4
+        },
+        mt: {
+          xs: -2.5, // Move up by 20px on mobile (previously -1.25, now -2.5)
+          md: 0,
+          lg: 0
+        },
+        paddingBottom: {
+          xs: '0px',
+          md: '24px',
           lg: '72px' 
         },
         marginX: 'auto',
