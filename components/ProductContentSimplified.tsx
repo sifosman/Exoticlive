@@ -9,6 +9,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minus, Plus } from 'lucide-react';
 import { Snackbar, Alert } from '@mui/material';
+import RelatedProducts from './RelatedProducts';
 
 // Debug configuration
 const DEBUG_MODE = true;
@@ -337,6 +338,43 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
       setMaxQuantity(0);
     }
   };
+
+  // Check if attribute option is available (in stock)
+  const isAttributeOptionAvailable = (attrName: string, option: string): boolean => {
+    // If no variations, all options are available
+    if (!product?.variations || !Array.isArray(product.variations) || product.variations.length === 0) {
+      return true;
+    }
+
+    // Create a copy of current selections with this option
+    const testSelections = {
+      ...selectedAttributes,
+      [attrName]: option
+    };
+    
+    // Check if any variation matches these selections
+    const hasMatchingVariation = product.variations.some(variation => {
+      if (!variation.attributes || !Array.isArray(variation.attributes)) {
+        return false;
+      }
+      
+      // For each attribute in our test selection, check if variation matches
+      return Object.entries(testSelections).every(([name, value]) => {
+        const normalizedName = normalizeAttributeName(name);
+        const normalizedValue = normalizeAttributeValue(value as string);
+        
+        // Find matching attribute in variation
+        return variation.attributes.some(attr => {
+          const varAttrName = normalizeAttributeName(attr.name || attr.option_name);
+          const varAttrValue = normalizeAttributeValue(attr.option || attr.value);
+          
+          return varAttrName === normalizedName && varAttrValue === normalizedValue;
+        });
+      });
+    });
+    
+    return hasMatchingVariation;
+  };
   
   // Check if all required attributes are selected
   const areAllAttributesSelected = (): boolean => {
@@ -453,45 +491,55 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
       {/* Product section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Product gallery */}
-          <div className="bg-[#f5f5f5] rounded-lg overflow-hidden shadow-sm relative aspect-square">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentImageIndex}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="w-full h-full flex items-center justify-center"
-              >
-                <Image
-                  src={getSafeImageUrl(currentImage.url, currentImageIndex)}
-                  alt={currentImage.alt || product.name}
-                  width={500}
-                  height={500}
-                  className="object-contain w-full h-full"
-                  onError={() => handleImageError(currentImageIndex, currentImage.url)}
-                />
-              </motion.div>
-            </AnimatePresence>
-            
-            {/* Gallery navigation */}
+          {/* Product gallery with thumbnails on left for desktop, stack for mobile */}
+          <div className="flex flex-col md:flex-row gap-2 md:gap-4">
+            {/* Thumbnails on left for desktop */}
             {images.length > 1 && (
-              <>
-                <button
-                  onClick={prevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-70 hover:bg-opacity-100 rounded-full p-2 transition-all text-gray-800"
-                >
-                  <ChevronLeftIcon className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-70 hover:bg-opacity-100 rounded-full p-2 transition-all text-gray-800"
-                >
-                  <ChevronRightIcon className="w-6 h-6" />
-                </button>
-              </>
+              <div className="order-2 md:order-1 md:w-1/5 flex flex-row md:flex-col gap-2 mt-2 md:mt-0">
+                {images.map((image, index) => (
+                  <div 
+                    key={index}
+                    className={`aspect-square cursor-pointer border rounded overflow-hidden ${
+                      currentImageIndex === index ? 'border-black' : 'border-gray-200'
+                    }`}
+                    onClick={() => setCurrentImageIndex(index)}
+                    onMouseEnter={() => setCurrentImageIndex(index)}
+                  >
+                    <Image
+                      src={getSafeImageUrl(image.url, index)}
+                      alt={image.alt || `Product thumbnail ${index + 1}`}
+                      width={100}
+                      height={100}
+                      className="object-contain w-full h-full"
+                      onError={() => handleImageError(index, image.url)}
+                    />
+                  </div>
+                ))}
+              </div>
             )}
+            
+            {/* Main image */}
+            <div className="order-1 md:order-2 md:w-4/5 bg-[#f5f5f5] rounded-lg overflow-hidden shadow-sm relative aspect-square">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentImageIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full h-full flex items-center justify-center"
+                >
+                  <Image
+                    src={getSafeImageUrl(currentImage.url, currentImageIndex)}
+                    alt={currentImage.alt || product.name}
+                    width={500}
+                    height={500}
+                    className="object-contain w-full h-full"
+                    onError={() => handleImageError(currentImageIndex, currentImage.url)}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
           
           {/* Product details */}
@@ -518,31 +566,45 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
             </div>
             
             <div className="space-y-6">
-              {/* Attribute selectors */}
-              {product.attributes && product.attributes.map((attribute, index) => (
-                <div key={`${attribute.name}-${index}`} className="mt-4">
-                  <h3 className="text-sm font-medium text-gray-900 mb-2">
-                    {formatAttributeName(attribute.name)}
-                  </h3>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {attribute.options && attribute.options.map((option, optionIndex) => (
-                      <button
-                        key={`${option}-${optionIndex}`}
-                        className={`border rounded-md py-2 px-3 text-sm font-medium transition-all
-                          ${selectedAttributes[attribute.name] === option 
-                            ? 'bg-black text-white border-black' 
-                            : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'
-                          }`}
-                        onClick={() => handleAttributeChange(attribute.name, option)}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
+              {/* Attribute selection - small, mobile friendly */}
+              {product.attributes && product.attributes.length > 0 && (
+                <div className="mt-6 space-y-4">
+                  {product.attributes.map((attribute, attrIndex) => (
+                    <div key={attrIndex}>
+                      <h3 className="text-sm font-medium text-gray-900 mb-1.5">
+                        {formatAttributeName(attribute.name)}
+                      </h3>
+                      <div className="flex flex-wrap gap-1.5 md:gap-2">
+                        {attribute.options.map((option, optIndex) => {
+                          const isSelected = selectedAttributes[attribute.name] === option;
+                          const isAvailable = isAttributeOptionAvailable(attribute.name, option);
+                          
+                          return (
+                            <button
+                              key={optIndex}
+                              className={`
+                                px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm border transition-all
+                                ${isSelected 
+                                  ? 'bg-black text-white border-black' 
+                                  : isAvailable 
+                                    ? 'bg-white text-gray-800 border-gray-300 hover:border-black' 
+                                    : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                }
+                              `}
+                              onClick={() => isAvailable && handleAttributeChange(attribute.name, option)}
+                              disabled={!isAvailable}
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              
-              {/* Stock status message */}
+              )}
+
+              {/* Stock status */}
               <div className="mt-4">
                 {!areAllAttributesSelected() ? (
                   <p className="text-amber-600 font-medium">Please select all options</p>
@@ -598,6 +660,14 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
             </div>
           </div>
         </div>
+      </div>
+      
+      {/* Related Products Section */}
+      <div className="mt-10 md:mt-16 border-t border-gray-200 pt-6 md:pt-10 px-2 md:px-0">
+        <h2 className="text-lg md:text-2xl font-lato font-bold mb-6 text-center text-gray-800">
+          You Might Also Like
+        </h2>
+        <RelatedProducts />
       </div>
       
       {/* Success notification */}
