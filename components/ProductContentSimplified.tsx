@@ -206,9 +206,18 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
   const isVariationInStock = (variation: any): boolean => {
     if (!variation) return false;
     
-    // Check stock status
+    // Debug log if DEBUG_MODE is enabled
+    if (DEBUG_MODE) {
+      console.log('Checking stock for variation:', variation.id);
+      console.log('Stock status:', variation.stock_status);
+      console.log('Stock quantity:', variation.stock_quantity);
+    }
+    
+    // Check stock status - Typesense stores this as lowercase strings
     if (typeof variation.stock_status === 'string') {
-      if (variation.stock_status.toLowerCase() === STOCK_STATUS_IN_STOCK) {
+      // Normalize to lowercase for case-insensitive comparison
+      const stockStatus = variation.stock_status.toLowerCase();
+      if (stockStatus === STOCK_STATUS_IN_STOCK) {
         // Also verify stock quantity if available
         if (typeof variation.stock_quantity === 'number') {
           return variation.stock_quantity > 0;
