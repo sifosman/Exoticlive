@@ -26,7 +26,7 @@ const FastSellingProducts = () => {
           query_by: 'name,description,brand',
           sort_by: 'price:desc', // Try sorting by price as an alternative
           per_page: 200, // Increase to get more potential products
-          filter_by: 'stock_status:=instock' // Simplify filter to get more products
+          filter_by: 'has_in_stock_variations:=true' // Only show products with at least one in-stock variation
         });
         
         // Filter out products without valid images

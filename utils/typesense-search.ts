@@ -20,6 +20,7 @@ export interface Product {
   is_featured: boolean;
   is_on_sale: boolean;
   average_rating: number;
+  has_in_stock_variations: boolean;
 }
 
 // Create Typesense client
@@ -60,16 +61,18 @@ export interface SearchParams {
 
 // Search function
 export async function searchProducts(params: SearchParams) {
+  // Default parameters
   const searchParameters = {
     q: params.q || '*',
     query_by: params.query_by || 'name,description',
-    filter_by: params.filter_by || '',
+    // Remove stock_status filter if it wasn't explicitly provided to show all products
+    filter_by: params.filter_by || 'has_in_stock_variations:=true',
     sort_by: params.sort_by || '_text_match:desc,price:asc',
     page: params.page || 1,
     per_page: params.per_page || 12,
     facet_by: params.facet_by || 'categories,colors,sizes',
     max_facet_values: params.max_facet_values || 10,
-    include_fields: params.include_fields || 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
+    include_fields: params.include_fields || 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes,has_in_stock_variations'
   };
   
   console.log('Search parameters:', searchParameters);
@@ -80,8 +83,23 @@ export async function searchProducts(params: SearchParams) {
       .documents()
       .search(searchParameters);
 
+    // Process the search results to ensure prices are properly formatted as numbers
+    const processedProducts = searchResults.hits?.map(hit => {
+      const doc = hit.document as any;
+      
+      // Convert price strings to numbers if they're strings
+      const processedDoc = {
+        ...doc,
+        price: typeof doc.price === 'string' ? parseFloat(doc.price) : (doc.price || 0),
+        sale_price: doc.sale_price ? (typeof doc.sale_price === 'string' ? parseFloat(doc.sale_price) : doc.sale_price) : null,
+        regular_price: typeof doc.regular_price === 'string' ? parseFloat(doc.regular_price) : (doc.regular_price || 0),
+      };
+      
+      return processedDoc as Product;
+    }) || [];
+
     return {
-      products: searchResults.hits?.map(hit => hit.document as Product) || [],
+      products: processedProducts,
       found: searchResults.found || 0,
       page: searchResults.page || 1,
       facets: searchResults.facet_counts || [],

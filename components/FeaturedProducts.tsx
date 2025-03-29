@@ -26,7 +26,7 @@ const FeaturedProducts = () => {
           query_by: 'name,description,brand',
           sort_by: 'price:asc',
           per_page: 200,
-          filter_by: 'stock_status:=instock'
+          filter_by: 'has_in_stock_variations:=true'
         });
         
         // Filter out products without valid images

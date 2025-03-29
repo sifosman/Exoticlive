@@ -79,8 +79,11 @@ const ProductSearchTypesense = ({ isOpen, onClose }: ProductSearchProps) => {
   };
 
   const formatPrice = (price: number | null | undefined) => {
-    if (!price) return 'Price not available';
-    return `R${price.toFixed(2)}`;
+    if (price === null || price === undefined) return 'Price not available';
+    return new Intl.NumberFormat('en-ZA', {
+      style: 'currency',
+      currency: 'ZAR'
+    }).format(price);
   };
 
   // Clear search when drawer closes
