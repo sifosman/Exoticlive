@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
 import { getApolloClient } from '@/lib/apollo-client';
-import ProductContentSimplified from '@/components/ProductContentSimplified';
+import ProductContentStandard from '@/components/ProductContentStandard';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import Typesense from 'typesense';
@@ -574,7 +574,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   return (
     <main className={`${lato.variable}`}>
       <Suspense fallback={<div>Loading product...</div>}>
-        <ProductContentSimplified product={product} />  
+        <ProductContentStandard product={product} />  
       </Suspense>
     </main>
   );

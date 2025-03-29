@@ -460911,3 +460911,611 @@
 
 2025-02-09T19:46:12.211Z:  Successfully imported 723 products
 
+2025-03-28T21:15:05.022Z:  Attempting to delete existing collection...
+
+2025-03-28T21:15:05.352Z:  Existing collection deleted
+
+2025-03-28T21:15:06.369Z:  Creating new collection with schema:
+{
+  "name": "products",
+  "fields": [
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "short_description",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "price",
+      "type": "float"
+    },
+    {
+      "name": "sale_price",
+      "type": "float",
+      "optional": true
+    },
+    {
+      "name": "regular_price",
+      "type": "float",
+      "optional": true
+    },
+    {
+      "name": "stock_quantity",
+      "type": "int32",
+      "optional": true
+    },
+    {
+      "name": "stock_status",
+      "type": "string",
+      "facet": true
+    },
+    {
+      "name": "image_url",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "image_alt",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "slug",
+      "type": "string"
+    },
+    {
+      "name": "gallery_images",
+      "type": "string[]",
+      "optional": true
+    },
+    {
+      "name": "attributes",
+      "type": "object[]",
+      "optional": true
+    },
+    {
+      "name": "variations",
+      "type": "object[]",
+      "optional": true
+    },
+    {
+      "name": "colors",
+      "type": "string[]",
+      "facet": true,
+      "optional": true
+    },
+    {
+      "name": "sizes",
+      "type": "string[]",
+      "facet": true,
+      "optional": true
+    },
+    {
+      "name": "categories",
+      "type": "string[]",
+      "facet": true,
+      "optional": true
+    },
+    {
+      "name": "tags",
+      "type": "string[]",
+      "facet": true,
+      "optional": true
+    }
+  ],
+  "default_sorting_field": "price"
+}
+
+2025-03-28T21:15:06.416Z:  Error managing collection:
+{
+  "name": "RequestMalformed",
+  "httpStatus": 400
+}
+
+2025-03-28T21:15:06.418Z:  Import failed:
+{
+  "name": "RequestMalformed",
+  "httpStatus": 400
+}
+
+2025-03-28T21:15:06.422Z:  Fatal error:
+{
+  "name": "RequestMalformed",
+  "httpStatus": 400
+}
+
+2025-03-28T21:17:20.287Z:  Attempting to delete existing collection...
+
+2025-03-28T21:17:20.584Z:  No existing collection found
+
+2025-03-28T21:17:21.592Z:  Creating new collection with schema:
+{
+  "name": "products",
+  "fields": [
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "short_description",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "price",
+      "type": "float"
+    },
+    {
+      "name": "sale_price",
+      "type": "float",
+      "optional": true
+    },
+    {
+      "name": "regular_price",
+      "type": "float",
+      "optional": true
+    },
+    {
+      "name": "stock_quantity",
+      "type": "int32",
+      "optional": true
+    },
+    {
+      "name": "stock_status",
+      "type": "string",
+      "facet": true
+    },
+    {
+      "name": "image_url",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "image_alt",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "slug",
+      "type": "string"
+    },
+    {
+      "name": "gallery_images",
+      "type": "string[]",
+      "optional": true
+    },
+    {
+      "name": "attributes_json",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "variations_json",
+      "type": "string",
+      "optional": true
+    },
+    {
+      "name": "colors",
+      "type": "string[]",
+      "facet": true,
+      "optional": true
+    },
+    {
+      "name": "sizes",
+      "type": "string[]",
+      "facet": true,
+      "optional": true
+    },
+    {
+      "name": "categories",
+      "type": "string[]",
+      "facet": true,
+      "optional": true
+    },
+    {
+      "name": "tags",
+      "type": "string[]",
+      "facet": true,
+      "optional": true
+    }
+  ],
+  "default_sorting_field": "price"
+}
+
+2025-03-28T21:17:21.638Z:  Collection created successfully:
+{
+  "created_at": 1743196641,
+  "default_sorting_field": "price",
+  "enable_nested_fields": false,
+  "fields": [
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "name",
+      "optional": false,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "description",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "short_description",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "price",
+      "optional": false,
+      "sort": true,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "float"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "sale_price",
+      "optional": true,
+      "sort": true,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "float"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "regular_price",
+      "optional": true,
+      "sort": true,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "float"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "stock_quantity",
+      "optional": true,
+      "sort": true,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "int32"
+    },
+    {
+      "facet": true,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "stock_status",
+      "optional": false,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "image_url",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "image_alt",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "slug",
+      "optional": false,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "gallery_images",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string[]"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "attributes_json",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string"
+    },
+    {
+      "facet": false,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "variations_json",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string"
+    },
+    {
+      "facet": true,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "colors",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string[]"
+    },
+    {
+      "facet": true,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "sizes",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string[]"
+    },
+    {
+      "facet": true,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "categories",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string[]"
+    },
+    {
+      "facet": true,
+      "index": true,
+      "infix": false,
+      "locale": "",
+      "name": "tags",
+      "optional": true,
+      "sort": false,
+      "stem": false,
+      "stem_dictionary": "",
+      "store": true,
+      "type": "string[]"
+    }
+  ],
+  "name": "products",
+  "num_documents": 0,
+  "symbols_to_index": [],
+  "token_separators": []
+}
+
+2025-03-28T21:17:22.651Z:  Fetching products from WooCommerce...
+
+2025-03-28T21:17:22.655Z:  Fetching products from https://wp.exoticshoes.co.za/graphql
+{
+  "variables": {
+    "first": 100,
+    "after": null
+  }
+}
+
+2025-03-28T21:17:26.844Z: GraphQL Response:
+{
+  "errors": [
+    {
+      "message": "Cannot query field \"productCategories\" on type \"ProductUnion\". Did you mean to use an inline fragment on \"Product\", \"VariableProduct\", \"ExternalProduct\", \"GroupProduct\", or \"SimpleProduct\"?",
+      "extensions": {
+        "category": "graphql"
+      },
+      "locations": [
+        {
+          "line": 17,
+          "column": 11
+        }
+      ]
+    },
+    {
+      "message": "Cannot query field \"productTags\" on type \"ProductUnion\". Did you mean to use an inline fragment on \"Product\", \"VariableProduct\", \"ExternalProduct\", \"GroupProduct\", or \"SimpleProduct\"?",
+      "extensions": {
+        "category": "graphql"
+      },
+      "locations": [
+        {
+          "line": 22,
+          "column": 11
+        }
+      ]
+    }
+  ],
+  "extensions": {
+    "debug": [
+      {
+        "type": "GRAPHQL_DEBUG",
+        "message": "Interface field argument \"ProductVariation.metaData(keysIn:)\" expected to be of type \"\" but got \"[String]\". Please ensure the field arguments match the interface field arguments or rename the argument.",
+        "stack": [
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceTrait.php:258",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceTrait.php:223",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceTrait.php:131",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Type/WPInterfaceType.php:49",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:829",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:718",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:851",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Registry/TypeRegistry.php:950",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:406",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Definition/FieldDefinition.php:210",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Utils/TypeInfo.php:213",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:222",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:208",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:448",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:437",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Type/Schema.php:425",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Utils/QueryAnalyzer.php:486",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Language/Visitor.php:470",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/vendor/webonyx/graphql-php/src/Language/Visitor.php:277",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Utils/QueryAnalyzer.php:501",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Utils/QueryAnalyzer.php:272",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:324",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:348",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/plugin.php:517",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Request.php:592",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Request.php:289",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Request.php:690",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Router.php:464",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-content/plugins/wp-graphql/src/Router.php:257",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:324",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp-hook.php:348",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/plugin.php:565",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp.php:418",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/class-wp.php:813",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-includes/functions.php:1336",
+          "/home/exoticsh/wp.exoticshoes.co.za/wp-blog-header.php:16",
+          "/home/exoticsh/wp.exoticshoes.co.za/index.php:17"
+        ]
+      }
+    ],
+    "queryAnalyzer": {
+      "keys": "dc6fffc09c13e3f2efd8bfa0b4ea24eb7f8c9653b1db2beb7df79035fadd07d4 graphql:Query operation:GetAllProducts list:variableproduct list:externalproduct list:groupproduct list:simpleproduct",
+      "keysLength": 182,
+      "keysCount": 7,
+      "skippedKeys": "",
+      "skippedKeysSize": 0,
+      "skippedKeysCount": 0,
+      "skippedTypes": []
+    }
+  }
+}
+
+2025-03-28T21:17:26.847Z: GraphQL Errors:
+[
+  {
+    "message": "Cannot query field \"productCategories\" on type \"ProductUnion\". Did you mean to use an inline fragment on \"Product\", \"VariableProduct\", \"ExternalProduct\", \"GroupProduct\", or \"SimpleProduct\"?",
+    "extensions": {
+      "category": "graphql"
+    },
+    "locations": [
+      {
+        "line": 17,
+        "column": 11
+      }
+    ]
+  },
+  {
+    "message": "Cannot query field \"productTags\" on type \"ProductUnion\". Did you mean to use an inline fragment on \"Product\", \"VariableProduct\", \"ExternalProduct\", \"GroupProduct\", or \"SimpleProduct\"?",
+    "extensions": {
+      "category": "graphql"
+    },
+    "locations": [
+      {
+        "line": 22,
+        "column": 11
+      }
+    ]
+  }
+]
+
+2025-03-28T21:17:26.849Z: Error fetching products:
+{
+  "message": "GraphQL query failed",
+  "stack": "Error: GraphQL query failed\n    at fetchAllProducts (file:///C:/Users/Administrator/Pictures/exoticlive%20-%20production%20versionbackup/scripts/import-products-fixed.mjs:208:15)\n    at async importProducts (file:///C:/Users/Administrator/Pictures/exoticlive%20-%20production%20versionbackup/scripts/import-products-fixed.mjs:401:22)",
+  "response": null
+}
+
+2025-03-28T21:17:26.851Z:  Import failed:
+{}
+
+2025-03-28T21:17:26.854Z:  Fatal error:
+{}
+
