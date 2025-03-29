@@ -87,9 +87,9 @@ const ResellBanner = () => {
             sx={{
               flex: { xs: '1', md: '0 0 40%' },
               position: 'relative',
-              height: { xs: '180px', sm: '220px', md: '280px' },
+              height: { xs: '180px', sm: '220px', md: '350px' },
               width: { xs: '100%', sm: '100%' },
-              maxWidth: { xs: '280px', sm: '300px', md: '400px' },
+              maxWidth: { xs: '280px', sm: '300px', md: '450px' },
               mx: 'auto',
               order: { xs: 1, md: 2 },
               mb: { xs: 1, md: 0 },

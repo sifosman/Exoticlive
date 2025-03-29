@@ -65,7 +65,7 @@ const SlidingBanner: React.FC = () => {
         position: 'relative',
         width: '100%',
         height: {
-          xs: '220px',
+          xs: 'calc(100vh - 60px)',
           sm: '250px',
           md: '300px',
           lg: '350px'
