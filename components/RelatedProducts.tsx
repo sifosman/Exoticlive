@@ -71,7 +71,7 @@ const RelatedProducts: React.FC = () => {
   }, [data]);
 
   if (loading) return (
-    <div className="mt-8 md:mt-12 text-center text-gray-600 text-sm md:text-base">
+    <div className="mt-8 md:mt-12 text-center text-gray-600 text-sm md:text-base font-lato">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -89,7 +89,7 @@ const RelatedProducts: React.FC = () => {
   if (!randomProducts.length) return null;
 
   return (
-    <section className="mt-4 md:mt-6">
+    <section className="mt-4 md:mt-6 font-lato">
       <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -126,10 +126,10 @@ const RelatedProducts: React.FC = () => {
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <button 
-            onClick={() => window.location.href = '/products'}
+            onClick={() => window.location.href = '/shop'}
             className="inline-flex items-center justify-center 
               px-4 py-2 md:px-5 md:py-2.5
-              text-xs md:text-sm font-medium 
+              text-xs md:text-sm font-medium font-lato
               text-white bg-black hover:bg-gray-800
               rounded transition-colors duration-200
               focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-900
