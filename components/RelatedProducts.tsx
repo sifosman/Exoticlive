@@ -66,7 +66,7 @@ const RelatedProducts: React.FC = () => {
       );
       
       const shuffled = [...filteredProducts].sort(() => 0.5 - Math.random());
-      setRandomProducts(shuffled.slice(0, 4));
+      setRandomProducts(shuffled.slice(0, 5));
     }
   }, [data]);
 
@@ -89,18 +89,14 @@ const RelatedProducts: React.FC = () => {
   if (!randomProducts.length) return null;
 
   return (
-    <section className="mt-6 md:mt-8 pt-2 md:pt-4">
+    <section className="mt-4 md:mt-6">
       <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-lg md:text-xl font-lato font-bold mb-3 md:mb-4 text-gray-900 px-1">
-            You May Also Like
-          </h2>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 lg:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4">
             {randomProducts.map((product: any, index: number) => (
               <motion.div
                 key={product.id}
@@ -112,7 +108,7 @@ const RelatedProducts: React.FC = () => {
                 }}
                 className="flex justify-center"
               >
-                <div className="w-full max-w-[180px] md:max-w-[220px]">
+                <div className="w-full max-w-full">
                   <ProductCard 
                     product={product}
                     index={index}
@@ -124,7 +120,7 @@ const RelatedProducts: React.FC = () => {
         </motion.div>
 
         <motion.div 
-          className="flex justify-center mt-4 md:mt-6"
+          className="flex justify-center mt-6 md:mt-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -132,14 +128,14 @@ const RelatedProducts: React.FC = () => {
           <button 
             onClick={() => window.location.href = '/products'}
             className="inline-flex items-center justify-center 
-              px-3 py-1.5 md:px-4 md:py-2 
-              text-[10px] md:text-xs font-medium 
-              text-white bg-gray-900 hover:bg-gray-800
-              rounded-full transition-colors duration-200
+              px-4 py-2 md:px-5 md:py-2.5
+              text-xs md:text-sm font-medium 
+              text-white bg-black hover:bg-gray-800
+              rounded transition-colors duration-200
               focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-900
               shadow-sm hover:shadow-md"
           >
-            View All Products
+            Shop All Products
           </button>
         </motion.div>
       </div>

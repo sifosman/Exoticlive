@@ -758,7 +758,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
 
       {/* Related Products Section */}
       <div className="mt-10 md:mt-16 border-t border-gray-200 pt-6 md:pt-10 px-2 md:px-0">
-        <h2 className="text-lg md:text-2xl font-lato font-bold mb-4 md:mb-6 text-center text-gray-800">
+        <h2 className="text-lg md:text-2xl font-lato font-bold mb-6 text-center text-gray-800">
           You Might Also Like
         </h2>
         <RelatedProducts />
