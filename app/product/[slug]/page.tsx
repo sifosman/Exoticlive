@@ -150,35 +150,6 @@ async function getProduct(slug: string) {
               attributes: processedAttributes
             };
           });
-          
-          // Log sample variation for debugging
-          if (variations.length > 0) {
-            console.log('DEBUG: Sample variation from Typesense:', variations[0]);
-          }
-          
-          // Check for Black/Size 3 variation
-          const blackSize3 = variations.find(v => {
-            if (!v.attributes || !Array.isArray(v.attributes)) return false;
-            
-            const hasBlackColor = v.attributes.some(attr => 
-              attr.name === 'color' && attr.option === 'Black'
-            );
-            
-            const hasSize3 = v.attributes.some(attr => 
-              attr.name === 'size' && attr.option === '3'
-            );
-            
-            return hasBlackColor && hasSize3;
-          });
-          
-          if (blackSize3) {
-            console.log('DEBUG: Found Black/Size 3 variation from JSON:');
-            console.log(`- ID: ${blackSize3.id}`);
-            console.log(`- Stock Quantity: ${blackSize3.stock_quantity}`);
-            console.log(`- Stock Status: ${blackSize3.stock_status}`);
-          } else {
-            console.log('DEBUG: Black/Size 3 variation NOT found in JSON data');
-          }
         } catch (error) {
           console.error('DEBUG: Error parsing variations_json:', error);
         }
@@ -188,34 +159,130 @@ async function getProduct(slug: string) {
         try {
           attributes = JSON.parse(typesenseProduct.attributes_json);
           console.log(`DEBUG: Parsed ${attributes.length} attributes from Typesense JSON`);
-          
-          // Log attributes for debugging
-          console.log('DEBUG: Attributes from Typesense:', attributes);
         } catch (error) {
           console.error('DEBUG: Error parsing attributes_json:', error);
         }
       }
       
-      // Determine if any variation is in stock
-      const anyVariationInStock = variations.some(variation => {
-        return variation.stock_status === 'instock' && variation.stock_quantity > 0;
-      });
-      
-      // Complete product data
+      // Return the processed product with variations and attributes
       return {
         ...processedProduct,
         variations,
-        attributes,
-        stock_status: anyVariationInStock ? 'instock' : 'outofstock',
-        isVariableProduct: true,
-        _dataSource: {
-          basic: 'typesense',
-          stock: 'typesense',
-          attributes: 'typesense',
-          realTimeStock: true
-        }
+        attributes
       };
     }
+    
+    // Process any product with Typesense data using ProductContentSimplified
+    // Check if this is a variable product with variations
+    const hasTypesenseVariations = typesenseProduct && 
+      (typesenseProduct.variations_json || typesenseProduct.variations);
+    
+    const hasTypesenseAttributes = typesenseProduct && 
+      (typesenseProduct.attributes_json || typesenseProduct.attributes);
+    
+    if (hasTypesenseVariations || hasTypesenseAttributes) {
+      console.log(`DEBUG: Using Typesense data for variable product: ${typesenseProduct.name}`);
+      
+      // Process Typesense data for variable product
+      const processedProduct = {
+        ...typesenseProduct,
+        price: Number(typesenseProduct.price || 0),
+        sale_price: typesenseProduct.sale_price ? Number(typesenseProduct.sale_price) : null,
+        regular_price: Number(typesenseProduct.regular_price || 0),
+        stock_quantity: Number(typesenseProduct.stock_quantity || 0),
+        gallery_images: Array.isArray(typesenseProduct.gallery_images)
+          ? typesenseProduct.gallery_images.map(url => ({ url, alt: '' }))
+          : []
+      };
+      
+      // Parse variations_json and attributes_json
+      let variations = [];
+      let attributes = [];
+      
+      // First try to use parsed variations if they exist
+      if (typesenseProduct.variations && Array.isArray(typesenseProduct.variations)) {
+        variations = typesenseProduct.variations;
+        console.log(`DEBUG: Using ${variations.length} pre-parsed variations`);
+      }
+      // Otherwise parse them from JSON string
+      else if (typesenseProduct.variations_json) {
+        try {
+          variations = JSON.parse(typesenseProduct.variations_json);
+          console.log(`DEBUG: Parsed ${variations.length} variations from variations_json`);
+        } catch (error) {
+          console.error('DEBUG: Error parsing variations_json:', error);
+        }
+      }
+      
+      // Convert variations to expected format if needed
+      variations = variations.map(variation => {
+        // Ensure attributes is properly formatted
+        const processedAttributes = variation.attributes || [];
+        
+        return {
+          ...variation,
+          id: variation.id,
+          price: Number(variation.price || processedProduct.price || 0),
+          regular_price: Number(variation.regular_price || processedProduct.regular_price || 0),
+          sale_price: Number(variation.sale_price || processedProduct.sale_price || 0),
+          stock_status: variation.stock_status || 'outofstock',
+          stock_quantity: Number(variation.stock_quantity || 0),
+          attributes: processedAttributes
+        };
+      });
+      
+      // First try to use parsed attributes if they exist
+      if (typesenseProduct.attributes && Array.isArray(typesenseProduct.attributes)) {
+        attributes = typesenseProduct.attributes;
+        console.log(`DEBUG: Using ${attributes.length} pre-parsed attributes`);
+      }
+      // Otherwise parse from JSON string
+      else if (typesenseProduct.attributes_json) {
+        try {
+          attributes = JSON.parse(typesenseProduct.attributes_json);
+          console.log(`DEBUG: Parsed ${attributes.length} attributes from attributes_json`);
+        } catch (error) {
+          console.error('DEBUG: Error parsing attributes_json:', error);
+        }
+      }
+      
+      // If attributes were not found, derive them from colors and sizes arrays if available
+      if ((!attributes || attributes.length === 0) && 
+          (Array.isArray(typesenseProduct.colors) || Array.isArray(typesenseProduct.sizes))) {
+        
+        attributes = [];
+        
+        if (Array.isArray(typesenseProduct.sizes) && typesenseProduct.sizes.length > 0) {
+          attributes.push({
+            id: 1,
+            name: "Size",
+            options: typesenseProduct.sizes,
+            variation: true
+          });
+        }
+        
+        if (Array.isArray(typesenseProduct.colors) && typesenseProduct.colors.length > 0) {
+          attributes.push({
+            id: attributes.length + 1,
+            name: "Color",
+            options: typesenseProduct.colors,
+            variation: true
+          });
+        }
+        
+        console.log(`DEBUG: Created ${attributes.length} attributes from colors/sizes arrays`);
+      }
+      
+      // Return the processed product with variations and attributes
+      return {
+        ...processedProduct,
+        variations,
+        attributes
+      };
+    }
+
+    // Fallback to GraphQL data if Typesense data doesn't have variations info
+    console.log('DEBUG: Falling back to GraphQL data because Typesense data lacks complete variation info');
     
     // Pre-format Typesense data to ensure consistency
     const typesenseFormatted = {
