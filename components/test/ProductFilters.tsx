@@ -38,7 +38,8 @@ const CATEGORIES = [
   'Pumps',
   'Sandals',
   'Takkies',
-  'Bargain Box'
+  'Bargain Box',
+  'Safety Boots'
 ];
 const MIN_PRICE = 0;
 const MAX_PRICE = 2500;

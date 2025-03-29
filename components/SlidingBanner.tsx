@@ -88,7 +88,7 @@ const SlidingBanner: React.FC = () => {
         },
         paddingBottom: {
           xs: '0px',
-          md: '24px',
+          md: '72px',
           lg: '72px' 
         },
         marginX: 'auto',

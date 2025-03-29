@@ -3,7 +3,6 @@
 import { Box, Button, Container, Typography, useTheme, useMediaQuery } from '@mui/material';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 
 const ResellBanner = () => {
   const theme = useTheme();
@@ -78,7 +77,7 @@ const ResellBanner = () => {
             gap: { xs: 4, md: 6 },
           }}
         >
-          {/* Video section with fallback image */}
+          {/* Video section - basic HTML5 video implementation */}
           <Box
             component={motion.div}
             initial={{ opacity: 0, x: 30 }}
@@ -97,61 +96,26 @@ const ResellBanner = () => {
               borderRadius: '12px',
               overflow: 'hidden',
               boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              bgcolor: '#f5f5f5', // Light background in case video doesn't load
             }}
           >
-            <Box 
-              sx={{ 
-                position: 'relative',
-                width: '100%',
-                height: '100%',
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              width="100%"
+              height="100%"
+              style={{
+                objectFit: 'cover',
+                display: 'block',
+                borderRadius: '12px',
               }}
             >
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                poster="/about.webp"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                  zIndex: 1
-                }}
-              >
-                <source src="/video.mp4" type="video/mp4" />
-              </video>
-              
-              {/* Fallback image if video fails to load */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  zIndex: 0
-                }}
-              >
-                <Image
-                  src="/about.webp"
-                  alt="Become a reseller"
-                  fill
-                  style={{ 
-                    objectFit: 'cover',
-                    objectPosition: 'center'
-                  }}
-                />
-              </Box>
-            </Box>
+              <source src="/video.mp4" type="video/mp4" />
+            </video>
           </Box>
           
-          {/* Content section - bottom on mobile, left on desktop */}
+          {/* Content section */}
           <Box 
             component={motion.div}
             initial={{ opacity: 0, x: -30 }}
@@ -219,12 +183,23 @@ const ResellBanner = () => {
                   backgroundColor: '#128C7E', 
                   boxShadow: '0 6px 20px rgba(37, 211, 102, 0.6)',
                 },
-                '& .MuiButton-startIcon': {
-                  marginRight: { xs: 1, sm: 1.5 },
-                }
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'center'
               }}
             >
-              <WhatsAppIcon style={{ marginRight: '8px' }} />
+              <Box 
+                component="span"
+                sx={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  '& svg': {
+                    fontSize: { xs: '1.2rem', sm: '1.4rem' },
+                  }
+                }}
+              >
+                <WhatsAppIcon />
+              </Box>
               {isMobile ? "WhatsApp Us" : "Chat with Us on WhatsApp"}
             </Button>
           </Box>
