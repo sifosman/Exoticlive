@@ -85,11 +85,11 @@ const ResellBanner = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             viewport={{ once: true }}
             sx={{
-              flex: { xs: '1', md: '0 0 40%' },
+              flex: { xs: '1', md: '0 0 45%' },
               position: 'relative',
-              height: { xs: '180px', sm: '220px', md: '350px' },
+              height: { xs: '180px', sm: '220px', md: '400px' },
               width: { xs: '100%', sm: '100%' },
-              maxWidth: { xs: '280px', sm: '300px', md: '450px' },
+              maxWidth: { xs: '280px', sm: '300px', md: '500px' },
               mx: 'auto',
               order: { xs: 1, md: 2 },
               mb: { xs: 1, md: 0 },
@@ -106,9 +106,10 @@ const ResellBanner = () => {
               width="100%"
               height="100%"
               style={{
-                objectFit: 'cover',
+                objectFit: 'contain',
                 display: 'block',
                 borderRadius: '12px',
+                backgroundColor: '#f8f8f8',
               }}
             >
               <source src="/video.mp4" type="video/mp4" />
@@ -129,6 +130,9 @@ const ResellBanner = () => {
               maxWidth: { xs: '100%', md: '60%' },
               order: { xs: 2, md: 1 }, 
               mt: { xs: 0, md: 0 },
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: { xs: 'center', md: 'flex-start' }, 
             }}
           >
             <Typography 

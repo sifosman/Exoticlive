@@ -65,8 +65,8 @@ export async function searchProducts(params: SearchParams) {
   const searchParameters = {
     q: params.q || '*',
     query_by: params.query_by || 'name,description',
-    // Remove stock_status filter if it wasn't explicitly provided to show all products
-    filter_by: params.filter_by || 'has_in_stock_variations:=true',
+    // Use an empty string as default filter to show all products
+    filter_by: params.filter_by || '',
     sort_by: params.sort_by || '_text_match:desc,price:asc',
     page: params.page || 1,
     per_page: params.per_page || 12,
