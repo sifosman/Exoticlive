@@ -607,7 +607,12 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                             <button
                               key={optIndex}
                               className={`
-                                px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs md:text-sm border transition-all
+                                px-3 py-2 md:px-3 md:py-1.5 
+                                rounded-md 
+                                text-sm md:text-sm 
+                                font-medium
+                                border transition-all
+                                min-w-[45px] min-h-[40px] md:min-h-[32px]
                                 ${isSelected 
                                   ? 'bg-black text-white border-black' 
                                   : isAvailable 
