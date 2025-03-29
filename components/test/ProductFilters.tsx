@@ -15,7 +15,7 @@ interface FilterProps {
   initialCategories?: string[];
 }
 
-const SIZES = ['5', '6', '7', '8', '9', '10', '11', '12'];
+const SIZES = ['3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'];
 const COLORS = [
   'All Black', 'Animal Print', 'Beige', 'Bisque', 'Black', 'Black Denim', 'Black PU', 
   'Black Sunflower', 'Black Suede', 'Black white', 'Black-White', 'Blue', 'Blush', 
@@ -238,9 +238,51 @@ export default function ProductFilters({ onFilterChange, initialCategories = [] 
             step={50}
             value={priceRange}
             onValueChange={handlePriceChange}
-            className="mb-6"
+            className="mb-4"
           />
-          <div className="flex justify-between mt-2">
+          <div className="flex justify-between mt-4 gap-4">
+            <div className="w-1/2">
+              <label htmlFor="min-price" className="block text-xs text-gray-500 mb-1 font-lato">Min Price</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R</span>
+                <input
+                  id="min-price"
+                  type="number"
+                  min={MIN_PRICE}
+                  max={priceRange[1]}
+                  value={priceRange[0]}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    if (value >= MIN_PRICE && value <= priceRange[1]) {
+                      handlePriceChange([value, priceRange[1]]);
+                    }
+                  }}
+                  className="w-full pl-7 pr-2 py-2 border border-gray-300 rounded-md text-sm font-lato"
+                />
+              </div>
+            </div>
+            <div className="w-1/2">
+              <label htmlFor="max-price" className="block text-xs text-gray-500 mb-1 font-lato">Max Price</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R</span>
+                <input
+                  id="max-price"
+                  type="number"
+                  min={priceRange[0]}
+                  max={MAX_PRICE}
+                  value={priceRange[1]}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    if (value >= priceRange[0] && value <= MAX_PRICE) {
+                      handlePriceChange([priceRange[0], value]);
+                    }
+                  }}
+                  className="w-full pl-7 pr-2 py-2 border border-gray-300 rounded-md text-sm font-lato"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-between mt-4">
             <span className="text-sm text-gray-600 font-lato">
               {new Intl.NumberFormat('en-ZA', {
                 style: 'currency',
