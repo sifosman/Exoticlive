@@ -71,7 +71,7 @@ export default function CheckoutPage() {
     return `R${price.toFixed(2)}`; // Format price with "R" symbol
   };
 
-  const createWooCommerceOrder = async (paymentMethodTitle: string) => {
+  const createWooCommerceOrder = async (paymentMethodTitle: string, transactionId?: string) => {
     console.log('Cart contents before creating order:', cart);
     try {
       // Function to extract numeric ID from base64 GraphQL ID
@@ -287,6 +287,11 @@ export default function CheckoutPage() {
       
       console.log('Initializing Ozow payment with site code:', process.env.NEXT_PUBLIC_OZOW_SITE_CODE);
       console.log('Transaction reference:', transactionId);
+      console.log('Amount:', formattedAmount);
+      
+      // Determine if we're in test mode
+      const isTestMode = process.env.NEXT_PUBLIC_OZOW_IS_TEST === 'true';
+      console.log('Test mode:', isTestMode);
       
       // Prepare Ozow payment request using the client-side accessible variables
       const ozowPayload = {
@@ -302,18 +307,24 @@ export default function CheckoutPage() {
           email: email.trim(),
           mobileNumber: phone.trim().replace(/\s+/g, '')
         },
-        cancelUrl: `${window.location.origin}/checkout?status=cancelled`,
-        errorUrl: `${window.location.origin}/checkout?status=error`,
-        successUrl: `${window.location.origin}/order-success`,
-        notifyUrl: `${window.location.origin}/api/ozow-notification`
+        cancelUrl: `${window.location.origin}/checkout?status=cancelled&ref=${transactionId}`,
+        errorUrl: `${window.location.origin}/checkout?status=error&ref=${transactionId}`,
+        successUrl: `${window.location.origin}/order-success?ref=${transactionId}`,
+        notifyUrl: `${window.location.origin}/api/ozow-notification`,
+        isTest: isTestMode
       };
       
       // Call Ozow API endpoint (remove any trailing slash)
       const apiEndpoint = '/api/ozow-payment'.replace(/\/$/, '');
+      console.log('Making request to endpoint:', apiEndpoint);
+      
       try {
         const response = await fetch(apiEndpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache' 
+          },
           body: JSON.stringify(ozowPayload)
         });
 
@@ -328,10 +339,11 @@ export default function CheckoutPage() {
         }
 
         const data = await response.json();
+        console.log('Payment response data:', data);
 
         if (data.success && data.paymentUrl) {
           // Create WooCommerce order before redirecting
-          await createWooCommerceOrder('Ozow Payment Gateway');
+          await createWooCommerceOrder('Ozow Payment Gateway', transactionId);
           // Redirect to Ozow payment page
           console.log('Redirecting to Ozow payment page:', data.paymentUrl);
           window.location.href = data.paymentUrl;
