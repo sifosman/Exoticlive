@@ -5,10 +5,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    console.log('Ozow payment request received with data:', {
-      transactionReference: body.transactionReference,
-      amount: body.amount
-    });
+    console.log('Ozow payment request received with data:', JSON.stringify(body, null, 2));
 
     // Extract only the payment details we need from request body
     const {
@@ -27,18 +24,21 @@ export async function POST(request: Request) {
     const privateKey = process.env.OZOW_PRIVATE_KEY;
     const apiKey = process.env.OZOW_API_KEY;
     
-    // For production, we should explicitly set isTest to false 
-    const isTest = false;
+    console.log('===================== OZOW PAYMENT DEBUG =====================');
+    console.log('Ozow API credentials:');
+    console.log('Site Code:', siteCodeToUse);
+    console.log('Private Key exists:', !!privateKey);
+    console.log('API Key exists:', !!apiKey);
+    
+    // Always use "false" string for production mode
     const isTestString = 'false';
     
-    console.log('Ozow config:', { 
-      siteCode: siteCodeToUse,
-      privateKeyExists: !!privateKey,
-      apiKeyExists: !!apiKey,
-      isTest
-    });
-
     if (!privateKey || !siteCodeToUse || !apiKey) {
+      console.error('Missing Ozow configuration:', {
+        hasSiteCode: !!siteCodeToUse,
+        hasPrivateKey: !!privateKey,
+        hasApiKey: !!apiKey
+      });
       return NextResponse.json(
         { success: false, message: 'Ozow configuration missing (keys or site code).' },
         { status: 500 }
@@ -51,34 +51,15 @@ export async function POST(request: Request) {
     const bankReference = reference;
     const customerName = customer.firstName && customer.lastName ? 
       `${customer.firstName.trim()} ${customer.lastName.trim()}` : '';
+    const customerId = customer.email || '';
     
-    // CRITICAL: This is exactly how Ozow requires hash input string to be formatted
-    // The order and case of these fields matter for hash generation
-    const hashInput = (
-      siteCodeToUse +           // SiteCode
-      'ZA' +                    // CountryCode (South Africa)
-      'ZAR' +                   // CurrencyCode (South African Rand)
-      amountFormatted +         // Amount
-      reference +               // TransactionReference
-      bankReference +           // BankReference
-      customerName +            // CustomerInformation
-      notifyUrl +               // NotifyUrl
-      isTestString +            // IsTest
-      privateKey                // PrivateKey
-    ).toLowerCase();            // Ozow requires lowercase for hash input
-    
-    console.log('Hash input structure (redacted):', 
-      'SiteCode+CountryCode+CurrencyCode+Amount+TransactionReference+BankReference+CustomerInformation+NotifyUrl+IsTest+PrivateKey');
-    console.log('Sample (with private key redacted):',
-      `${siteCodeToUse}+ZA+ZAR+${amountFormatted}+${reference}+${bankReference}+${customerName}+${notifyUrl}+${isTestString}+[REDACTED]`);
-    
-    // Generate SHA512 hash as required by Ozow
-    const hash = crypto
-      .createHash('sha512')
-      .update(hashInput)
-      .digest('hex');
-
-    console.log('Generated hash (first 20 chars):', hash.substring(0, 20) + '...');
+    console.log('Payment Details:');
+    console.log('Amount:', amountFormatted);
+    console.log('Reference:', reference);
+    console.log('Customer:', customerName);
+    console.log('Customer ID:', customerId);
+    console.log('Success URL:', successUrl);
+    console.log('Notify URL:', notifyUrl);
     
     // Use standard Ozow URL for production
     const baseUrl = 'https://pay.ozow.com';
@@ -93,14 +74,15 @@ export async function POST(request: Request) {
     params.append('Amount', amountFormatted);
     params.append('TransactionReference', reference);
     params.append('BankReference', bankReference);
+    params.append('IsTest', isTestString);
     
     // Customer information
     if (customerName) {
       params.append('CustomerInformation', customerName);
     }
     
-    if (customer.email) {
-      params.append('CustomerId', customer.email);
+    if (customerId) {
+      params.append('CustomerId', customerId);
     }
     
     // URLs - all required
@@ -109,10 +91,59 @@ export async function POST(request: Request) {
     params.append('SuccessUrl', successUrl);
     params.append('NotifyUrl', notifyUrl);
     
-    // Must use exactly "false" (not 0 or other values)
-    params.append('IsTest', isTestString);
+    // =====================================================
+    // CRITICAL: Generate hash according to Ozow documentation
+    // =====================================================
     
-    // Hash is required
+    // 1. Create a string with all parameters in exact order they appear in the request
+    //    (excluding HashCheck, and BEFORE adding ApiKey)
+    const paramsForHash = [
+      'SiteCode=' + siteCodeToUse,
+      'CountryCode=ZA',
+      'CurrencyCode=ZAR',
+      'Amount=' + amountFormatted,
+      'TransactionReference=' + reference,
+      'BankReference=' + bankReference,
+      'IsTest=' + isTestString
+    ];
+    
+    // Add optional parameters in the exact order they appear
+    if (customerName) {
+      paramsForHash.push('CustomerInformation=' + customerName);
+    }
+    
+    if (customerId) {
+      paramsForHash.push('CustomerId=' + customerId);
+    }
+    
+    // Add URLs in exact order
+    paramsForHash.push('CancelUrl=' + cancelUrl);
+    paramsForHash.push('ErrorUrl=' + errorUrl);
+    paramsForHash.push('SuccessUrl=' + successUrl);
+    paramsForHash.push('NotifyUrl=' + notifyUrl);
+    
+    // 2. Concatenate all parameters with '&'
+    const paramsString = paramsForHash.join('&');
+    
+    // 3. Append the private key (exactly as provided by Ozow)
+    const hashInput = paramsString + '&PrivateKey=' + privateKey;
+    
+    console.log('Hash calculation method:');
+    console.log('1. Concatenate all parameters in order (excluding HashCheck)'); 
+    console.log('2. Join with "&" character');
+    console.log('3. Append "&PrivateKey=YOUR_PRIVATE_KEY"');
+    console.log('4. Calculate SHA512 hash of the resulting string');
+    console.log('Hash input string format:', 'SiteCode=XXX&CountryCode=ZA&CurrencyCode=ZAR&Amount=XXX&...[more params]...&PrivateKey=XXX');
+    
+    // Generate SHA512 hash as required by Ozow
+    const hash = crypto
+      .createHash('sha512')
+      .update(hashInput)
+      .digest('hex');
+
+    console.log('Generated hash:', hash);
+    
+    // Add hash to parameters
     params.append('HashCheck', hash);
     
     // Add the API key as required by Ozow verification
@@ -121,7 +152,9 @@ export async function POST(request: Request) {
     }
     
     const paymentUrl = `${baseUrl}?${params.toString()}`;
-    console.log('Ozow Payment URL (first 100 chars):', paymentUrl.substring(0, 100) + '...');
+    console.log('Full Payment URL:');
+    console.log(paymentUrl);
+    console.log('=================== END OZOW PAYMENT DEBUG ===================');
 
     // Return the payment URL to the client
     return NextResponse.json({
