@@ -58,6 +58,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
+  const [province, setProvince] = useState('');
 
   useEffect(() => {
     setIsClient(true);
@@ -75,24 +76,62 @@ export default function CheckoutPage() {
     console.log('Cart contents before creating order:', cart);
     try {
       // Function to extract numeric ID from base64 GraphQL ID
-      const getNumericId = (base64Id: string) => {
+      const extractProductId = (graphqlId: string) => {
         try {
-          // Decode base64
-          const decoded = atob(base64Id);
-          // Extract numeric ID (assuming format is 'product:12345')
-          const numericId = decoded.split(':')[1];
-          return parseInt(numericId);
+          // Try the base64 approach first
+          const base64Decoded = atob(graphqlId);
+          const match = base64Decoded.match(/(\d+)$/);
+          if (match && match[1]) {
+            return match[1];
+          } else {
+            throw new Error('No numeric ID found in decoded string');
+          }
         } catch (error) {
           console.error('Error decoding ID:', error);
+          
+          // Fallback: try to extract numeric ID directly if it's a simple format
+          const numericMatch = graphqlId.match(/(\d+)$/);
+          if (numericMatch && numericMatch[1]) {
+            console.log(`Converting ID: ${graphqlId} to: ${numericMatch[1]}`);
+            return numericMatch[1];
+          }
+          
+          // If all else fails, just return the original ID
+          console.log(`Converting ID: ${graphqlId} to: null`);
           return null;
         }
       };
 
+      // Create line items from cart
+      const lineItems = cart.map(item => {
+        // Extract product ID safely
+        const productId = extractProductId(item.id);
+        
+        if (!productId) {
+          console.warn('Could not extract product ID for', item);
+        }
+        
+        // Create line item with all available information
+        return {
+          product_id: productId || 0,
+          name: item.name || 'Unknown Product',
+          quantity: item.quantity,
+          price: parseFloat(item.price),
+          total: (parseFloat(item.price) * item.quantity).toString(),
+          variation_id: item.variationId ? extractProductId(item.variationId) : undefined,
+          meta_data: item.attributes ? item.attributes.map(attr => ({
+            key: attr.name,
+            value: attr.value
+          })) : []
+        };
+      }).filter(item => item.product_id > 0 || item.name !== 'Unknown Product');
+
+      // Prepare order payload
       const orderPayload = {
-        payment_method: paymentMethod,
+        payment_method: 'ozow',
         payment_method_title: paymentMethodTitle,
-        set_paid: paymentMethod === 'yoco',
-        status: paymentMethod === 'bank_transfer' ? 'on-hold' : 'processing', // Change to processing for paid orders
+        set_paid: false,
+        status: 'processing',
         billing: {
           first_name: firstName,
           last_name: lastName,
@@ -100,7 +139,7 @@ export default function CheckoutPage() {
           phone: phone,
           address_1: address,
           city: city,
-          state: '',
+          state: province,
           postcode: postalCode,
           country: 'ZA'
         },
@@ -109,107 +148,76 @@ export default function CheckoutPage() {
           last_name: lastName,
           address_1: address,
           city: city,
-          state: '',
+          state: province,
           postcode: postalCode,
           country: 'ZA'
         },
-        line_items: cart.map(item => {
-          const numericId = getNumericId(item.id);
-          console.log('Converting ID:', item.id, 'to:', numericId);
-          
-          const lineItem: OrderLineItem = {
-            product_id: numericId,
-            quantity: item.quantity
-          };
-
-          // Only add variation_id if it exists and has a value
-          if (item.variationId && item.variationId !== '') {
-            const numericVariationId = getNumericId(item.variationId);
-            if (numericVariationId) {
-              lineItem.variation_id = numericVariationId;
-            }
-          }
-
-          return lineItem;
-        }).filter(item => item.product_id !== null), // Remove any items with null product_id
+        line_items: lineItems,
         shipping_lines: [
           {
             method_id: 'flat_rate',
             method_title: 'Flat Rate',
-            total: shipping.toString()
+            total: '99'
           }
         ],
-        // Add meta data to ensure stock is reduced immediately
         meta_data: [
           {
             key: '_reduce_stock',
             value: 'yes'
+          },
+          {
+            key: 'ozow_transaction_id',
+            value: transactionId || ''
           }
         ]
       };
-
+      
       console.log('Order payload:', JSON.stringify(orderPayload, null, 2));
 
-      const orderResponse = await fetch('https://wp.exoticshoes.co.za/wp-json/wc/v3/orders', {
+      // Create order in WooCommerce
+      const response = await fetch(`${process.env.NEXT_PUBLIC_WORDPRESS_URL}/wp-json/wc/v3/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
+          'Authorization': `Basic ${btoa(`${process.env.NEXT_PUBLIC_WOOCOMMERCE_KEY}:${process.env.NEXT_PUBLIC_WOOCOMMERCE_SECRET}`)}`
         },
         body: JSON.stringify(orderPayload)
       });
 
-      const orderData = await orderResponse.json();
-      
-      if (!orderResponse.ok) {
-        console.error('WooCommerce API Error Response:', {
-          status: orderResponse.status,
-          statusText: orderResponse.statusText,
-          data: orderData
-        });
-        throw new Error(orderData.message || 'Failed to create order');
-      }
-
-      console.log('Order created successfully:', orderData);
-
-      // Explicitly call the reduce stock endpoint after order creation
-      if (orderData.id) {
-        await reduceStockManually(orderData.id);
-      }
-
-      clearCart(); // Clear the cart after successful order
-      router.push(`/order-success?id=${orderData.id}`);
-    } catch (error) {
-      console.error('Error creating order:', error);
-      setPaymentError('An error occurred while creating the order. Please try again.');
-    }
-  };
-
-  // Function to explicitly reduce stock for an order
-  const reduceStockManually = async (orderId: number) => {
-    try {
-      console.log(`Manually reducing stock for order ${orderId}...`);
-      
-      const response = await fetch(`https://wp.exoticshoes.co.za/wp-json/wc/v3/orders/${orderId}/reduce-stock`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
-        }
-      });
-
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error(`Failed to reduce stock for order ${orderId}:`, errorData);
-        return false;
+        const errorText = await response.text();
+        throw new Error(`WooCommerce API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
-      const result = await response.json();
-      console.log(`Successfully reduced stock for order ${orderId}:`, result);
-      return true;
+      const order = await response.json();
+      console.log('Order created successfully:', order);
+
+      // Reduce stock
+      try {
+        console.log(`Manually reducing stock for order ${order.id}...`);
+        const stockResponse = await fetch(`${process.env.NEXT_PUBLIC_WORDPRESS_URL}/wp-json/wc/v3/orders/${order.id}/reduce-stock`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${btoa(`${process.env.NEXT_PUBLIC_WOOCOMMERCE_KEY}:${process.env.NEXT_PUBLIC_WOOCOMMERCE_SECRET}`)}`
+          }
+        });
+        
+        if (!stockResponse.ok) {
+          console.error(`Failed to reduce stock for order ${order.id}:`, await stockResponse.json());
+        }
+      } catch (stockError) {
+        console.error(`Failed to reduce stock for order ${order.id}:`, stockError);
+      }
+
+      // Clear cart after successful order
+      clearCart();
+      
+      return order;
     } catch (error) {
-      console.error(`Error reducing stock for order ${orderId}:`, error);
-      return false;
+      console.error('Error creating WooCommerce order:', error);
+      setPaymentError('Failed to create order. Please try again.');
+      throw error;
     }
   };
 
@@ -454,6 +462,20 @@ export default function CheckoutPage() {
                     required
                   />
                 </div>
+                <div>
+                  <Label htmlFor="province" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Province</Label>
+                  <Input 
+                    id="province"
+                    value={province}
+                    onChange={(e) => setProvince(e.target.value)}
+                    className="mt-1"
+                    style={{fontFamily: 'var(--font-lato)'}}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="postalCode" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Postal Code</Label>
                   <Input 
