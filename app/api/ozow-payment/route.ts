@@ -155,13 +155,13 @@ export async function POST(request: Request) {
     // Concatenate with '&' and append private key
     // Rebuild parameters in exact order required by Ozow
     const ozowOrderedParams = [
-      `SiteCode=${siteCodeToUse}`,
-      `CountryCode=ZA`,
-      `CurrencyCode=ZAR`,
-      `Amount=${amountFormatted}`,
-      `TransactionReference=${reference}`,
-      `BankReference=${bankReference}`,
-      `IsTest=${isTestString}`,
+      `SiteCode=${encodeURIComponent(siteCodeToUse)}`,
+      `CountryCode=${encodeURIComponent('ZA')}`,
+      `CurrencyCode=${encodeURIComponent('ZAR')}`,
+      `Amount=${encodeURIComponent(amountFormatted)}`,
+      `TransactionReference=${encodeURIComponent(reference)}`,
+      `BankReference=${encodeURIComponent(bankReference)}`,
+      `IsTest=${encodeURIComponent(isTestString)}`,
       ...(customerName ? [`CustomerInformation=${encodeURIComponent(customerName)}`] : []),
       ...(customerId ? [`CustomerId=${encodeURIComponent(customerId)}`] : []),
       `CancelUrl=${encodeURIComponent(cancelUrl)}`,
@@ -198,11 +198,6 @@ export async function POST(request: Request) {
     
     // Add hash to parameters
     params.append('HashCheck', hash);
-    
-    // Add the API key as required by Ozow verification
-    if (apiKey) {
-      params.append('ApiKey', apiKey);
-    }
     
     const paymentUrl = `${baseUrl}?${params.toString()}`;
     
