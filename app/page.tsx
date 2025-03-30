@@ -1,3 +1,5 @@
+"use client";
+
 import dynamic from 'next/dynamic';
 import FeaturedProducts from '@/components/FeaturedProducts';
 import SlidingBanner from '@/components/SlidingBanner';

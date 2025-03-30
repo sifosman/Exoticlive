@@ -23,10 +23,9 @@ const nextConfig = {
   output: 'standalone',
   // Disable React strict mode temporarily to fix build issues
   reactStrictMode: false,
-  // Disable static optimization which is causing issues with useSearchParams
+  // Experimental options
   experimental: {
-    // This will fix issues with useSearchParams and similar hooks
-    missingSuspenseWithCSRBailout: false,
+    // Remove missingSuspenseWithCSRBailout option as it's no longer supported in Next.js 15
   },
   // Set fallback export method
   distDir: '.next',
