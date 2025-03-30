@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import TypesenseProductGrid from '@/components/test/TypesenseProductGrid';
 import ProductFilters from '@/components/test/ProductFilters';
@@ -22,119 +22,160 @@ const CATEGORY_MAP: Record<string, string> = {
   'safety-boots': 'Safety Boots'
 };
 
-export default function ShopPage() {
+// Create a wrapper component to use searchParams
+function ShopPageContent() {
   const searchParams = useSearchParams();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
   // Initialize with categories from URL if available
   const initialCategorySlug = searchParams.get('category');
   const initialCategory = initialCategorySlug && CATEGORY_MAP[initialCategorySlug] 
-    ? [CATEGORY_MAP[initialCategorySlug]] 
-    : [];
+    ? CATEGORY_MAP[initialCategorySlug] 
+    : '';
+
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    initialCategory ? [initialCategory] : []
+  );
   
-  const [filters, setFilters] = useState({
-    sizes: [] as string[],
-    priceRange: [0, 10000] as [number, number],
-    colors: [] as string[],
-    categories: initialCategory
-  });
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // Log filters for debugging
-  useEffect(() => {
-    console.log('Current filters:', filters);
-  }, [filters]);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
+  const [searchQuery, setSearchQuery] = useState<string>(searchParams.get('q') || '');
   
   // Update filters when URL parameters change
   useEffect(() => {
-    const categorySlug = searchParams.get('category');
-    if (categorySlug && CATEGORY_MAP[categorySlug]) {
-      const categoryName = CATEGORY_MAP[categorySlug];
-      console.log('Setting category from URL:', categoryName);
-      
-      setFilters(prev => ({
-        ...prev,
-        categories: [categoryName]
-      }));
+    const category = searchParams.get('category');
+    const query = searchParams.get('q');
+    
+    if (query !== null && query !== searchQuery) {
+      setSearchQuery(query);
     }
-  }, [searchParams]);
+    
+    if (category && CATEGORY_MAP[category] && !selectedCategories.includes(CATEGORY_MAP[category])) {
+      setSelectedCategories([CATEGORY_MAP[category]]);
+    }
+  }, [searchParams, searchQuery, selectedCategories]);
 
-  // Toggle filter panel
-  const toggleFilter = () => {
+  const toggleFilterMobile = () => {
     setIsFilterOpen(!isFilterOpen);
   };
 
+  const clearAllFilters = () => {
+    setSelectedCategories([]);
+    setSelectedColors([]);
+    setSelectedSizes([]);
+    setPriceRange([0, 5000]);
+    setSearchQuery('');
+  };
+
+  const hasActiveFilters = selectedCategories.length > 0 || 
+                          selectedColors.length > 0 || 
+                          selectedSizes.length > 0 || 
+                          priceRange[0] > 0 || 
+                          priceRange[1] < 5000 ||
+                          searchQuery.length > 0;
+
   // Generate heading based on selected category
   const getHeadingText = () => {
-    if (filters.categories.length === 1) {
-      return `Shop ${filters.categories[0]}`;
-    } else if (filters.categories.length > 1) {
-      return `Shop ${filters.categories.join(', ')}`;
+    if (selectedCategories.length === 1) {
+      return `Shop ${selectedCategories[0]}`;
+    } else if (selectedCategories.length > 1) {
+      return `Shop ${selectedCategories.join(', ')}`;
     }
     return 'Shop';
   };
 
   return (
-    <main className="min-h-screen bg-white font-sans">
+    <>
       <ShopBanner heading={getHeadingText()} />
-      <div className="container mx-auto px-4 py-8">
-        {/* Search Bar */}
-        <ProductSearch onSearch={setSearchQuery} />
-        
-        {/* Mobile Filter Toggle Button */}
-        <div className="md:hidden mb-4">
-          <Button 
-            onClick={toggleFilter} 
-            variant="outline" 
-            className="w-full flex items-center justify-center gap-2 font-sans"
-          >
-            <SlidersHorizontal size={16} />
-            {isFilterOpen ? 'Hide Filters' : 'Show Filters'}
-          </Button>
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-8 font-sans relative">
-          {/* Mobile Filter Overlay */}
-          <div 
-            className={`${isFilterOpen ? 'fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden' : 'hidden'}`}
-            onClick={() => setIsFilterOpen(false)}
-          />
-          
-          {/* Filter Panel - Hidden by default on mobile, slides in when toggled */}
-          <div 
-            className={`
-              ${isFilterOpen ? 'translate-x-0' : '-translate-x-full'} 
-              md:translate-x-0 fixed md:relative z-50 md:z-auto left-0 top-0 h-full md:h-auto
-              transition-transform duration-300 ease-in-out bg-white md:bg-transparent
-              w-3/4 md:w-auto overflow-y-auto md:overflow-visible
-              shadow-xl md:shadow-none pb-20 md:pb-0
-            `}
-          >
-            {/* Close button for mobile filter */}
-            <div className="flex justify-between items-center p-4 border-b md:hidden">
-              <h2 className="text-lg font-bold">Filters</h2>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setIsFilterOpen(false)}
-              >
-                <X size={24} />
-              </Button>
-            </div>
+      
+      <div className="container mx-auto px-4 lg:px-8 py-6">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+          {/* Mobile filter toggle */}
+          <div className="w-full flex justify-between items-center md:hidden mb-4">
+            <Button 
+              onClick={toggleFilterMobile}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <SlidersHorizontal size={18} />
+              Filters
+            </Button>
             
-            <ProductFilters 
-              onFilterChange={setFilters} 
-              initialCategories={filters.categories}
+            <ProductSearch 
+              searchQuery={searchQuery} 
+              setSearchQuery={setSearchQuery} 
+              className="flex-1 mx-2"
             />
           </div>
           
-          <TypesenseProductGrid 
-            filters={filters} 
-            searchQuery={searchQuery} 
-          />
+          {/* Filters sidebar - desktop always visible, mobile conditional */}
+          <div className={`
+            ${isFilterOpen ? 'block' : 'hidden'} md:block
+            w-full md:w-64 lg:w-72 bg-white md:sticky md:top-24 overflow-auto
+            ${isFilterOpen ? 'h-auto fixed top-0 left-0 right-0 bottom-0 z-50 p-4 overflow-y-auto' : ''} 
+          `}>
+            {isFilterOpen && (
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Filters</h2>
+                <Button onClick={toggleFilterMobile} variant="ghost" size="icon">
+                  <X size={24} />
+                </Button>
+              </div>
+            )}
+            
+            <ProductFilters 
+              selectedCategories={selectedCategories}
+              setSelectedCategories={setSelectedCategories}
+              selectedColors={selectedColors}
+              setSelectedColors={setSelectedColors}
+              selectedSizes={selectedSizes}
+              setSelectedSizes={setSelectedSizes}
+              priceRange={priceRange}
+              setPriceRange={setPriceRange}
+            />
+            
+            {hasActiveFilters && (
+              <Button 
+                onClick={clearAllFilters}
+                variant="outline" 
+                className="mt-4 w-full"
+              >
+                Clear All Filters
+              </Button>
+            )}
+          </div>
+          
+          {/* Product grid area */}
+          <div className="flex-1">
+            {/* Search bar - desktop only */}
+            <div className="hidden md:flex justify-between items-center mb-6">
+              <ProductSearch 
+                searchQuery={searchQuery} 
+                setSearchQuery={setSearchQuery} 
+              />
+            </div>
+            
+            {/* Product grid */}
+            <TypesenseProductGrid 
+              categories={selectedCategories}
+              colors={selectedColors}
+              sizes={selectedSizes}
+              priceRange={priceRange}
+              searchQuery={searchQuery}
+            />
+          </div>
         </div>
       </div>
-    </main>
+    </>
+  );
+}
+
+// Main component with Suspense boundary
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading products...</div>}>
+      <ShopPageContent />
+    </Suspense>
   );
 }
