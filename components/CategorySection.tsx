@@ -21,7 +21,7 @@ const CategorySection = () => {
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
   return (
-    <section className="w-full py-12 px-4">
+    <section className="w-full py-12 px-4 font-lato">
       <h2 className="text-3xl font-lato font-light tracking-wider text-center mb-8">
         Shop by Category
       </h2>
@@ -34,7 +34,7 @@ const CategorySection = () => {
             transition={{ duration: 0.5, delay: index * 0.1 }}
             className={`${category.slug === 'bargain-box' ? 'col-span-2 md:col-span-3' : ''}`}
           >
-            <Link href={`/shop?category=${category.slug}`}>
+            <Link href={`/shop?category=${category.slug}`} className="font-lato">
               <div className="relative group cursor-pointer overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
                 {category.slug === 'bargain-box' ? (
                   <div className="relative w-full h-auto overflow-hidden">
