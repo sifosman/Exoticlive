@@ -72,59 +72,71 @@ export default function CheckoutPage() {
     return `R${price.toFixed(2)}`; // Format price with "R" symbol
   };
 
+  // Function to safely decode product IDs that might be base64 encoded
+  const safeDecodeId = (encodedId: string): string => {
+    try {
+      // Check if the string is actually base64 encoded
+      // Base64 strings only contain A-Z, a-z, 0-9, +, /, and = for padding
+      const isBase64 = /^[A-Za-z0-9+/=]+$/.test(encodedId);
+      
+      if (!isBase64) {
+        console.log('ID is not base64 encoded, using as-is:', encodedId);
+        return encodedId;
+      }
+      
+      // Try to decode the base64 string
+      const decoded = atob(encodedId);
+      console.log('Converting ID:', encodedId, 'to:', decoded);
+      return decoded;
+    } catch (error) {
+      // If decoding fails, log the error and return the original ID
+      console.error('Error decoding ID:', error);
+      return encodedId;
+    }
+  };
+
   const createWooCommerceOrder = async (paymentMethodTitle: string, transactionId?: string) => {
     console.log('Cart contents before creating order:', cart);
     try {
-      // Function to extract numeric ID from base64 GraphQL ID
-      const extractProductId = (graphqlId: string) => {
-        try {
-          // Try the base64 approach first
-          const base64Decoded = atob(graphqlId);
-          const match = base64Decoded.match(/(\d+)$/);
-          if (match && match[1]) {
-            return match[1];
-          } else {
-            throw new Error('No numeric ID found in decoded string');
-          }
-        } catch (error) {
-          console.error('Error decoding ID:', error);
-          
-          // Fallback: try to extract numeric ID directly if it's a simple format
-          const numericMatch = graphqlId.match(/(\d+)$/);
-          if (numericMatch && numericMatch[1]) {
-            console.log(`Converting ID: ${graphqlId} to: ${numericMatch[1]}`);
-            return numericMatch[1];
-          }
-          
-          // If all else fails, just return the original ID
-          console.log(`Converting ID: ${graphqlId} to: null`);
-          return null;
-        }
-      };
-
       // Create line items from cart
       const lineItems = cart.map(item => {
-        // Extract product ID safely
-        const productId = extractProductId(item.id);
-        
-        if (!productId) {
-          console.warn('Could not extract product ID for', item);
+        // Get product ID, safely handling both encoded and non-encoded IDs
+        let productId = item.id;
+        try {
+          // First check if it looks like a base64 string
+          if (/^[A-Za-z0-9+/=]+$/.test(productId)) {
+            const decodedId = safeDecodeId(productId);
+            console.log('Converting ID:', productId, 'to:', decodedId);
+            productId = decodedId;
+          } else {
+            console.log('Using raw product ID:', productId);
+          }
+        } catch (error) {
+          console.error('Error processing product ID:', error);
+          // Continue with the original ID if there's an error
         }
-        
-        // Create line item with all available information
+
+        // Extract attribute values for this item
+        const attributes = [];
+        if (item.attributes && item.attributes.length > 0) {
+          item.attributes.forEach(attr => {
+            attributes.push({
+              key: attr.name,
+              value: attr.value
+            });
+          });
+        }
+
+        // Return the line item object for the order
         return {
-          product_id: productId || 0,
-          name: item.name || 'Unknown Product',
+          product_id: productId,
+          name: item.name,
           quantity: item.quantity,
-          price: parseFloat(item.price),
-          total: (parseFloat(item.price) * item.quantity).toString(),
-          variation_id: item.variationId ? extractProductId(item.variationId) : undefined,
-          meta_data: item.attributes ? item.attributes.map(attr => ({
-            key: attr.name,
-            value: attr.value
-          })) : []
+          price: item.price,
+          total: (item.price * item.quantity).toString(),
+          meta_data: attributes
         };
-      }).filter(item => item.product_id > 0 || item.name !== 'Unknown Product');
+      });
 
       // Prepare order payload
       const orderPayload = {
@@ -289,77 +301,68 @@ export default function CheckoutPage() {
       const isTestMode = process.env.NEXT_PUBLIC_OZOW_IS_TEST === 'true';
       console.log('Test mode:', isTestMode);
       
-      // Format customer name as per Ozow requirements
-      const customerName = `${firstName.trim()} ${lastName.trim()}`;
+      // Create a serialized version of order data to pass through URLs
+      // We're only taking what we need for creating the order later
+      const orderData = encodeURIComponent(JSON.stringify({
+        firstName,
+        lastName,
+        email,
+        phone,
+        address,
+        city,
+        state: province,
+        zipCode: postalCode,
+        cartItems: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          attributes: item.attributes
+        })),
+        shippingCost: shipping
+      }));
       
-      // Prepare Ozow payment request using the client-side accessible variables
+      // Simply formatted for SimplePayment API
       const ozowPayload = {
         siteCode: process.env.NEXT_PUBLIC_OZOW_SITE_CODE,
-        countryCode: 'ZA',
-        currencyCode: 'ZAR',
         amount: formattedAmount,
         transactionReference: transactionId,
-        bankReference: `EXO-${lastName}`.substring(0, 30), // Ensure bank reference isn't too long
         customer: {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          email: email.trim(),
-          mobileNumber: phone.trim().replace(/\s+/g, '')
+          email: email.trim()
         },
+        // Pass order data in success URL so we can create the order after payment
         cancelUrl: `${window.location.origin}/checkout?status=cancelled&ref=${transactionId}`,
         errorUrl: `${window.location.origin}/checkout?status=error&ref=${transactionId}`,
-        successUrl: `${window.location.origin}/order-success?ref=${transactionId}`,
-        notifyUrl: `${window.location.origin}/api/ozow-notification`,
-        isTest: isTestMode
+        successUrl: `${window.location.origin}/order-success?ref=${transactionId}&data=${orderData}`,
+        notifyUrl: `${window.location.origin}/api/ozow-notification?ref=${transactionId}`
       };
       
-      // Call Ozow API endpoint (remove any trailing slash)
-      const apiEndpoint = '/api/ozow-payment'.replace(/\/$/, '');
-      console.log('Making request to endpoint:', apiEndpoint);
-      
-      try {
-        const response = await fetch(apiEndpoint, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache' 
-          },
-          body: JSON.stringify(ozowPayload)
-        });
+      // Make a request to our backend API to initialize Ozow payment
+      console.log('Making request to endpoint: /api/ozow-payment');
+      const response = await fetch('/api/ozow-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(ozowPayload)
+      });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Ozow payment API error:', {
-            status: response.status,
-            statusText: response.statusText,
-            body: errorText
-          });
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
+      const data = await response.json();
+      console.log('Payment response data:', data);
 
-        const data = await response.json();
-        console.log('Payment response data:', data);
-
-        if (data.success && data.paymentUrl) {
-          // Create WooCommerce order before redirecting
-          await createWooCommerceOrder('Ozow Payment Gateway', transactionId);
-          // Redirect to Ozow payment page
-          console.log('Redirecting to Ozow payment page:', data.paymentUrl);
-          window.location.href = data.paymentUrl;
-        } else {
-          console.error('Ozow payment failed:', data);
-          setPaymentError(data.message || 'Failed to initialize Ozow payment. Please try again.');
-          setIsLoading(false);
-        }
-      } catch (apiError) {
-        console.error('Ozow API request failed:', apiError);
-        setPaymentError('Error connecting to payment service. Please try again later.');
-        setIsLoading(false);
+      if (data.success && data.paymentUrl) {
+        // Directly redirect to Ozow - order will be created after successful payment
+        console.log('Redirecting to Ozow payment page:', data.paymentUrl);
+        window.location.href = data.paymentUrl;
+      } else {
+        setPaymentError('Payment initialization failed. Please try again or contact support.');
+        console.error('Payment initialization failed:', data);
       }
     } catch (error) {
-      console.error('Ozow payment error:', error);
-      setPaymentError('An error occurred while processing your payment. Please try again.');
-      setIsLoading(false);
+      console.error('Error during payment process:', error);
+      setPaymentError('An error occurred during payment. Please try again.');
     }
   };
 

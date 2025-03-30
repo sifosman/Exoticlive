@@ -43,37 +43,207 @@ interface OrderDetails {
   date_created: string;
 }
 
+// Safe function to decode product IDs
+const safeDecodeId = (encodedId: string): string => {
+  try {
+    // Check if the string is actually base64 encoded
+    const isBase64 = /^[A-Za-z0-9+/=]+$/.test(encodedId);
+    
+    if (!isBase64) {
+      console.log('ID is not base64 encoded, using as-is:', encodedId);
+      return encodedId;
+    }
+    
+    // Try to decode the base64 string
+    const decoded = atob(encodedId);
+    console.log('Converting ID:', encodedId, 'to:', decoded);
+    return decoded;
+  } catch (error) {
+    // If decoding fails, log the error and return the original ID
+    console.error('Error decoding ID:', error);
+    return encodedId;
+  }
+};
+
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
-  const id = searchParams?.get('id') || null;
+  const ref = searchParams?.get('ref') || null;
+  const orderDataParam = searchParams?.get('data') || null;
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (id) {
-      // Fetch order details from your API
-      fetch(`/api/orders/${id}`)
-        .then(res => res.json())
-        .then(data => {
-          setOrder(data);
-          setLoading(false);
-        })
-        .catch(error => {
-          console.error('Error fetching order:', error);
-          setLoading(false);
+    async function createOrder() {
+      if (!ref || !orderDataParam) {
+        setError("Missing order reference or data");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Decode and parse the order data from URL
+        const orderData = JSON.parse(decodeURIComponent(orderDataParam));
+        console.log('Order data from URL:', orderData);
+        
+        // Prepare line items for WooCommerce
+        const lineItems = orderData.cartItems.map((item: any) => {
+          // Safely handle product ID (could be base64 encoded from GraphQL)
+          let productId = item.id;
+          try {
+            if (/^[A-Za-z0-9+/=]+$/.test(productId)) {
+              productId = safeDecodeId(productId);
+            }
+          } catch (e) {
+            console.error('Error processing product ID:', e);
+          }
+          
+          // Extract attribute values for meta data
+          const metaData = [];
+          if (item.attributes && item.attributes.length > 0) {
+            item.attributes.forEach((attr: any) => {
+              metaData.push({
+                key: attr.name,
+                value: attr.value
+              });
+            });
+          }
+          
+          return {
+            product_id: productId,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            total: (item.price * item.quantity).toString(),
+            meta_data: metaData
+          };
         });
+        
+        // Prepare order payload
+        const orderPayload = {
+          payment_method: "ozow",
+          payment_method_title: "Ozow Payment Gateway",
+          set_paid: true, // Mark as paid since payment was successful
+          status: "processing",
+          billing: {
+            first_name: orderData.firstName,
+            last_name: orderData.lastName,
+            email: orderData.email,
+            phone: orderData.phone,
+            address_1: orderData.address,
+            city: orderData.city,
+            state: orderData.state,
+            postcode: orderData.zipCode,
+            country: "ZA"
+          },
+          shipping: {
+            first_name: orderData.firstName,
+            last_name: orderData.lastName,
+            address_1: orderData.address,
+            city: orderData.city,
+            state: orderData.state,
+            postcode: orderData.zipCode,
+            country: "ZA"
+          },
+          line_items: lineItems,
+          shipping_lines: [
+            {
+              method_id: "flat_rate",
+              method_title: "Flat Rate",
+              total: orderData.shippingCost.toString()
+            }
+          ],
+          meta_data: [
+            {
+              key: "_reduce_stock",
+              value: "yes"
+            },
+            {
+              key: "ozow_transaction_id",
+              value: ref
+            }
+          ]
+        };
+        
+        console.log('Creating WooCommerce order with payload:', orderPayload);
+        
+        // Create the order in WooCommerce
+        const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || 'https://wp.exoticshoes.co.za';
+        const response = await fetch(`${wpUrl}/wp-json/wc/v3/orders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
+          },
+          body: JSON.stringify(orderPayload)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error creating order:', errorText);
+          throw new Error(`Failed to create order: ${response.status}`);
+        }
+        
+        const orderResponse = await response.json();
+        console.log('Order created successfully:', orderResponse);
+        
+        // Set the order data from the response
+        setOrder({
+          id: orderResponse.id,
+          total: orderResponse.total,
+          billing: orderResponse.billing,
+          shipping: orderResponse.shipping,
+          line_items: orderResponse.line_items,
+          payment_method_title: orderResponse.payment_method_title,
+          payment_method: orderResponse.payment_method,
+          status: orderResponse.status,
+          date_created: orderResponse.date_created
+        });
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Error creating order:', error);
+        setError('Failed to process your order. Please contact customer support.');
+        setLoading(false);
+      }
     }
-  }, [id]);
+    
+    createOrder();
+  }, [ref, orderDataParam]);
 
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-16 pt-[100px]">
         <div className="max-w-3xl mx-auto">
-          <Skeleton className="h-8 w-64 mb-8" />
+          <div className="text-center mb-8">
+            <h2 className="text-xl font-semibold">Processing Your Order</h2>
+            <p className="text-gray-600">Please wait while we finalize your order...</p>
+          </div>
           <div className="space-y-4">
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-48 w-full" />
             <Skeleton className="h-24 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-16 pt-[100px]">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-xl font-semibold text-red-600">Order Processing Error</h2>
+            <p className="text-gray-600">{error}</p>
+          </div>
+          <div className="text-center mt-8">
+            <Link href="/checkout">
+              <Button variant="outline" className="mx-2">Return to Checkout</Button>
+            </Link>
+            <Link href="/">
+              <Button className="mx-2">Continue Shopping</Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -199,31 +369,32 @@ function OrderSuccessContent() {
 
                 {/* Order Total */}
                 <div className="pt-4 border-t border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <span className="font-lato font-semibold text-gray-900">Total</span>
-                    <span className="font-lato font-bold text-gray-900">
-                      {order.total ? formatPrice(parseFloat(order.total)) : formatPrice(0)}
-                    </span>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="text-gray-900 font-medium">{formatPrice(parseFloat(order.total))}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                    <span className="text-gray-900 font-lato font-bold">Total</span>
+                    <span className="text-gray-900 font-lato font-bold text-xl">{formatPrice(parseFloat(order.total))}</span>
                   </div>
                 </div>
               </>
             ) : (
-              <p className="text-gray-600 text-center">Order not found</p>
+              <div className="text-center py-8">
+                <p className="text-gray-600">Order details not available</p>
+              </div>
             )}
           </motion.div>
 
-          {/* Action Buttons */}
+          {/* Continue Shopping Button */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="flex justify-center"
+            className="text-center"
           >
-            <Link href="/" className="w-full sm:w-auto">
-              <Button
-                variant="outline"
-                className="w-full bg-gray-50 hover:bg-gray-100 text-gray-900 border-gray-200"
-              >
+            <Link href="/">
+              <Button className="px-8 py-2">
                 Continue Shopping
               </Button>
             </Link>
@@ -234,10 +405,12 @@ function OrderSuccessContent() {
   );
 }
 
-export default function OrderSuccessPage() {
+function OrderSuccessPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <OrderSuccessContent />
     </Suspense>
   );
 }
+
+export default OrderSuccessPage;
