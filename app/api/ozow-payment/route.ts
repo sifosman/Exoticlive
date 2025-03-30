@@ -1,11 +1,47 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
+// Helper function to validate payment data
+function validatePaymentData(data: any): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  // Check for required fields
+  if (!data.siteCode && !process.env.OZOW_SITE_CODE) errors.push('Missing SiteCode');
+  if (!data.amount || isNaN(parseFloat(data.amount))) errors.push('Invalid or missing Amount');
+  if (!data.transactionReference) errors.push('Missing TransactionReference');
+  if (!data.cancelUrl) errors.push('Missing CancelUrl');
+  if (!data.errorUrl) errors.push('Missing ErrorUrl');
+  if (!data.successUrl) errors.push('Missing SuccessUrl');
+  if (!data.notifyUrl) errors.push('Missing NotifyUrl');
+  
+  // Additional validations
+  if (data.amount && parseFloat(data.amount) <= 0) errors.push('Amount must be greater than 0');
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    console.log('Ozow payment request received with data:', JSON.stringify(body, null, 2));
+    console.log('===== OZOW PAYMENT REQUEST RECEIVED =====');
+    console.log(JSON.stringify(body, null, 2));
+    
+    // Validate the payment data first
+    const validation = validatePaymentData(body);
+    if (!validation.isValid) {
+      console.error('Payment data validation failed:', validation.errors);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Invalid payment data: ' + validation.errors.join(', ') 
+        },
+        { status: 400 }
+      );
+    }
 
     // Extract only the payment details we need from request body
     const {
@@ -24,11 +60,10 @@ export async function POST(request: Request) {
     const privateKey = process.env.OZOW_PRIVATE_KEY;
     const apiKey = process.env.OZOW_API_KEY;
     
-    console.log('===================== OZOW PAYMENT DEBUG =====================');
-    console.log('Ozow API credentials:');
+    console.log('===== OZOW CREDENTIALS CHECK =====');
     console.log('Site Code:', siteCodeToUse);
-    console.log('Private Key exists:', !!privateKey);
-    console.log('API Key exists:', !!apiKey);
+    console.log('Private Key exists:', !!privateKey, 'Length:', privateKey ? privateKey.length : 0);
+    console.log('API Key exists:', !!apiKey, 'Length:', apiKey ? apiKey.length : 0);
     
     // Always use "false" string for production mode
     const isTestString = 'false';
@@ -53,7 +88,7 @@ export async function POST(request: Request) {
       `${customer.firstName.trim()} ${customer.lastName.trim()}` : '';
     const customerId = customer.email || '';
     
-    console.log('Payment Details:');
+    console.log('===== PAYMENT DETAILS =====');
     console.log('Amount:', amountFormatted);
     console.log('Reference:', reference);
     console.log('Customer:', customerName);
@@ -91,49 +126,37 @@ export async function POST(request: Request) {
     params.append('SuccessUrl', successUrl);
     params.append('NotifyUrl', notifyUrl);
     
-    // =====================================================
-    // CRITICAL: Generate hash according to Ozow documentation
-    // =====================================================
+    console.log('===== HASH CALCULATION =====');
     
-    // 1. Create a string with all parameters in exact order they appear in the request
-    //    (excluding HashCheck, and BEFORE adding ApiKey)
-    const paramsForHash = [
-      'SiteCode=' + siteCodeToUse,
-      'CountryCode=ZA',
-      'CurrencyCode=ZAR',
-      'Amount=' + amountFormatted,
-      'TransactionReference=' + reference,
-      'BankReference=' + bankReference,
-      'IsTest=' + isTestString
-    ];
+    // Extract all parameters for hash calculation
+    const paramsObj: Record<string, string> = {};
+    params.forEach((value, key) => {
+      paramsObj[key] = value;
+    });
     
-    // Add optional parameters in the exact order they appear
-    if (customerName) {
-      paramsForHash.push('CustomerInformation=' + customerName);
+    // Sort parameters alphabetically as per Ozow requirements
+    const sortedKeys = Object.keys(paramsObj).sort();
+    const paramsForHash: string[] = [];
+    
+    // Build the hash input with all parameters in correct format
+    for (const key of sortedKeys) {
+      paramsForHash.push(`${key}=${paramsObj[key]}`);
     }
     
-    if (customerId) {
-      paramsForHash.push('CustomerId=' + customerId);
-    }
-    
-    // Add URLs in exact order
-    paramsForHash.push('CancelUrl=' + cancelUrl);
-    paramsForHash.push('ErrorUrl=' + errorUrl);
-    paramsForHash.push('SuccessUrl=' + successUrl);
-    paramsForHash.push('NotifyUrl=' + notifyUrl);
-    
-    // 2. Concatenate all parameters with '&'
+    // Concatenate with '&' and append private key
     const paramsString = paramsForHash.join('&');
-    
-    // 3. Append the private key (exactly as provided by Ozow)
     const hashInput = paramsString + '&PrivateKey=' + privateKey;
     
     console.log('Hash calculation method:');
-    console.log('1. Concatenate all parameters in order (excluding HashCheck)'); 
-    console.log('2. Join with "&" character');
-    console.log('3. Append "&PrivateKey=YOUR_PRIVATE_KEY"');
-    console.log('4. Calculate SHA512 hash of the resulting string');
-    console.log('Hash input string format:', 'SiteCode=XXX&CountryCode=ZA&CurrencyCode=ZAR&Amount=XXX&...[more params]...&PrivateKey=XXX');
+    console.log('1. Get all parameters in alphabetical order');
+    console.log('2. Format as "Key=Value" for each parameter');
+    console.log('3. Join with "&" character');
+    console.log('4. Append "&PrivateKey=YOUR_PRIVATE_KEY"');
+    console.log('5. Calculate SHA512 hash of the resulting string');
+    
+    // Log redacted hash input for debugging
+    const redactedHashInput = hashInput.replace(privateKey, '[REDACTED]');
+    console.log('Redacted hash input:', redactedHashInput);
     
     // Generate SHA512 hash as required by Ozow
     const hash = crypto
@@ -152,10 +175,16 @@ export async function POST(request: Request) {
     }
     
     const paymentUrl = `${baseUrl}?${params.toString()}`;
-    console.log('Full Payment URL:');
+    
+    // Log the final URL for debugging
+    console.log('===== FINAL PAYMENT URL =====');
     console.log(paymentUrl);
-    console.log('=================== END OZOW PAYMENT DEBUG ===================');
 
+    // Check if URL is too long (over 2000 characters)
+    if (paymentUrl.length > 2000) {
+      console.warn('Warning: Payment URL is very long (' + paymentUrl.length + ' chars)');
+    }
+    
     // Return the payment URL to the client
     return NextResponse.json({
       success: true,
