@@ -1,100 +1,58 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 
-// This function will handle incoming notifications from Ozow about payment status
+// This endpoint receives notification callbacks from Ozow after payment
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    console.log('===== OZOW NOTIFICATION RECEIVED =====');
     
-    // Extract relevant fields from the notification
-    const {
-      TransactionId,
-      SiteCode,
-      TransactionReference,
-      Amount,
-      Status,
-      Hash
-    } = body;
-
-    // Verify the hash to ensure the notification is authentic
-    // Retrieve private key from environment variables
+    // Try to parse both formats that Ozow might send
+    const contentType = request.headers.get('content-type') || '';
+    let data: any;
+    
+    if (contentType.includes('application/json')) {
+      data = await request.json();
+      console.log('JSON Notification Data:', JSON.stringify(data, null, 2));
+    } else {
+      // Handle form data
+      const formData = await request.formData();
+      data = {};
+      formData.forEach((value, key) => {
+        data[key] = value;
+      });
+      console.log('Form Data Notification:', JSON.stringify(data, null, 2));
+    }
+    
+    // Extract transaction reference if available to check localStorage later
+    const transactionReference = data.TransactionReference || 
+                              data.transactionReference || 
+                              request.url.split('ref=')[1];
+    
+    console.log('Transaction Reference from notification:', transactionReference);
+    
+    // Get Ozow credentials
+    const siteCode = process.env.OZOW_SITE_CODE;
     const privateKey = process.env.OZOW_PRIVATE_KEY;
-    const apiKey = process.env.OZOW_API_KEY;
-
-    if (!privateKey || !apiKey) {
-      console.error('Ozow configuration missing');
-      return NextResponse.json({ status: 'error', message: 'Configuration error' }, { status: 500 });
-    }
-
-    // Recreate the hash using the same algorithm as Ozow
-    // 1. Concatenate values in the correct order
-    const hashString = `${apiKey}${SiteCode}${TransactionId}${TransactionReference}${Amount}${Status}${privateKey}`;
     
-    // 2. Convert to lowercase
-    const lowercaseString = hashString.toLowerCase();
-    
-    // 3. Generate SHA512 hash
-    const calculatedHash = crypto
-      .createHash('sha512')
-      .update(lowercaseString)
-      .digest('hex');
-    
-    // Verify that the calculated hash matches the provided hash
-    if (calculatedHash.toLowerCase() !== Hash.toLowerCase()) {
-      console.error('Hash verification failed for Ozow notification');
-      return NextResponse.json({ status: 'error', message: 'Invalid hash' }, { status: 400 });
-    }
-    
-    // Process the notification based on status
-    // Status values: Complete, Cancelled, Failed, Pending, etc.
-    if (Status === 'Complete') {
-      // Payment successful - update order status in WooCommerce
-      await updateOrderStatus(TransactionReference, 'processing', 'Payment received via Ozow');
-    } else if (Status === 'Cancelled') {
-      // Payment was cancelled
-      await updateOrderStatus(TransactionReference, 'cancelled', 'Payment cancelled via Ozow');
-    } else if (Status === 'Failed') {
-      // Payment failed
-      await updateOrderStatus(TransactionReference, 'failed', 'Payment failed via Ozow');
-    }
-    
-    // Always respond with 200 OK to Ozow to acknowledge receipt of notification
-    return NextResponse.json({ status: 'success' });
-  } catch (error) {
-    console.error('Error processing Ozow notification:', error);
-    // Still return 200 OK to prevent Ozow from retrying unnecessarily
-    return NextResponse.json({ status: 'error', message: 'Error processing notification' });
-  }
-}
-
-// Function to update WooCommerce order status
-async function updateOrderStatus(reference: string, status: string, note: string) {
-  try {
-    // Extract order ID from reference (assuming format EXO-timestamp-orderid)
-    // If your reference format is different, adjust accordingly
-    const orderId = reference.split('-')[1]; // Adjust based on your reference format
-    
-    // Update order status in WooCommerce
-    const response = await fetch(`https://wp.exoticshoes.co.za/wp-json/wc/v3/orders/${orderId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
-      },
-      body: JSON.stringify({
-        status: status,
-        customer_note: note
-      })
+    console.log('Ozow credentials available:', {
+      hasSiteCode: !!siteCode,
+      hasPrivateKey: !!privateKey
     });
     
-    if (!response.ok) {
-      throw new Error(`Failed to update order status: ${response.statusText}`);
-    }
+    // Respond with 200 to acknowledge receipt
+    return NextResponse.json({ 
+      status: 'ok',
+      message: 'Notification received successfully',
+      reference: transactionReference
+    });
     
-    console.log(`Order ${orderId} status updated to ${status}`);
-    return true;
   } catch (error) {
-    console.error('Error updating order status:', error);
-    return false;
+    console.error('Error processing Ozow notification:', error);
+    
+    // Return 200 even on error so Ozow knows we received the notification
+    return NextResponse.json({ 
+      status: 'error',
+      message: 'Error processing notification, but received',
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 }
