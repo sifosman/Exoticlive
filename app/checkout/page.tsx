@@ -287,63 +287,91 @@ export default function CheckoutPage() {
 
   const handleOzowPayment = async () => {
     try {
-      // Create a transaction ID - typically a unique order reference
-      const transactionId = `EXO-${Date.now()}`;
+      // Check if cart is populated
+      if (!cart || cart.length === 0) {
+        setPaymentError('Your cart is empty. Please add items before checking out.');
+        return;
+      }
       
-      // Format amount to ensure it has 2 decimal places
-      const formattedAmount = parseFloat(total.toString()).toFixed(2);
+      // Validate required fields
+      if (!firstName || !lastName || !email || !phone || !address) {
+        setPaymentError('Please fill out all required fields.');
+        return;
+      }
       
-      console.log('Initializing Ozow payment with site code:', process.env.NEXT_PUBLIC_OZOW_SITE_CODE);
-      console.log('Transaction reference:', transactionId);
-      console.log('Amount:', formattedAmount);
+      console.log('Cart items for checkout:', cart);
       
-      // We're in production mode - explicitly set test to false
-      const isTestMode = false;
-      console.log('Test mode:', isTestMode);
+      // Verify all items are in stock before proceeding
+      for (const item of cart) {
+        if (item.stockStatus === 'outofstock') {
+          setPaymentError(`Sorry, ${item.name} is out of stock. Please remove it from your cart to continue.`);
+          return;
+        }
+        
+        console.log(`Item ${item.id} - Stock status: ${item.stockStatus}`, item);
+      }
       
-      // Store order data in localStorage instead of passing through URL
-      // This keeps the URLs short while preserving all the data we need
+      // Prepare line items for WooCommerce order
+      const lineItems = cart.map(item => {
+        const lineItem: any = {
+          product_id: item.mainProductId || item.id,
+          quantity: item.quantity
+        };
+        
+        // If this is a variation, add the variation_id
+        if (item.variationId) {
+          lineItem.variation_id = item.variationId;
+        }
+        
+        return lineItem;
+      });
+      
+      console.log('Line items for order:', lineItems);
+      
+      // Create a unique transaction reference
+      const timestamp = Date.now();
+      const transactionReference = `EXO-${timestamp}`;
+      
+      // Save order data to localStorage to avoid URL length limits
       const orderData = {
+        lineItems,
         firstName,
         lastName,
         email,
         phone,
         address,
-        city,
-        state: province,
-        zipCode: postalCode,
-        cartItems: cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          attributes: item.attributes
-        })),
-        shippingCost: shipping
+        totalAmount: total
       };
       
-      // Store in localStorage with transaction ID as key
-      localStorage.setItem(`ozow_order_${transactionId}`, JSON.stringify(orderData));
+      // Store the order data in localStorage keyed by the transaction reference
+      localStorage.setItem(`order_${transactionReference}`, JSON.stringify(orderData));
+      console.log('Order data saved to localStorage with key:', `order_${transactionReference}`);
       
-      // Format payload for standard Ozow production API (not SimplePayment)
+      // Full website URL from env or default
+      const baseUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://exoticshoes.co.za';
+      
+      // Construct the Ozow payment request
       const ozowPayload = {
         siteCode: process.env.NEXT_PUBLIC_OZOW_SITE_CODE,
-        amount: formattedAmount,
-        transactionReference: transactionId,
+        amount: total.toFixed(2),
+        transactionReference,
         customer: {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.trim()
+          firstName,
+          lastName,
+          email
         },
-        // Pass only the reference in the URL, keeping it very short
-        cancelUrl: `${window.location.origin}/checkout?status=cancelled&ref=${transactionId}`,
-        errorUrl: `${window.location.origin}/checkout?status=error&ref=${transactionId}`,
-        successUrl: `${window.location.origin}/order-success?ref=${transactionId}`,
-        notifyUrl: `${window.location.origin}/api/ozow-notification?ref=${transactionId}`
+        cancelUrl: `${baseUrl}/checkout?status=cancelled&ref=${transactionReference}`,
+        errorUrl: `${baseUrl}/checkout?status=error&ref=${transactionReference}`,
+        successUrl: `${baseUrl}/order-success?ref=${transactionReference}`,
+        notifyUrl: `${baseUrl}/api/ozow-notification?ref=${transactionReference}`
       };
       
-      // Make a request to our backend API to initialize Ozow payment
-      console.log('Making request to endpoint: /api/ozow-payment');
+      console.log('Initializing Ozow payment with site code:', process.env.NEXT_PUBLIC_OZOW_SITE_CODE);
+      console.log('Transaction reference:', transactionReference);
+      console.log('Amount:', total.toFixed(2));
+      console.log('Test mode:', process.env.NEXT_PUBLIC_OZOW_TEST_MODE === 'true' ? 'true' : 'false');
+      
+      console.log('Making request to endpoint:', '/api/ozow-payment');
       const response = await fetch('/api/ozow-payment', {
         method: 'POST',
         headers: {
@@ -351,18 +379,32 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify(ozowPayload)
       });
-
+      
       const data = await response.json();
       console.log('Payment response data:', data);
-
-      if (data.success && data.paymentUrl) {
-        // Directly redirect to Ozow - order will be created after successful payment
-        console.log('Redirecting to Ozow payment page:', data.paymentUrl);
-        window.location.href = data.paymentUrl;
-      } else {
-        setPaymentError('Payment initialization failed. Please try again or contact support.');
-        console.error('Payment initialization failed:', data);
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to initialize payment');
       }
+      
+      // Redirect to Ozow payment page
+      console.log('Redirecting to Ozow payment page:', data.paymentUrl);
+      
+      // Set up error handling for Ozow redirect
+      const errorCheckTimer = setTimeout(() => {
+        // Check if we've been redirected to an error page
+        if (window.location.href.includes('request-error')) {
+          console.error('Ozow payment error detected! Redirected to error page.');
+          setPaymentError('Payment gateway returned an error. Please check your payment details and try again.');
+        }
+      }, 5000); // Check after 5 seconds
+      
+      // Cleanup timer if we successfully navigate away
+      window.addEventListener('beforeunload', () => clearTimeout(errorCheckTimer));
+      
+      // Redirect to Ozow
+      window.location.href = data.paymentUrl;
+      
     } catch (error) {
       console.error('Error during payment process:', error);
       setPaymentError('An error occurred during payment. Please try again.');
