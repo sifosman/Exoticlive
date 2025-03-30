@@ -166,8 +166,8 @@ export async function POST(request: Request) {
     // Generate SHA512 hash as required by Ozow
     const hash = crypto
       .createHash('sha512')
-      .update(hashInput)
-      .digest('hex');
+      .update(hashInput, 'utf8')
+      .digest('hex').toUpperCase();
 
     console.log('Generated hash:', hash);
     
