@@ -4,6 +4,11 @@ import crypto from 'crypto';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    
+    console.log('Ozow payment request received with data:', {
+      transactionReference: body.transactionReference,
+      amount: body.amount
+    });
 
     // Extract payment details from request body
     const {
@@ -25,7 +30,15 @@ export async function POST(request: Request) {
     const apiKey = process.env.OZOW_API_KEY;
     const isTest = process.env.OZOW_IS_TEST === 'true';
 
+    console.log('Ozow server config:', { 
+      siteCodeProvided: !!siteCode,
+      apiKeyExists: !!apiKey,
+      privateKeyExists: !!privateKey,
+      isTest
+    });
+
     if (!privateKey || !apiKey) {
+      console.error('Ozow configuration missing: API key or private key not found in environment variables');
       return NextResponse.json(
         { success: false, message: 'Ozow configuration missing' },
         { status: 500 }
@@ -33,13 +46,15 @@ export async function POST(request: Request) {
     }
 
     // Prepare data for hash generation according to Ozow documentation
-    // 1. Concatenate the values in order specified by Ozow
-    const concatenatedString = `${siteCode}${countryCode}${currencyCode}${amount}${transactionReference}${bankReference}${customer.firstName} ${customer.lastName}${notifyUrl}${isTest}${privateKey}`;
+    // Using the official documentation format for proper hash generation
+    const hashInputString = `${siteCode}${countryCode}${currencyCode}${amount}${transactionReference}${bankReference}${customer.firstName} ${customer.lastName}${notifyUrl}${isTest ? 'true' : 'false'}${privateKey}`;
     
-    // 2. Convert to lowercase
-    const lowercaseString = concatenatedString.toLowerCase();
+    console.log('Hash input string (without sensitive data):', hashInputString.replace(privateKey, '[REDACTED]'));
     
-    // 3. Generate SHA512 hash
+    // Convert to lowercase as required by Ozow
+    const lowercaseString = hashInputString.toLowerCase();
+    
+    // Generate SHA512 hash
     const hash = crypto
       .createHash('sha512')
       .update(lowercaseString)
@@ -67,6 +82,11 @@ export async function POST(request: Request) {
       HashCheck: hash
     };
 
+    console.log('Sending request to Ozow API with payload:', {
+      ...payload,
+      HashCheck: hash.substring(0, 10) + '...',
+    });
+
     // Make request to Ozow API - Using the correct endpoint as per documentation
     const ozowResponse = await fetch('https://api.ozow.com/secure/request/create', {
       method: 'POST',
@@ -80,16 +100,34 @@ export async function POST(request: Request) {
 
     // Check if the request was successful
     if (!ozowResponse.ok) {
-      const errorData = await ozowResponse.json();
-      console.error('Ozow API Error:', errorData);
+      let errorMessage = `Ozow API Error: ${ozowResponse.status} ${ozowResponse.statusText}`;
+      let errorData;
+      
+      try {
+        errorData = await ozowResponse.json();
+        console.error('Ozow API Error:', errorData);
+        errorMessage = `Ozow API Error: ${JSON.stringify(errorData)}`;
+      } catch (e) {
+        console.error('Failed to parse Ozow error response:', e);
+        // Try to get text response if JSON parsing fails
+        try {
+          const textResponse = await ozowResponse.text();
+          console.error('Ozow API Error (text):', textResponse);
+          errorMessage = `Ozow API Error: ${textResponse.substring(0, 100)}...`;
+        } catch (textError) {
+          console.error('Failed to get text response:', textError);
+        }
+      }
+      
       return NextResponse.json(
-        { success: false, message: 'Failed to process payment with Ozow' },
-        { status: ozowResponse.status }
+        { success: false, message: errorMessage },
+        { status: 500 }
       );
     }
 
     // Parse the Ozow response
     const responseData = await ozowResponse.json();
+    console.log('Ozow API response:', responseData);
 
     // Return the payment URL
     return NextResponse.json({
@@ -99,7 +137,11 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error processing Ozow payment:', error);
     return NextResponse.json(
-      { success: false, message: 'An error occurred processing the payment' },
+      { 
+        success: false, 
+        message: 'An error occurred processing the payment',
+        error: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }

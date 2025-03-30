@@ -282,44 +282,67 @@ export default function CheckoutPage() {
       // Create a transaction ID - typically a unique order reference
       const transactionId = `EXO-${Date.now()}`;
       
+      // Format amount to ensure it has 2 decimal places
+      const formattedAmount = parseFloat(total.toString()).toFixed(2);
+      
+      console.log('Initializing Ozow payment with site code:', process.env.NEXT_PUBLIC_OZOW_SITE_CODE);
+      console.log('Transaction reference:', transactionId);
+      
       // Prepare Ozow payment request using the client-side accessible variables
       const ozowPayload = {
         siteCode: process.env.NEXT_PUBLIC_OZOW_SITE_CODE,
         countryCode: 'ZA',
         currencyCode: 'ZAR',
-        amount: total,
+        amount: formattedAmount,
         transactionReference: transactionId,
-        bankReference: `EXO-${lastName}`,
+        bankReference: `EXO-${lastName}`.substring(0, 30), // Ensure bank reference isn't too long
         customer: {
-          firstName: firstName,
-          lastName: lastName,
-          email: email,
-          mobileNumber: phone
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+          mobileNumber: phone.trim().replace(/\s+/g, '')
         },
         cancelUrl: `${window.location.origin}/checkout?status=cancelled`,
         errorUrl: `${window.location.origin}/checkout?status=error`,
         successUrl: `${window.location.origin}/order-success`,
         notifyUrl: `${window.location.origin}/api/ozow-notification`
       };
-
-      console.log('Initializing Ozow payment with site code:', process.env.NEXT_PUBLIC_OZOW_SITE_CODE);
       
-      // Call Ozow API endpoint
-      const response = await fetch('/api/ozow-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ozowPayload)
-      });
+      // Call Ozow API endpoint (remove any trailing slash)
+      const apiEndpoint = '/api/ozow-payment'.replace(/\/$/, '');
+      try {
+        const response = await fetch(apiEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ozowPayload)
+        });
 
-      const data = await response.json();
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Ozow payment API error:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
 
-      if (data.success && data.paymentUrl) {
-        // Create WooCommerce order before redirecting
-        await createWooCommerceOrder('Ozow Payment Gateway');
-        // Redirect to Ozow payment page
-        window.location.href = data.paymentUrl;
-      } else {
-        setPaymentError('Failed to initialize Ozow payment. Please try again.');
+        const data = await response.json();
+
+        if (data.success && data.paymentUrl) {
+          // Create WooCommerce order before redirecting
+          await createWooCommerceOrder('Ozow Payment Gateway');
+          // Redirect to Ozow payment page
+          console.log('Redirecting to Ozow payment page:', data.paymentUrl);
+          window.location.href = data.paymentUrl;
+        } else {
+          console.error('Ozow payment failed:', data);
+          setPaymentError(data.message || 'Failed to initialize Ozow payment. Please try again.');
+          setIsLoading(false);
+        }
+      } catch (apiError) {
+        console.error('Ozow API request failed:', apiError);
+        setPaymentError('Error connecting to payment service. Please try again later.');
         setIsLoading(false);
       }
     } catch (error) {
