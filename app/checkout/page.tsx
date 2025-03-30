@@ -297,8 +297,8 @@ export default function CheckoutPage() {
       console.log('Transaction reference:', transactionId);
       console.log('Amount:', formattedAmount);
       
-      // Determine if we're in test mode
-      const isTestMode = process.env.NEXT_PUBLIC_OZOW_IS_TEST === 'true';
+      // We're in production mode - explicitly set test to false
+      const isTestMode = false;
       console.log('Test mode:', isTestMode);
       
       // Create a serialized version of order data to pass through URLs
@@ -322,7 +322,7 @@ export default function CheckoutPage() {
         shippingCost: shipping
       }));
       
-      // Simply formatted for SimplePayment API
+      // Format payload for standard Ozow production API (not SimplePayment)
       const ozowPayload = {
         siteCode: process.env.NEXT_PUBLIC_OZOW_SITE_CODE,
         amount: formattedAmount,
