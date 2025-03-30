@@ -282,7 +282,7 @@ export default function CheckoutPage() {
       // Create a transaction ID - typically a unique order reference
       const transactionId = `EXO-${Date.now()}`;
       
-      // Prepare Ozow payment request
+      // Prepare Ozow payment request using the client-side accessible variables
       const ozowPayload = {
         siteCode: process.env.NEXT_PUBLIC_OZOW_SITE_CODE,
         countryCode: 'ZA',
@@ -302,6 +302,8 @@ export default function CheckoutPage() {
         notifyUrl: `${window.location.origin}/api/ozow-notification`
       };
 
+      console.log('Initializing Ozow payment with site code:', process.env.NEXT_PUBLIC_OZOW_SITE_CODE);
+      
       // Call Ozow API endpoint
       const response = await fetch('/api/ozow-payment', {
         method: 'POST',

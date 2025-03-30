@@ -23,6 +23,7 @@ export async function POST(request: Request) {
     // Ensure required environment variables are set
     const privateKey = process.env.OZOW_PRIVATE_KEY;
     const apiKey = process.env.OZOW_API_KEY;
+    const isTest = process.env.OZOW_IS_TEST === 'true';
 
     if (!privateKey || !apiKey) {
       return NextResponse.json(
@@ -31,13 +32,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Prepare data for hash generation
-    const hashString = `${apiKey}${siteCode}${privateKey}${amount}${transactionReference}`;
-
-    // Generate hash using SHA512
+    // Prepare data for hash generation according to Ozow documentation
+    // 1. Concatenate the values in order specified by Ozow
+    const concatenatedString = `${siteCode}${countryCode}${currencyCode}${amount}${transactionReference}${bankReference}${customer.firstName} ${customer.lastName}${notifyUrl}${isTest}${privateKey}`;
+    
+    // 2. Convert to lowercase
+    const lowercaseString = concatenatedString.toLowerCase();
+    
+    // 3. Generate SHA512 hash
     const hash = crypto
       .createHash('sha512')
-      .update(hashString)
+      .update(lowercaseString)
       .digest('hex');
 
     // Construct the payload for Ozow API
@@ -58,16 +63,17 @@ export async function POST(request: Request) {
       ErrorUrl: errorUrl,
       SuccessUrl: successUrl,
       NotifyUrl: notifyUrl,
-      IsTest: process.env.NODE_ENV !== 'production', // Set to false in production
+      IsTest: isTest,
       HashCheck: hash
     };
 
-    // Make request to Ozow API
-    const ozowResponse = await fetch('https://api.ozow.com/postpaymentrequest', {
+    // Make request to Ozow API - Using the correct endpoint as per documentation
+    const ozowResponse = await fetch('https://api.ozow.com/secure/request/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'ApiKey': apiKey
+        'ApiKey': apiKey,
+        'Accept': 'application/json'
       },
       body: JSON.stringify(payload)
     });

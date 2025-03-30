@@ -27,10 +27,16 @@ export async function POST(request: Request) {
     }
 
     // Recreate the hash using the same algorithm as Ozow
+    // 1. Concatenate values in the correct order
     const hashString = `${apiKey}${SiteCode}${TransactionId}${TransactionReference}${Amount}${Status}${privateKey}`;
+    
+    // 2. Convert to lowercase
+    const lowercaseString = hashString.toLowerCase();
+    
+    // 3. Generate SHA512 hash
     const calculatedHash = crypto
       .createHash('sha512')
-      .update(hashString)
+      .update(lowercaseString)
       .digest('hex');
     
     // Verify that the calculated hash matches the provided hash
