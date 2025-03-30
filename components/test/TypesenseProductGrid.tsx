@@ -35,6 +35,10 @@ interface Props {
     colors: string[];
     categories: string[];
   };
+  categories?: string[];
+  colors?: string[];
+  sizes?: string[];
+  priceRange?: [number, number];
   searchQuery?: string;
 }
 
@@ -62,7 +66,14 @@ interface TypesenseSearchResult {
 
 const ITEMS_PER_PAGE = 24;
 
-const TypesenseProductGrid = ({ filters, searchQuery = '' }: Props) => {
+const TypesenseProductGrid = ({ 
+  filters, 
+  searchQuery = '',
+  categories = [],
+  colors = [],
+  sizes = [],
+  priceRange = [0, 5000]
+}: Props) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,8 +115,16 @@ const TypesenseProductGrid = ({ filters, searchQuery = '' }: Props) => {
         colors: filters.colors || [],
         categories: filters.categories || []
       }));
+    } else {
+      setFilters(prev => ({
+        ...prev,
+        priceRange,
+        sizes,
+        colors,
+        categories
+      }));
     }
-  }, [filters]);
+  }, [filters, priceRange, sizes, colors, categories]);
 
   // Calculate total pages
   const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
@@ -180,19 +199,19 @@ const TypesenseProductGrid = ({ filters, searchQuery = '' }: Props) => {
         let filterString = 'stock_status:=instock';
 
         // Add price filter
-        if (filters?.priceRange) {
-          const [minPrice, maxPrice] = filters.priceRange;
+        if (internalFilters.priceRange) {
+          const [minPrice, maxPrice] = internalFilters.priceRange;
           if (minPrice > 0 || maxPrice < 10000) {
             filterString += ` && price:>=${minPrice} && price:<=${maxPrice}`;
           }
         }
 
         // Add category filter
-        if (filters?.categories?.length > 0) {
+        if (internalFilters.categories?.length > 0) {
           // Log categories for debugging
-          console.log('Filtering by categories:', filters.categories);
+          console.log('Filtering by categories:', internalFilters.categories);
           
-          const categoryFilter = filters.categories
+          const categoryFilter = internalFilters.categories
             .map(cat => `categories:=${cat}`)
             .join(' || ');
           
@@ -201,10 +220,10 @@ const TypesenseProductGrid = ({ filters, searchQuery = '' }: Props) => {
         }
 
         // Add color filter directly through the colors field
-        if (filters?.colors?.length > 0) {
-          console.log('Filtering by colors:', filters.colors);
+        if (internalFilters.colors?.length > 0) {
+          console.log('Filtering by colors:', internalFilters.colors);
           
-          const colorsFilter = filters.colors
+          const colorsFilter = internalFilters.colors
             .map(color => `colors:=${color}`)
             .join(' || ');
           
@@ -212,10 +231,10 @@ const TypesenseProductGrid = ({ filters, searchQuery = '' }: Props) => {
         }
 
         // Add size filter directly through the sizes field
-        if (filters?.sizes?.length > 0) {
-          console.log('Filtering by sizes:', filters.sizes);
+        if (internalFilters.sizes?.length > 0) {
+          console.log('Filtering by sizes:', internalFilters.sizes);
           
-          const sizesFilter = filters.sizes
+          const sizesFilter = internalFilters.sizes
             .map(size => `sizes:=${size}`)
             .join(' || ');
           
@@ -272,7 +291,7 @@ const TypesenseProductGrid = ({ filters, searchQuery = '' }: Props) => {
     };
 
     fetchProducts();
-  }, [currentPage, internalFilters, searchQuery, filters]);
+  }, [currentPage, internalFilters, searchQuery]);
 
   if (error) {
     return (
