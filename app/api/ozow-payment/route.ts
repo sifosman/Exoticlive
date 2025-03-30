@@ -58,7 +58,6 @@ export async function POST(request: Request) {
     }
 
     // Prepare data for hash generation according to Ozow documentation
-    // Using the official documentation format for proper hash generation
     const isTestString = isTest ? 'true' : 'false';
     console.log('Using test mode:', isTestString);
     
@@ -83,98 +82,37 @@ export async function POST(request: Request) {
 
     console.log('Generated hash (first 20 chars):', hash.substring(0, 20) + '...');
     
-    // Construct the payload for Ozow API
-    const payload = {
+    // Construct query parameters for the Ozow payment URL
+    const params = new URLSearchParams({
       SiteCode: siteCodeToUse,
       CountryCode: countryCode,
       CurrencyCode: currencyCode,
       Amount: amount,
       TransactionReference: transactionReference,
       BankReference: bankReference,
-      Customer: {
-        FirstName: customer.firstName,
-        LastName: customer.lastName,
-        Email: customer.email,
-        Mobile: customer.mobileNumber,
-      },
+      CustomerFirstName: customer.firstName,
+      CustomerLastName: customer.lastName,
+      CustomerEmail: customer.email,
+      CustomerMobile: customer.mobileNumber,
       CancelUrl: cancelUrl,
       ErrorUrl: errorUrl,
       SuccessUrl: successUrl,
       NotifyUrl: notifyUrl,
-      IsTest: isTest,
-      HashCheck: hash
-    };
-
-    console.log('Sending request to Ozow API with payload:', {
-      SiteCode: payload.SiteCode,
-      Amount: payload.Amount,
-      TransactionReference: payload.TransactionReference,
-      IsTest: payload.IsTest,
-      HashCheck: hash.substring(0, 10) + '...'
+      IsTest: isTestString,
+      HashCheck: hash,
+      ApiKey: apiKey
     });
 
-    // Make request to Ozow API - Using the correct endpoint as per documentation
-    const ozowResponse = await fetch('https://pay.ozow.com', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'ApiKey': apiKey
-      },
-      body: new URLSearchParams({
-        SiteCode: payload.SiteCode,
-        CountryCode: payload.CountryCode,
-        CurrencyCode: payload.CurrencyCode,
-        Amount: payload.Amount,
-        TransactionReference: payload.TransactionReference,
-        BankReference: payload.BankReference,
-        CustomerFirstName: payload.Customer.FirstName,
-        CustomerLastName: payload.Customer.LastName,
-        CustomerEmail: payload.Customer.Email,
-        CustomerMobile: payload.Customer.Mobile,
-        CancelUrl: payload.CancelUrl,
-        ErrorUrl: payload.ErrorUrl,
-        SuccessUrl: payload.SuccessUrl,
-        NotifyUrl: payload.NotifyUrl,
-        IsTest: isTest ? 'true' : 'false',
-        HashCheck: payload.HashCheck
-      }).toString()
-    });
+    // Construct the direct payment URL - Use the redirect approach instead of API
+    const baseUrl = isTest ? 'https://pay.ozow.com/test?' : 'https://pay.ozow.com/?';
+    const paymentUrl = baseUrl + params.toString();
+    
+    console.log('Direct payment URL constructed (truncated):', paymentUrl.substring(0, 100) + '...');
 
-    // Check if the request was successful
-    if (!ozowResponse.ok) {
-      let errorMessage = `Ozow API Error: ${ozowResponse.status} ${ozowResponse.statusText}`;
-      let errorData;
-      
-      try {
-        errorData = await ozowResponse.json();
-        console.error('Ozow API Error:', errorData);
-        errorMessage = `Ozow API Error: ${JSON.stringify(errorData)}`;
-      } catch (e) {
-        console.error('Failed to parse Ozow error response:', e);
-        // Try to get text response if JSON parsing fails
-        try {
-          const textResponse = await ozowResponse.text();
-          console.error('Ozow API Error (text):', textResponse);
-          errorMessage = `Ozow API Error: ${textResponse.substring(0, 100)}...`;
-        } catch (textError) {
-          console.error('Failed to get text response:', textError);
-        }
-      }
-      
-      return NextResponse.json(
-        { success: false, message: errorMessage },
-        { status: 500 }
-      );
-    }
-
-    // Parse the Ozow response
-    const responseData = await ozowResponse.json();
-    console.log('Ozow API response:', responseData);
-
-    // Return the payment URL
+    // Return the payment URL to the client
     return NextResponse.json({
       success: true,
-      paymentUrl: responseData.url
+      paymentUrl: paymentUrl
     });
   } catch (error) {
     console.error('Error processing Ozow payment:', error);
