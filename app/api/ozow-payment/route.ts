@@ -56,7 +56,16 @@ export async function POST(request: Request) {
     } = body;
 
     // Ensure required environment variables are set
-    const siteCodeToUse = process.env.OZOW_SITE_CODE || siteCode;
+    // Use ONLY environment variable or body value, not both
+    const siteCodeToUse = process.env.OZOW_SITE_CODE ? process.env.OZOW_SITE_CODE : siteCode;
+    if (siteCodeToUse.includes('EXO-EXO')) {
+      console.error('Duplicate EXO prefix detected in SiteCode:', siteCodeToUse);
+      return NextResponse.json(
+        { success: false, message: 'Invalid SiteCode configuration' },
+        { status: 400 }
+      );
+    }
+    
     const privateKey = process.env.OZOW_PRIVATE_KEY;
     const apiKey = process.env.OZOW_API_KEY;
     
@@ -144,8 +153,24 @@ export async function POST(request: Request) {
     }
     
     // Concatenate with '&' and append private key
-    const paramsString = paramsForHash.join('&');
-    const hashInput = paramsString + '&PrivateKey=' + privateKey;
+    // Rebuild parameters in exact order required by Ozow
+    const ozowOrderedParams = [
+      `SiteCode=${siteCodeToUse}`,
+      `CountryCode=ZA`,
+      `CurrencyCode=ZAR`,
+      `Amount=${amountFormatted}`,
+      `TransactionReference=${reference}`,
+      `BankReference=${bankReference}`,
+      `IsTest=${isTestString}`,
+      ...(customerName ? [`CustomerInformation=${encodeURIComponent(customerName)}`] : []),
+      ...(customerId ? [`CustomerId=${encodeURIComponent(customerId)}`] : []),
+      `CancelUrl=${encodeURIComponent(cancelUrl)}`,
+      `ErrorUrl=${encodeURIComponent(errorUrl)}`,
+      `SuccessUrl=${encodeURIComponent(successUrl)}`,
+      `NotifyUrl=${encodeURIComponent(notifyUrl)}`
+    ];
+
+    const hashInput = ozowOrderedParams.join('&') + `&PrivateKey=${privateKey}`;
     
     console.log('Hash calculation method:');
     console.log('1. Get all parameters in alphabetical order');
