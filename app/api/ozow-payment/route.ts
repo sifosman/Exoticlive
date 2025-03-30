@@ -82,32 +82,33 @@ export async function POST(request: Request) {
 
     console.log('Generated hash (first 20 chars):', hash.substring(0, 20) + '...');
     
-    // Construct query parameters for the Ozow payment URL
-    const params = new URLSearchParams({
-      SiteCode: siteCodeToUse,
-      CountryCode: countryCode,
-      CurrencyCode: currencyCode,
-      Amount: amount,
-      TransactionReference: transactionReference,
-      BankReference: bankReference,
-      CustomerFirstName: customer.firstName,
-      CustomerLastName: customer.lastName,
-      CustomerEmail: customer.email,
-      CustomerMobile: customer.mobileNumber,
-      CancelUrl: cancelUrl,
-      ErrorUrl: errorUrl,
-      SuccessUrl: successUrl,
-      NotifyUrl: notifyUrl,
-      IsTest: isTestString,
-      HashCheck: hash,
-      ApiKey: apiKey
-    });
+    // Ensure exact parameter format required by Ozow
+    const params = new URLSearchParams();
+    params.append('SiteCode', siteCodeToUse);
+    params.append('CountryCode', countryCode);
+    params.append('CurrencyCode', currencyCode);
+    params.append('Amount', amount);
+    params.append('TransactionReference', transactionReference);
+    params.append('BankReference', bankReference);
+    params.append('Optional1', ''); // Add empty optional fields as per Ozow docs
+    params.append('Optional2', '');
+    params.append('Optional3', '');
+    params.append('Optional4', '');
+    params.append('Optional5', '');
+    params.append('CustomerInformation', customerName);
+    params.append('CustomerId', customer.email || '');
+    params.append('CancelUrl', cancelUrl);
+    params.append('ErrorUrl', errorUrl);
+    params.append('SuccessUrl', successUrl);
+    params.append('NotifyUrl', notifyUrl);
+    params.append('IsTest', isTestString);
+    params.append('HashCheck', hash);
 
-    // Construct the direct payment URL - Use the redirect approach instead of API
-    const baseUrl = isTest ? 'https://pay.ozow.com/test?' : 'https://pay.ozow.com/?';
-    const paymentUrl = baseUrl + params.toString();
+    // Construct the payment URL - use the correct Ozow endpoint
+    const baseUrl = 'https://pay.ozow.com';
+    const paymentUrl = `${baseUrl}?${params.toString()}`;
     
-    console.log('Direct payment URL constructed (truncated):', paymentUrl.substring(0, 100) + '...');
+    console.log('Ozow payment URL constructed (truncated):', paymentUrl.substring(0, 100) + '...');
 
     // Return the payment URL to the client
     return NextResponse.json({

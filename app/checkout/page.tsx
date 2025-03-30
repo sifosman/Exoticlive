@@ -289,6 +289,9 @@ export default function CheckoutPage() {
       const isTestMode = process.env.NEXT_PUBLIC_OZOW_IS_TEST === 'true';
       console.log('Test mode:', isTestMode);
       
+      // Format customer name as per Ozow requirements
+      const customerName = `${firstName.trim()} ${lastName.trim()}`;
+      
       // Prepare Ozow payment request using the client-side accessible variables
       const ozowPayload = {
         siteCode: process.env.NEXT_PUBLIC_OZOW_SITE_CODE,
