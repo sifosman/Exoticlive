@@ -5,14 +5,26 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { X } from "lucide-react";
 
+// Updated interface to match how it's used in shop page
 interface FilterProps {
-  onFilterChange: (filters: {
+  // Old API for backward compatibility
+  onFilterChange?: (filters: {
     sizes: string[];
     priceRange: [number, number];
     colors: string[];
     categories: string[];
   }) => void;
   initialCategories?: string[];
+  
+  // New API as used in the shop page
+  selectedCategories?: string[];
+  setSelectedCategories?: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedColors?: string[];
+  setSelectedColors?: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedSizes?: string[];
+  setSelectedSizes?: React.Dispatch<React.SetStateAction<string[]>>;
+  priceRange?: [number, number];
+  setPriceRange?: React.Dispatch<React.SetStateAction<[number, number]>>;
 }
 
 const SIZES = ['3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'];
@@ -44,48 +56,128 @@ const CATEGORIES = [
 const MIN_PRICE = 0;
 const MAX_PRICE = 2500;
 
-export default function ProductFilters({ onFilterChange, initialCategories = [] }: FilterProps) {
-  const [selectedSizes, setSelectedSizes] = React.useState<string[]>([]);
-  const [priceRange, setPriceRange] = React.useState<[number, number]>([MIN_PRICE, MAX_PRICE]);
-  const [selectedColors, setSelectedColors] = React.useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = React.useState<string[]>(initialCategories);
+export default function ProductFilters({
+  // Handle both APIs
+  onFilterChange,
+  initialCategories = [],
+  selectedCategories: externalSelectedCategories,
+  setSelectedCategories: externalSetSelectedCategories,
+  selectedColors: externalSelectedColors,
+  setSelectedColors: externalSetSelectedColors,
+  selectedSizes: externalSelectedSizes,
+  setSelectedSizes: externalSetSelectedSizes,
+  priceRange: externalPriceRange,
+  setPriceRange: externalSetPriceRange
+}: FilterProps) {
+  // Determine if we're using the new controlled API
+  const isControlled = 
+    externalSetSelectedCategories !== undefined &&
+    externalSetSelectedColors !== undefined &&
+    externalSetSelectedSizes !== undefined &&
+    externalSetPriceRange !== undefined;
+  
+  // Internal state for old API
+  const [internalSelectedSizes, setInternalSelectedSizes] = React.useState<string[]>([]);
+  const [internalPriceRange, setInternalPriceRange] = React.useState<[number, number]>([MIN_PRICE, MAX_PRICE]);
+  const [internalSelectedColors, setInternalSelectedColors] = React.useState<string[]>([]);
+  const [internalSelectedCategories, setInternalSelectedCategories] = React.useState<string[]>(initialCategories);
 
-  // Apply initialCategories when it changes
+  // Use either external state or internal state
+  const selectedSizes = isControlled ? (externalSelectedSizes || []) : internalSelectedSizes;
+  const selectedColors = isControlled ? (externalSelectedColors || []) : internalSelectedColors;
+  const selectedCategories = isControlled ? (externalSelectedCategories || []) : internalSelectedCategories;
+  const priceRange = isControlled ? (externalPriceRange || [MIN_PRICE, MAX_PRICE]) : internalPriceRange;
+  
+  // Use either external or internal state setters
+  const setSelectedSizes = isControlled ? externalSetSelectedSizes! : setInternalSelectedSizes;
+  const setSelectedColors = isControlled ? externalSetSelectedColors! : setInternalSelectedColors;
+  const setSelectedCategories = isControlled ? externalSetSelectedCategories! : setInternalSelectedCategories;
+  const setPriceRange = isControlled ? externalSetPriceRange! : setInternalPriceRange;
+
+  // Apply initialCategories when it changes (for old API)
   React.useEffect(() => {
-    if (initialCategories.length > 0) {
-      setSelectedCategories(initialCategories);
-      updateFilters(selectedSizes, priceRange, selectedColors, initialCategories);
+    if (!isControlled && initialCategories.length > 0) {
+      setInternalSelectedCategories(initialCategories);
+      if (onFilterChange) {
+        onFilterChange({
+          sizes: selectedSizes,
+          priceRange: internalPriceRange,
+          colors: selectedColors,
+          categories: initialCategories,
+        });
+      }
     }
-  }, [initialCategories]);
+  }, [initialCategories, isControlled]);
 
+  // Handlers for all filter types
   const handleSizeChange = (size: string) => {
     const newSizes = selectedSizes.includes(size)
       ? selectedSizes.filter(s => s !== size)
       : [...selectedSizes, size];
+    
     setSelectedSizes(newSizes);
-    updateFilters(newSizes, priceRange, selectedColors, selectedCategories);
+    
+    // Call onFilterChange if using old API
+    if (!isControlled && onFilterChange) {
+      onFilterChange({
+        sizes: newSizes,
+        priceRange,
+        colors: selectedColors,
+        categories: selectedCategories,
+      });
+    }
   };
 
   const handlePriceChange = (value: number[]) => {
     const newRange: [number, number] = [value[0], value[1]];
+    
     setPriceRange(newRange);
-    updateFilters(selectedSizes, newRange, selectedColors, selectedCategories);
+    
+    // Call onFilterChange if using old API
+    if (!isControlled && onFilterChange) {
+      onFilterChange({
+        sizes: selectedSizes,
+        priceRange: newRange,
+        colors: selectedColors,
+        categories: selectedCategories,
+      });
+    }
   };
 
   const handleColorChange = (color: string) => {
     const newColors = selectedColors.includes(color)
       ? selectedColors.filter(c => c !== color)
       : [...selectedColors, color];
+    
     setSelectedColors(newColors);
-    updateFilters(selectedSizes, priceRange, newColors, selectedCategories);
+    
+    // Call onFilterChange if using old API
+    if (!isControlled && onFilterChange) {
+      onFilterChange({
+        sizes: selectedSizes,
+        priceRange,
+        colors: newColors,
+        categories: selectedCategories,
+      });
+    }
   };
 
   const handleCategoryChange = (category: string) => {
     const newCategories = selectedCategories.includes(category)
       ? selectedCategories.filter(c => c !== category)
       : [...selectedCategories, category];
+    
     setSelectedCategories(newCategories);
-    updateFilters(selectedSizes, priceRange, selectedColors, newCategories);
+    
+    // Call onFilterChange if using old API
+    if (!isControlled && onFilterChange) {
+      onFilterChange({
+        sizes: selectedSizes,
+        priceRange,
+        colors: selectedColors,
+        categories: newCategories,
+      });
+    }
   };
 
   const clearAllFilters = () => {
@@ -93,21 +185,16 @@ export default function ProductFilters({ onFilterChange, initialCategories = [] 
     setPriceRange([MIN_PRICE, MAX_PRICE]);
     setSelectedColors([]);
     setSelectedCategories([]);
-    updateFilters([], [MIN_PRICE, MAX_PRICE], [], []);
-  };
-
-  const updateFilters = (
-    sizes: string[],
-    price: [number, number],
-    colors: string[],
-    categories: string[]
-  ) => {
-    onFilterChange({
-      sizes,
-      priceRange: price,
-      colors,
-      categories,
-    });
+    
+    // Call onFilterChange if using old API
+    if (!isControlled && onFilterChange) {
+      onFilterChange({
+        sizes: [],
+        priceRange: [MIN_PRICE, MAX_PRICE],
+        colors: [],
+        categories: [],
+      });
+    }
   };
 
   const hasActiveFilters = selectedSizes.length > 0 || 
