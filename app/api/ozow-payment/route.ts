@@ -154,9 +154,14 @@ export async function POST(request: Request) {
     console.log('4. Append "&PrivateKey=YOUR_PRIVATE_KEY"');
     console.log('5. Calculate SHA512 hash of the resulting string');
     
+    // Log detailed parameter information
+    console.log('Parameters for hash calculation (sorted):', JSON.stringify(paramsObj, null, 2));
+    console.log('Private key length:', privateKey.length);
+    
     // Log redacted hash input for debugging
     const redactedHashInput = hashInput.replace(privateKey, '[REDACTED]');
     console.log('Redacted hash input:', redactedHashInput);
+    console.log('Full hash input length:', hashInput.length);
     
     // Generate SHA512 hash as required by Ozow
     const hash = crypto
