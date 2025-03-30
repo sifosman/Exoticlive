@@ -176,6 +176,8 @@ export default function CheckoutPage() {
 
       // Create order in WooCommerce
       const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL?.replace(/\/+$/, '') || 'https://wp.exoticshoes.co.za';
+      
+      console.log('Creating order at:', `${wpUrl}/wp-json/wc/v3/orders`);
       const response = await fetch(`${wpUrl}/wp-json/wc/v3/orders`, {
         method: 'POST',
         headers: {
@@ -193,24 +195,9 @@ export default function CheckoutPage() {
       const order = await response.json();
       console.log('Order created successfully:', order);
 
-      // Reduce stock
-      try {
-        console.log(`Manually reducing stock for order ${order.id}...`);
-        const stockResponse = await fetch(`${wpUrl}/wp-json/wc/v3/orders/${order.id}/reduce-stock`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
-          }
-        });
-        
-        if (!stockResponse.ok) {
-          console.error(`Failed to reduce stock for order ${order.id}:`, await stockResponse.json());
-        }
-      } catch (stockError) {
-        console.error(`Failed to reduce stock for order ${order.id}:`, stockError);
-      }
-
+      // Note: WooCommerce will automatically reduce stock when we use the _reduce_stock meta field
+      // We don't need to manually call the reduce-stock endpoint, which was causing a 404 error
+      
       // Clear cart after successful order
       clearCart();
       
