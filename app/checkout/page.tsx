@@ -175,11 +175,12 @@ export default function CheckoutPage() {
       console.log('Order payload:', JSON.stringify(orderPayload, null, 2));
 
       // Create order in WooCommerce
-      const response = await fetch(`${process.env.NEXT_PUBLIC_WORDPRESS_URL}/wp-json/wc/v3/orders`, {
+      const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL?.replace(/\/+$/, '') || 'https://wp.exoticshoes.co.za';
+      const response = await fetch(`${wpUrl}/wp-json/wc/v3/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Basic ${btoa(`${process.env.NEXT_PUBLIC_WOOCOMMERCE_KEY}:${process.env.NEXT_PUBLIC_WOOCOMMERCE_SECRET}`)}`
+          'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
         },
         body: JSON.stringify(orderPayload)
       });
@@ -195,11 +196,11 @@ export default function CheckoutPage() {
       // Reduce stock
       try {
         console.log(`Manually reducing stock for order ${order.id}...`);
-        const stockResponse = await fetch(`${process.env.NEXT_PUBLIC_WORDPRESS_URL}/wp-json/wc/v3/orders/${order.id}/reduce-stock`, {
+        const stockResponse = await fetch(`${wpUrl}/wp-json/wc/v3/orders/${order.id}/reduce-stock`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${btoa(`${process.env.NEXT_PUBLIC_WOOCOMMERCE_KEY}:${process.env.NEXT_PUBLIC_WOOCOMMERCE_SECRET}`)}`
+            'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
           }
         });
         
