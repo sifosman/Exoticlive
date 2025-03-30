@@ -68,23 +68,35 @@ const safeDecodeId = (encodedId: string): string => {
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const ref = searchParams?.get('ref') || null;
-  const orderDataParam = searchParams?.get('data') || null;
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function createOrder() {
-      if (!ref || !orderDataParam) {
-        setError("Missing order reference or data");
+      if (!ref) {
+        setError("Missing order reference");
         setLoading(false);
         return;
       }
 
       try {
-        // Decode and parse the order data from URL
-        const orderData = JSON.parse(decodeURIComponent(orderDataParam));
-        console.log('Order data from URL:', orderData);
+        // Retrieve order data from localStorage using the reference
+        const orderDataKey = `ozow_order_${ref}`;
+        const storedOrderData = localStorage.getItem(orderDataKey);
+        
+        if (!storedOrderData) {
+          setError("Order data not found. Please contact customer support.");
+          setLoading(false);
+          return;
+        }
+        
+        // Parse the stored order data
+        const orderData = JSON.parse(storedOrderData);
+        console.log('Order data retrieved from localStorage:', orderData);
+        
+        // Clear the data from localStorage to prevent duplicate orders
+        localStorage.removeItem(orderDataKey);
         
         // Prepare line items for WooCommerce
         const lineItems = orderData.cartItems.map((item: any) => {
@@ -209,7 +221,7 @@ function OrderSuccessContent() {
     }
     
     createOrder();
-  }, [ref, orderDataParam]);
+  }, [ref]);
 
   if (loading) {
     return (

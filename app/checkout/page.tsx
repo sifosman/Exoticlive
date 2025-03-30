@@ -301,9 +301,9 @@ export default function CheckoutPage() {
       const isTestMode = false;
       console.log('Test mode:', isTestMode);
       
-      // Create a serialized version of order data to pass through URLs
-      // We're only taking what we need for creating the order later
-      const orderData = encodeURIComponent(JSON.stringify({
+      // Store order data in localStorage instead of passing through URL
+      // This keeps the URLs short while preserving all the data we need
+      const orderData = {
         firstName,
         lastName,
         email,
@@ -320,7 +320,10 @@ export default function CheckoutPage() {
           attributes: item.attributes
         })),
         shippingCost: shipping
-      }));
+      };
+      
+      // Store in localStorage with transaction ID as key
+      localStorage.setItem(`ozow_order_${transactionId}`, JSON.stringify(orderData));
       
       // Format payload for standard Ozow production API (not SimplePayment)
       const ozowPayload = {
@@ -332,10 +335,10 @@ export default function CheckoutPage() {
           lastName: lastName.trim(),
           email: email.trim()
         },
-        // Pass order data in success URL so we can create the order after payment
+        // Pass only the reference in the URL, keeping it very short
         cancelUrl: `${window.location.origin}/checkout?status=cancelled&ref=${transactionId}`,
         errorUrl: `${window.location.origin}/checkout?status=error&ref=${transactionId}`,
-        successUrl: `${window.location.origin}/order-success?ref=${transactionId}&data=${orderData}`,
+        successUrl: `${window.location.origin}/order-success?ref=${transactionId}`,
         notifyUrl: `${window.location.origin}/api/ozow-notification?ref=${transactionId}`
       };
       
