@@ -73,11 +73,6 @@ function ShopPageContent() {
     setIsFilterOpen(!isFilterOpen);
   };
 
-  // Function to scroll to top of the page with smooth behavior
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const clearAllFilters = () => {
     setSelectedCategories([]);
     setSelectedColors([]);
