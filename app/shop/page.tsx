@@ -51,8 +51,17 @@ function ShopPageContent() {
       setSearchQuery(query);
     }
     
-    if (category && CATEGORY_MAP[category] && !selectedCategories.includes(CATEGORY_MAP[category])) {
-      setSelectedCategories([CATEGORY_MAP[category]]);
+    // Handle category parameter changes
+    if (category) {
+      // If there's a category in the URL and it's valid
+      if (CATEGORY_MAP[category] && !selectedCategories.includes(CATEGORY_MAP[category])) {
+        setSelectedCategories([CATEGORY_MAP[category]]);
+      }
+    } else {
+      // If there's no category in the URL but we have selected categories, clear them
+      if (selectedCategories.length > 0) {
+        setSelectedCategories([]);
+      }
     }
   }, [searchParams, searchQuery, selectedCategories]);
 
