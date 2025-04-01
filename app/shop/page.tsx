@@ -47,23 +47,22 @@ function ShopPageContent() {
     const category = searchParams.get('category');
     const query = searchParams.get('q');
     
-    if (query !== null && query !== searchQuery) {
-      setSearchQuery(query);
-    }
+    // Always update search query when URL changes
+    setSearchQuery(query || '');
     
     // Handle category parameter changes
     if (category) {
       // If there's a category in the URL and it's valid
-      if (CATEGORY_MAP[category] && !selectedCategories.includes(CATEGORY_MAP[category])) {
-        setSelectedCategories([CATEGORY_MAP[category]]);
+      const categoryName = CATEGORY_MAP[category];
+      if (categoryName) {
+        // Always update the category when URL changes
+        setSelectedCategories([categoryName]);
       }
     } else {
-      // If there's no category in the URL but we have selected categories, clear them
-      if (selectedCategories.length > 0) {
-        setSelectedCategories([]);
-      }
+      // If there's no category in the URL, clear selected categories
+      setSelectedCategories([]);
     }
-  }, [searchParams, searchQuery, selectedCategories]);
+  }, [searchParams]); // Only depend on searchParams to avoid circular dependencies
 
   const toggleFilterMobile = () => {
     setIsFilterOpen(!isFilterOpen);
