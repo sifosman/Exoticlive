@@ -42,6 +42,11 @@ function ShopPageContent() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
   const [searchQuery, setSearchQuery] = useState<string>(searchParams.get('q') || '');
   
+  // Function to scroll to top of the page with smooth behavior
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
   // Update filters when URL parameters change
   useEffect(() => {
     const category = searchParams.get('category');
@@ -68,12 +73,18 @@ function ShopPageContent() {
     setIsFilterOpen(!isFilterOpen);
   };
 
+  // Function to scroll to top of the page with smooth behavior
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const clearAllFilters = () => {
     setSelectedCategories([]);
     setSelectedColors([]);
     setSelectedSizes([]);
     setPriceRange([0, 5000]);
     setSearchQuery('');
+    scrollToTop();
   };
 
   const hasActiveFilters = selectedCategories.length > 0 || 
@@ -112,7 +123,10 @@ function ShopPageContent() {
             
             <ProductSearch 
               searchQuery={searchQuery} 
-              setSearchQuery={setSearchQuery} 
+              setSearchQuery={(query) => {
+                setSearchQuery(query);
+                scrollToTop();
+              }} 
               className="flex-1 mx-2"
             />
           </div>
@@ -134,13 +148,25 @@ function ShopPageContent() {
             
             <ProductFilters 
               selectedCategories={selectedCategories}
-              setSelectedCategories={setSelectedCategories}
+              setSelectedCategories={(categories) => {
+                setSelectedCategories(categories);
+                scrollToTop();
+              }}
               selectedColors={selectedColors}
-              setSelectedColors={setSelectedColors}
+              setSelectedColors={(colors) => {
+                setSelectedColors(colors);
+                scrollToTop();
+              }}
               selectedSizes={selectedSizes}
-              setSelectedSizes={setSelectedSizes}
+              setSelectedSizes={(sizes) => {
+                setSelectedSizes(sizes);
+                scrollToTop();
+              }}
               priceRange={priceRange}
-              setPriceRange={setPriceRange}
+              setPriceRange={(range) => {
+                setPriceRange(range);
+                scrollToTop();
+              }}
             />
             
             {hasActiveFilters && (
@@ -160,7 +186,10 @@ function ShopPageContent() {
             <div className="hidden md:flex justify-between items-center mb-6">
               <ProductSearch 
                 searchQuery={searchQuery} 
-                setSearchQuery={setSearchQuery} 
+                setSearchQuery={(query) => {
+                  setSearchQuery(query);
+                  scrollToTop();
+                }} 
               />
             </div>
             
