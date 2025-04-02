@@ -93,6 +93,7 @@ export default function LoginPage() {
       if (response.ok && data.success) {
         console.log('Login successful, redirecting to account page');
         router.push('/account');
+        router.refresh(); // Ensure the page updates after redirect
       } else {
         console.error('Login failed:', data.message || 'Unknown error');
         setError(data.message || 'Invalid credentials. Please try again.');
