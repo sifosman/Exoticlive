@@ -160,7 +160,6 @@ function ShopPageContent() {
               priceRange={priceRange}
               setPriceRange={(range) => {
                 setPriceRange(range);
-                scrollToTop();
               }}
             />
             
