@@ -56,14 +56,8 @@ export async function POST(request: Request) {
 
     // Ensure required environment variables are set
     // Use ONLY environment variable or body value, not both
-    const siteCodeToUse = (process.env.OZOW_SITE_CODE || siteCode).replace(/^EXO-/, '');
-    if (siteCodeToUse.startsWith('EXO-')) {
-      console.error('Duplicate EXO prefix detected in SiteCode:', siteCodeToUse);
-      return NextResponse.json(
-        { success: false, message: 'Invalid SiteCode configuration' },
-        { status: 400 }
-      );
-    }
+    const siteCodeToUse = process.env.OZOW_SITE_CODE || siteCode;
+    
     
     const privateKey = process.env.OZOW_PRIVATE_KEY;
     const apiKey = process.env.OZOW_API_KEY;
