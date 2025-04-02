@@ -27,8 +27,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    console.log('Ozow Payment Request Received:', JSON.stringify(data, null, 2));
-    console.log(JSON.stringify(body, null, 2));
+    console.log('Ozow Payment Request Received:', JSON.stringify(body, null, 2));
     
     // Validate the payment data first
     const validation = validatePaymentData(body);
@@ -57,8 +56,8 @@ export async function POST(request: Request) {
 
     // Ensure required environment variables are set
     // Use ONLY environment variable or body value, not both
-    const siteCodeToUse = process.env.OZOW_SITE_CODE ? process.env.OZOW_SITE_CODE : siteCode;
-    if (siteCodeToUse.includes('EXO-EXO')) {
+    const siteCodeToUse = (process.env.OZOW_SITE_CODE || siteCode).replace(/^EXO-/, '');
+    if (siteCodeToUse.startsWith('EXO-')) {
       console.error('Duplicate EXO prefix detected in SiteCode:', siteCodeToUse);
       return NextResponse.json(
         { success: false, message: 'Invalid SiteCode configuration' },
