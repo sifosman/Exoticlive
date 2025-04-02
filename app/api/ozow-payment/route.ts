@@ -231,4 +231,3 @@ export async function POST(request: Request) {
     );
   }
 }
-console.log('Ozow API Response:', response);
