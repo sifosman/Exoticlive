@@ -24,7 +24,7 @@ const FeaturedProducts = () => {
         const results = await searchProducts({
           q: '*',
           query_by: 'name,description,brand',
-          sort_by: 'price:asc',
+          sort_by: Math.random() > 0.5 ? 'price:asc' : 'price:desc',
           per_page: 200,
           filter_by: 'stock_status:=instock'
         });
@@ -73,7 +73,14 @@ const FeaturedProducts = () => {
       }
     };
 
+    // Initial fetch
     fetchProducts();
+    
+    // Set up interval to refresh products every 5 minutes
+    const intervalId = setInterval(fetchProducts, 5 * 60 * 1000);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   if (loading) return <ProductCardSkeleton count={4} />;

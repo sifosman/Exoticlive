@@ -24,9 +24,9 @@ const FastSellingProducts = () => {
         const results = await searchProducts({
           q: '*',
           query_by: 'name,description,brand',
-          sort_by: 'price:desc', // Try sorting by price as an alternative
+          sort_by: 'total_sales:desc', // Sort by sales count descending
           per_page: 200, // Increase to get more potential products
-          filter_by: 'stock_status:=instock' // Simplify filter to get more products
+          filter_by: 'stock_status:=instock' // Only in-stock products
         });
         
         // Filter out products without valid images
@@ -85,7 +85,7 @@ const FastSellingProducts = () => {
   return (
     <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
       <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
-        Fast Selling Products
+        Most Sold Products
       </h2>
       
       <div className="relative fast-selling-carousel">
