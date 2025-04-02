@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    console.log('===== OZOW PAYMENT REQUEST RECEIVED =====');
+    console.log('Ozow Payment Request Received:', JSON.stringify(data, null, 2));
     console.log(JSON.stringify(body, null, 2));
     
     // Validate the payment data first
@@ -213,7 +213,11 @@ export async function POST(request: Request) {
     // Return the payment URL to the client
     return NextResponse.json({
       success: true,
-      paymentUrl: paymentUrl
+      paymentUrl: paymentUrl,
+      payload: {
+        parameters: paramsObj,
+        hashInput: redactedHashInput
+      }
     });
   } catch (error) {
     console.error('Error processing Ozow payment:', error);
@@ -227,3 +231,4 @@ export async function POST(request: Request) {
     );
   }
 }
+console.log('Ozow API Response:', response);
