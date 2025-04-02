@@ -24,7 +24,7 @@ const FastSellingProducts = () => {
         const results = await searchProducts({
           q: '*',
           query_by: 'name,description,brand',
-          sort_by: 'date:desc', // Sort by date descending
+          sort_by: 'price:desc', // Sort by price descending
           per_page: 200, // Increase to get more potential products
           filter_by: 'stock_status:=instock' // Only in-stock products
         });
