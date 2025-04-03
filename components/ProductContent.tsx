@@ -70,7 +70,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
   const { addToCart } = useCart();
   const { toast } = useToast();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
   const [hoveredImageIndex, setHoveredImageIndex] = useState<number | null>(null);
@@ -83,14 +83,14 @@ const ProductContent = ({ product }: ProductContentProps) => {
     if (!image || !isValidImageUrl(image.sourceUrl)) {
       return 'https://exoticlive.co.za/wp-content/uploads/woocommerce-placeholder.png';
     }
-    return imageErrors[`${index}-${image.sourceUrl}`] 
+    return imageErrors[`${index}-${image.sourceUrl}`]
       ? 'https://exoticlive.co.za/wp-content/uploads/woocommerce-placeholder.png'
       : image.sourceUrl;
   };
 
   const validImages = (product.galleryImages?.nodes || [])
     .filter(img => img && isValidImageUrl(img.sourceUrl));
-  
+
   const allImages = [
     ...(product.image && isValidImageUrl(product.image.sourceUrl) ? [product.image] : []),
     ...validImages
@@ -114,7 +114,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
 
     // Get all variations that have this attribute
     const variations = product.variations.nodes;
-    
+
     // Get unique options from variations
     const options = Array.from(new Set(variations.flatMap((variation) =>
       variation.attributes.nodes
@@ -143,10 +143,10 @@ const ProductContent = ({ product }: ProductContentProps) => {
     // Find variations that match this attribute value
     const matchingVariations = product.variations.nodes.filter(variation => {
       const attrs = variation.attributes?.nodes || [];
-      
+
       // Match current attribute
-      const matchesCurrentAttr = attrs.some((attr: { name: string; value: string }) => 
-        attr.name.toLowerCase() === normalizedAttrName && 
+      const matchesCurrentAttr = attrs.some((attr: { name: string; value: string }) =>
+        attr.name.toLowerCase() === normalizedAttrName &&
         attr.value.toLowerCase() === normalizedAttrValue
       );
 
@@ -156,8 +156,8 @@ const ProductContent = ({ product }: ProductContentProps) => {
       }
 
       // If other attribute is selected, check both
-      const matchesOtherAttr = attrs.some((attr: { name: string; value: string }) => 
-        attr.name.toLowerCase() === otherAttrName && 
+      const matchesOtherAttr = attrs.some((attr: { name: string; value: string }) =>
+        attr.name.toLowerCase() === otherAttrName &&
         attr.value.toLowerCase() === otherAttrValue
       );
 
@@ -165,8 +165,8 @@ const ProductContent = ({ product }: ProductContentProps) => {
     });
 
     // Check if any matching variation is in stock
-    return matchingVariations.some(variation => 
-      variation.stockStatus === 'IN_STOCK' && 
+    return matchingVariations.some(variation =>
+      variation.stockStatus === 'IN_STOCK' &&
       (typeof variation.stockQuantity === 'undefined' || variation.stockQuantity === null || variation.stockQuantity > 0)
     );
   };
@@ -189,18 +189,18 @@ const ProductContent = ({ product }: ProductContentProps) => {
   const handleAttributeChange = (attributeName: string, value: string) => {
     setSelectedAttributes(prevAttributes => {
       const newAttributes = { ...prevAttributes, [attributeName]: value };
-      
+
       // Check if this combination exists in variations
       if (product.__typename === 'VariableProduct') {
         const matchingVariation = product.variations.nodes.find((variation: ProductVariation) => {
-          return variation.attributes.nodes.every((attr: { name: string; value: string }) => 
+          return variation.attributes.nodes.every((attr: { name: string; value: string }) =>
             newAttributes[attr.name]?.toLowerCase() === attr.value.toLowerCase()
           );
         });
-        
+
         console.log('Matching variation:', matchingVariation);
       }
-      
+
       return newAttributes;
     });
   };
@@ -223,8 +223,8 @@ const ProductContent = ({ product }: ProductContentProps) => {
 
     const matchingVariations = product.variations.nodes.filter(variation => {
       const attrs = variation.attributes.nodes;
-      const matchesCurrentAttr = attrs.some((attr: { name: string; value: string }) => 
-        attr.name === attrName && 
+      const matchesCurrentAttr = attrs.some((attr: { name: string; value: string }) =>
+        attr.name === attrName &&
         attr.value === value
       );
 
@@ -232,8 +232,8 @@ const ProductContent = ({ product }: ProductContentProps) => {
       const otherAttrName = attrName === 'pa_color' ? 'pa_size' : 'pa_color';
       const otherAttrValue = selectedAttributes[otherAttrName];
       if (otherAttrValue) {
-        const matchesOtherAttr = attrs.some((attr: { name: string; value: string }) => 
-          attr.name === otherAttrName && 
+        const matchesOtherAttr = attrs.some((attr: { name: string; value: string }) =>
+          attr.name === otherAttrName &&
           attr.value === otherAttrValue
         );
         return matchesCurrentAttr && matchesOtherAttr;
@@ -278,10 +278,10 @@ const ProductContent = ({ product }: ProductContentProps) => {
       return;
     }
 
-    const priceToUse = selectedVariation 
+    const priceToUse = selectedVariation
       ? selectedVariation.salePrice || selectedVariation.regularPrice
       : product.price;
-      
+
     if (!priceToUse) {
       toast({
         title: "Error",
@@ -306,6 +306,18 @@ const ProductContent = ({ product }: ProductContentProps) => {
     }
 
     try {
+      // Format variation attributes for display
+      let variationName = '';
+
+      if (selectedVariation && selectedVariation.attributes && selectedVariation.attributes.nodes) {
+        variationName = selectedVariation.attributes.nodes
+          .map(attr => {
+            const attrName = displayAttributeName(attr.name);
+            return `${attrName}: ${attr.value}`;
+          })
+          .join(', ');
+      }
+
       addToCart({
         id: product.id,
         name: product.name,
@@ -313,13 +325,15 @@ const ProductContent = ({ product }: ProductContentProps) => {
         quantity: quantity,
         image: product.image?.sourceUrl || '/placeholder.jpg',
         variationId: selectedVariation?.id ?? '',
-        variationName: selectedVariation?.name ?? '',
+        variationName: variationName,
+        stockQuantity: selectedVariation?.stockQuantity || null,
+        stockStatus: selectedVariation?.stockStatus || 'IN_STOCK',
       });
 
       // Show both notifications
       toast({
         title: "✓ Added to Cart",
-        description: `${product.name}`,
+        description: `${product.name}${variationName ? ` (${variationName})` : ''}`,
         duration: 1500,
         style: {
           backgroundColor: '#4CAF50',
@@ -373,7 +387,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
                 <CheckCircle className="w-4 h-4 text-green-600" />
                 <span className="text-green-600 font-medium">
                   In Stock
-                  {(!product.stockQuantity || product.stockQuantity > 0) && 
+                  {(!product.stockQuantity || product.stockQuantity > 0) &&
                     ` (${product.stockQuantity} available)`
                   }
                 </span>
@@ -397,7 +411,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
             <CheckCircle className="w-4 h-4 text-green-600" />
             <span className="text-green-600 font-medium">
               In Stock
-              {(!selectedVariation.stockQuantity || selectedVariation.stockQuantity > 0) && 
+              {(!selectedVariation.stockQuantity || selectedVariation.stockQuantity > 0) &&
                 ` (${selectedVariation.stockQuantity} available)`
               }
             </span>
@@ -413,7 +427,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
   };
 
   const isVariationInStock = (variation: ProductVariation) => {
-    return variation.stockStatus === 'IN_STOCK' && 
+    return variation.stockStatus === 'IN_STOCK' &&
            (!variation.stockQuantity || variation.stockQuantity > 0);
   };
 
@@ -457,10 +471,10 @@ const ProductContent = ({ product }: ProductContentProps) => {
 
   const isValidSelection = () => {
     if (!isVariableProduct) return true;
-    
+
     // Get available attributes from the product
     const availableAttributes = product.attributes?.nodes || [];
-    
+
     // Check if all required attributes are selected
     return availableAttributes.every(attribute => {
       // If the attribute has options, it needs to be selected
@@ -635,9 +649,9 @@ const ProductContent = ({ product }: ProductContentProps) => {
                   : product.salePrice || product.regularPrice || product.price
               )}
             </p>
-            
-            <div className="prose prose-sm md:prose-base max-w-none mb-4 md:mb-8" 
-              dangerouslySetInnerHTML={{ __html: product.description || '' }} 
+
+            <div className="prose prose-sm md:prose-base max-w-none mb-4 md:mb-8"
+              dangerouslySetInnerHTML={{ __html: product.description || '' }}
             />
           </div>
 
@@ -725,7 +739,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
             disabled={isVariableProduct && !isValidSelection()}
             className={`
               w-full py-2 md:py-3 text-sm md:text-base font-lato font-medium transition-colors mt-3 md:mt-4 rounded
-              ${isVariableProduct && !isValidSelection() 
+              ${isVariableProduct && !isValidSelection()
                 ? 'bg-gray-600 text-white cursor-not-allowed'
                 : 'bg-black text-white hover:bg-gray-900'
               }
@@ -735,7 +749,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
           </button>
 
           {/* Trusted Supplier Banner */}
-          <div 
+          <div
             className="mt-4 md:mt-6 text-white py-3 md:py-4 px-4 md:px-6 rounded flex items-center justify-center gap-1 md:gap-2 bg-cover bg-center"
             style={{ backgroundImage: 'url("/notification-bg.webp")' }}
           >
@@ -747,8 +761,8 @@ const ProductContent = ({ product }: ProductContentProps) => {
           {/* Additional Information */}
           {product.additionalInformation && (
             <div className="mt-8">
-              <div 
-                dangerouslySetInnerHTML={{ __html: product.additionalInformation }} 
+              <div
+                dangerouslySetInnerHTML={{ __html: product.additionalInformation }}
                 className="prose prose-sm max-w-none"
               />
             </div>
