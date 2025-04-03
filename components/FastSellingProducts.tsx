@@ -24,9 +24,9 @@ const FastSellingProducts = () => {
         const results = await searchProducts({
           q: '*',
           query_by: 'name,description,brand',
-          sort_by: 'id:desc', // Sort by ID descending (newest first) as a reliable fallback
+          sort_by: 'price:asc', // Sort by price as it's definitely available for sorting
           per_page: 200, // Increase to get more potential products
-          filter_by: 'stock_status:=instock', // Only in-stock products
+          filter_by: 'stock_status:=instock && categories:=FastSellingProducts', // Only in-stock products from FastSellingProducts category
           include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
         });
 
@@ -61,8 +61,8 @@ const FastSellingProducts = () => {
         });
 
         // Log sample processed products for debugging
-        console.log('Newest products sample:', processedProducts.slice(0, 2));
-        console.log('Product IDs (sorted newest first):', processedProducts.slice(0, 5).map(p => p.id));
+        console.log('Fast Selling products sample:', processedProducts.slice(0, 2));
+        console.log('Fast Selling products categories:', processedProducts.slice(0, 5).map(p => ({ id: p.id, categories: p.categories })));
 
         // Get more products for the carousel
         setProducts(processedProducts.slice(0, 12));
@@ -81,13 +81,22 @@ const FastSellingProducts = () => {
   if (loading) return <ProductCardSkeleton count={4} />;
   if (error) return <p>Error loading products: {error}</p>;
   if (!products || products.length === 0) {
-    return <p>No products found.</p>;
+    return (
+      <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
+          Fast Selling Products
+        </h2>
+        <p className="text-gray-500 text-center py-8">
+          No products found in the FastSellingProducts category. Please add products to this category in WooCommerce.
+        </p>
+      </div>
+    );
   }
 
   return (
     <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
       <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
-        Newest Arrivals
+        Fast Selling Products
       </h2>
 
       <div className="relative fast-selling-carousel">
