@@ -1,16 +1,16 @@
-// app/api/webhooks/woocommerce/route.ts
+// app/api/webhooks/variation-update/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import Typesense from 'typesense';
 import crypto from 'crypto';
 
-// Initialize Typesense Cloud client
+// Initialize Typesense client
 const typesenseClient = new Typesense.Client({
   nodes: [{
-    host: process.env.TYPESENSE_CLOUD_HOST || '',
-    port: 443,
-    protocol: 'https'
+    host: process.env.TYPESENSE_HOST || process.env.NEXT_PUBLIC_TYPESENSE_HOST || '',
+    port: parseInt(process.env.TYPESENSE_PORT || process.env.NEXT_PUBLIC_TYPESENSE_PORT || '443'),
+    protocol: process.env.TYPESENSE_PROTOCOL || process.env.NEXT_PUBLIC_TYPESENSE_PROTOCOL || 'https'
   }],
-  apiKey: process.env.TYPESENSE_CLOUD_API_KEY || '',
+  apiKey: process.env.TYPESENSE_API_KEY || process.env.NEXT_PUBLIC_TYPESENSE_ADMIN_API_KEY || '',
   connectionTimeoutSeconds: 10
 });
 
@@ -29,15 +29,15 @@ function verifyWooCommerceWebhook(request: Request, signature: string, body: str
   try {
     const hmac = crypto.createHmac('sha256', process.env.WEBHOOK_SECRET);
     const digest = hmac.update(body).digest('base64');
-
+    
     const isValid = signature === digest;
-
+    
     if (!isValid) {
       console.error('Webhook signature verification failed');
       console.error('Expected:', digest);
       console.error('Received:', signature);
     }
-
+    
     return isValid;
   } catch (error) {
     console.error('Error verifying webhook signature:', error);
@@ -52,25 +52,25 @@ async function fetchProductFromWooCommerce(productId: number) {
     const wcKey = process.env.WC_CONSUMER_KEY || '';
     const wcSecret = process.env.WC_CONSUMER_SECRET || '';
     const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || '';
-
+    
     if (!wcKey || !wcSecret || !wpUrl) {
       throw new Error('WooCommerce API credentials not configured');
     }
-
+    
     // Create authentication header
     const authString = Buffer.from(`${wcKey}:${wcSecret}`).toString('base64');
-
+    
     // Fetch product from WooCommerce
     const response = await fetch(`${wpUrl}/wp-json/wc/v3/products/${productId}`, {
       headers: {
         'Authorization': `Basic ${authString}`
       }
     });
-
+    
     if (!response.ok) {
       throw new Error(`Failed to fetch product ${productId} from WooCommerce: ${response.statusText}`);
     }
-
+    
     return await response.json();
   } catch (error) {
     console.error(`Error fetching product from WooCommerce:`, error);
@@ -85,25 +85,25 @@ async function fetchVariationsFromWooCommerce(productId: number) {
     const wcKey = process.env.WC_CONSUMER_KEY || '';
     const wcSecret = process.env.WC_CONSUMER_SECRET || '';
     const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || '';
-
+    
     if (!wcKey || !wcSecret || !wpUrl) {
       throw new Error('WooCommerce API credentials not configured');
     }
-
+    
     // Create authentication header
     const authString = Buffer.from(`${wcKey}:${wcSecret}`).toString('base64');
-
+    
     // Fetch variations from WooCommerce
     const response = await fetch(`${wpUrl}/wp-json/wc/v3/products/${productId}/variations?per_page=100`, {
       headers: {
         'Authorization': `Basic ${authString}`
       }
     });
-
+    
     if (!response.ok) {
       throw new Error(`Failed to fetch variations for product ${productId} from WooCommerce: ${response.statusText}`);
     }
-
+    
     return await response.json();
   } catch (error) {
     console.error(`Error fetching variations from WooCommerce:`, error);
@@ -161,7 +161,7 @@ function transformProduct(product: any, variations: any[] = []) {
       name: attr.name,
       option: attr.option
     }));
-
+    
     return {
       id: variation.id.toString(),
       price: parseFloat(variation.price || '0'),
@@ -172,10 +172,6 @@ function transformProduct(product: any, variations: any[] = []) {
       attributes: variationAttributes
     };
   });
-
-  // Calculate variation counts
-  const variationsCount = processedVariations.length;
-  const inStockVariationsCount = processedVariations.filter(v => v.stock_status === 'instock').length;
 
   // Create the transformed product with all required fields
   const transformedProduct = {
@@ -197,17 +193,13 @@ function transformProduct(product: any, variations: any[] = []) {
     slug: product.slug,
     stock_status: product.stock_status || 'outofstock',
     stock_quantity: product.stock_quantity || 0,
-    variations_count: variationsCount,
-    in_stock_variations_count: inStockVariationsCount,
+    variations_count: processedVariations.length,
+    in_stock_variations_count: processedVariations.filter(v => v.stock_status === 'instock').length,
     is_featured: !!product.featured,
     is_on_sale: isOnSale,
     average_rating: parseFloat(product.average_rating || 0),
     date_created: dateCreated,
-
-    // Add variations data
-    variations: processedVariations,
-    variations_json: JSON.stringify(processedVariations),
-
+    
     // Add fields that might be required by the Typesense schema
     catalog_visibility: product.catalog_visibility || 'visible',
     short_description: product.short_description ? product.short_description.replace(/<[^>]*>?/gm, '') : '',
@@ -219,21 +211,25 @@ function transformProduct(product: any, variations: any[] = []) {
     shipping_class_id: product.shipping_class_id || 0,
     cross_sell_ids: product.cross_sell_ids || [],
     upsell_ids: product.upsell_ids || [],
-    purchasable: product.purchasable !== undefined ? product.purchasable : true
+    purchasable: product.purchasable !== undefined ? product.purchasable : true,
+    
+    // Add variations data
+    variations: processedVariations,
+    variations_json: JSON.stringify(processedVariations)
   };
-
+  
   // Log the transformed product for debugging
   console.log('Transformed product:', JSON.stringify(transformedProduct).substring(0, 200) + '...');
-
+  
   return transformedProduct;
 }
 
-// Handle POST requests (when a product is created or updated)
+// Handle POST requests (when a variation is updated)
 export async function POST(request: NextRequest) {
   try {
-    console.log('Received webhook request');
+    console.log('Received variation update webhook request');
     console.log('Headers:', JSON.stringify(Object.fromEntries(request.headers.entries())));
-
+    
     // Get the request body as text
     const body = await request.text();
     console.log('Request body:', body.substring(0, 200) + (body.length > 200 ? '...' : ''));
@@ -244,7 +240,7 @@ export async function POST(request: NextRequest) {
 
     // For testing purposes, accept all webhooks
     console.log('Skipping signature verification for testing');
-
+    
     // Verify the webhook (commented out for testing)
     /*
     if (!verifyWooCommerceWebhook(request, signature, body)) {
@@ -268,108 +264,44 @@ export async function POST(request: NextRequest) {
     const topic = request.headers.get('X-WC-Webhook-Topic') || '';
     console.log(`Received webhook: ${topic}`);
 
-    // Handle product creation/update
-    if (topic === 'product.created' || topic === 'product.updated') {
+    // Handle variation update
+    if (topic === 'product_variation.updated' || topic === 'product.updated') {
       try {
-        console.log(`Processing ${topic} webhook for product ${data.id}`);
-
         // Check if this is a variation
-        if (data.parent_id) {
-          // This is a variation, handle it as a variation update
-          console.log(`This is a variation of product ${data.parent_id}, handling as variation update`);
-
+        const isVariation = data.parent_id !== undefined;
+        
+        if (isVariation) {
+          console.log(`Processing variation update for variation ${data.id} of product ${data.parent_id}`);
+          
           // Get the parent product ID
           const parentId = data.parent_id;
-
+          
           // Fetch the parent product from WooCommerce
           const parentProduct = await fetchProductFromWooCommerce(parentId);
-          console.log(`Parent product fetched: ${parentProduct.name}`);
-
+          console.log(`Fetched parent product: ${parentProduct.name}`);
+          
           // Fetch all variations for the parent product
           const variations = await fetchVariationsFromWooCommerce(parentId);
           console.log(`Fetched ${variations.length} variations for product ${parentId}`);
-
+          
           // Transform the parent product with all variations
           const transformedProduct = transformProduct(parentProduct, variations);
-
+          
           // Update the parent product in Typesense
           await typesenseClient.collections('products').documents().upsert(transformedProduct);
-
-          console.log(`Product ${parentId} updated in Typesense with ${variations.length} variations`);
+          
+          console.log(`Updated product ${parentId} in Typesense with ${variations.length} variations`);
           return NextResponse.json({ success: true });
         } else {
-          // This is a regular product or a variable product
-
-          // Check if this is a variable product
-          const isVariableProduct = data.type === 'variable';
-          console.log(`Product type: ${data.type}, Is variable: ${isVariableProduct}`);
-
-          // For variable products, we need to fetch variations
-          let variations = [];
-          if (isVariableProduct) {
-            console.log(`Fetching variations for product ${data.id}...`);
-            variations = await fetchVariationsFromWooCommerce(data.id);
-            console.log(`Fetched ${variations.length} variations for product ${data.id}`);
-
-            // Log variation stock status for debugging
-            variations.forEach((variation: any) => {
-              console.log(`Variation ${variation.id} stock status: ${variation.stock_status}, quantity: ${variation.stock_quantity}`);
-            });
-          }
-
-          // Transform the product with variations
-          const transformedProduct = transformProduct(data, variations);
-
-          // Upsert the product to Typesense
-          await typesenseClient.collections('products').documents().upsert(transformedProduct);
-
-          console.log(`Product ${data.id} ${topic === 'product.created' ? 'created' : 'updated'} in Typesense`);
-          return NextResponse.json({ success: true });
+          console.log(`This is not a variation update, skipping`);
+          return NextResponse.json({ success: true, message: 'Not a variation update' });
         }
       } catch (error) {
-        console.error(`Error processing ${topic} webhook:`, error);
-        return NextResponse.json({
-          error: `Failed to process ${topic} webhook`,
+        console.error(`Error processing variation update:`, error);
+        return NextResponse.json({ 
+          error: 'Failed to process variation update',
           message: error instanceof Error ? error.message : String(error)
         }, { status: 500 });
-      }
-    }
-
-    // Handle product deletion
-    if (topic === 'product.deleted') {
-      // Delete the product from Typesense
-      await typesenseClient.collections('products').documents(data.id.toString()).delete();
-
-      console.log(`Product ${data.id} deleted from Typesense`);
-      return NextResponse.json({ success: true });
-    }
-
-    // Handle variation updates
-    if (topic === 'product_variation.updated' || (topic === 'product.updated' && data.parent_id)) {
-      try {
-        // Get the parent product ID
-        const parentId = data.parent_id;
-        console.log(`Variation updated for product ${parentId}, fetching parent product...`);
-
-        // Fetch the parent product from WooCommerce
-        const parentProduct = await fetchProductFromWooCommerce(parentId);
-        console.log(`Parent product fetched: ${parentProduct.name}`);
-
-        // Fetch all variations for the parent product
-        const variations = await fetchVariationsFromWooCommerce(parentId);
-        console.log(`Fetched ${variations.length} variations for product ${parentId}`);
-
-        // Transform the parent product with all variations
-        const transformedProduct = transformProduct(parentProduct, variations);
-
-        // Update the parent product in Typesense
-        await typesenseClient.collections('products').documents().upsert(transformedProduct);
-
-        console.log(`Product ${parentId} updated in Typesense with ${variations.length} variations`);
-        return NextResponse.json({ success: true });
-      } catch (error) {
-        console.error('Error processing variation update:', error);
-        return NextResponse.json({ error: 'Failed to process variation update' }, { status: 500 });
       }
     }
 
