@@ -147,22 +147,24 @@ export async function POST(request: Request) {
     
     // Concatenate with '&' and append private key
     // Rebuild parameters in exact order required by Ozow
+    // Remove the alphabetical sorting
+    // Build hash input with Ozow's required order
     const ozowOrderedParams = [
-      `SiteCode=${encodeURIComponent(siteCodeToUse)}`,
-      `CountryCode=${encodeURIComponent('ZA')}`,
-      `CurrencyCode=${encodeURIComponent('ZAR')}`,
-      `Amount=${encodeURIComponent(amountFormatted)}`,
-      `TransactionReference=${encodeURIComponent(reference)}`,
-      `BankReference=${encodeURIComponent(bankReference)}`,
-      `IsTest=${encodeURIComponent(isTestString)}`,
-      ...(customerName ? [`CustomerInformation=${encodeURIComponent(customerName)}`] : []),
-      ...(customerId ? [`optional1=${encodeURIComponent(customerId)}`] : []),
-      `CancelUrl=${encodeURIComponent(cancelUrl)}`,
-      `ErrorUrl=${encodeURIComponent(errorUrl)}`,
-      `SuccessUrl=${encodeURIComponent(successUrl)}`,
-      `NotifyUrl=${encodeURIComponent(notifyUrl)}`
+    `SiteCode=${encodeURIComponent(siteCodeToUse)}`,
+    `CountryCode=${encodeURIComponent('ZA')}`,
+    `CurrencyCode=${encodeURIComponent('ZAR')}`,
+    `Amount=${encodeURIComponent(amountFormatted)}`,
+    `TransactionReference=${encodeURIComponent(reference)}`,
+    `BankReference=${encodeURIComponent(bankReference)}`,
+    `IsTest=${encodeURIComponent(isTestString)}`,
+    ...(customerName ? [`CustomerInformation=${encodeURIComponent(customerName)}`] : []),
+    ...(customerId ? [`optional1=${encodeURIComponent(customerId)}`] : []),
+    `CancelUrl=${encodeURIComponent(cancelUrl)}`,
+    `ErrorUrl=${encodeURIComponent(errorUrl)}`,
+    `SuccessUrl=${encodeURIComponent(successUrl)}`,
+    `NotifyUrl=${encodeURIComponent(notifyUrl)}`
     ];
-
+    
     const hashInput = ozowOrderedParams.join('&') + `&PrivateKey=${privateKey}`;
     
     console.log('Hash calculation method:');
