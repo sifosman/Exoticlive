@@ -1,10 +1,10 @@
-WooCommerce to Typesense Sync - 2025-04-03T19:14:58.305Z
+WooCommerce to Typesense Sync - 2025-04-03T20:38:05.217Z
 
 
 ================================================================================
 Starting WooCommerce to Typesense Sync
 ================================================================================
-Typesense collection 'products' exists with 1082 documents
+Typesense collection 'products' exists with 1083 documents
 
 ================================================================================
 Clearing Typesense Collection

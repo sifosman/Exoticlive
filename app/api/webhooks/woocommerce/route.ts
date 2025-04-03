@@ -23,27 +23,60 @@ function verifyWooCommerceWebhook(request: Request, signature: string, body: str
 
   const hmac = crypto.createHmac('sha256', process.env.WEBHOOK_SECRET);
   const digest = hmac.update(body).digest('base64');
-  
+
   return signature === digest;
+}
+
+// Fetch a product from WooCommerce
+async function fetchProductFromWooCommerce(productId: number) {
+  try {
+    // WooCommerce API credentials
+    const wcKey = process.env.WC_CONSUMER_KEY || '';
+    const wcSecret = process.env.WC_CONSUMER_SECRET || '';
+    const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || '';
+
+    if (!wcKey || !wcSecret || !wpUrl) {
+      throw new Error('WooCommerce API credentials not configured');
+    }
+
+    // Create authentication header
+    const authString = Buffer.from(`${wcKey}:${wcSecret}`).toString('base64');
+
+    // Fetch product from WooCommerce
+    const response = await fetch(`${wpUrl}/wp-json/wc/v3/products/${productId}`, {
+      headers: {
+        'Authorization': `Basic ${authString}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch product ${productId} from WooCommerce: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching product from WooCommerce:`, error);
+    throw error;
+  }
 }
 
 // Transform a WooCommerce product to Typesense format
 function transformProduct(product: any) {
   // Extract categories
-  const categories = product.categories ? 
+  const categories = product.categories ?
     product.categories.map((cat: any) => cat.name) : [];
 
   // Extract tags
   const tags = product.tags ?
     product.tags.map((tag: any) => tag.name) : [];
-    
+
   // Extract attributes for faceting
   const attributes = product.attributes || [];
-  
+
   // Extract colors and sizes specifically for faceting
   const colors: string[] = [];
   const sizes: string[] = [];
-  
+
   attributes.forEach((attr: any) => {
     if (attr.name && attr.name.toLowerCase() === 'color') {
       colors.push(...attr.options);
@@ -52,29 +85,29 @@ function transformProduct(product: any) {
       sizes.push(...attr.options);
     }
   });
-  
+
   // Calculate dates as timestamps for sorting
-  const dateCreated = product.date_created ? 
-    new Date(product.date_created).getTime() : 
+  const dateCreated = product.date_created ?
+    new Date(product.date_created).getTime() :
     Date.now();
-  
+
   // Check if product is on sale
-  const isOnSale = product.sale_price && 
-    parseFloat(product.sale_price) > 0 && 
+  const isOnSale = product.sale_price &&
+    parseFloat(product.sale_price) > 0 &&
     parseFloat(product.sale_price) < parseFloat(product.regular_price);
-  
+
   // Get gallery images
   const galleryImages = product.images && product.images.length > 1 ?
     product.images.slice(1).map((img: any) => img.src) : [];
-    
+
   // Extract variation information
   const variationsCount = product.variations ? product.variations.length : 0;
   const inStockVariationsCount = 0; // Would need additional API calls to determine this
-    
+
   return {
     id: product.id.toString(),
     name: product.name,
-    description: product.description ? 
+    description: product.description ?
       product.description.replace(/<[^>]*>?/gm, '') : '', // Strip HTML
     price: parseFloat(product.price || 0),
     sale_price: product.sale_price ? parseFloat(product.sale_price) : null,
@@ -84,7 +117,7 @@ function transformProduct(product: any) {
     attributes,
     colors,
     sizes,
-    image_url: product.images && product.images.length > 0 ? 
+    image_url: product.images && product.images.length > 0 ?
       product.images[0].src : '',
     gallery_images: galleryImages,
     slug: product.slug,
@@ -104,41 +137,66 @@ export async function POST(request: NextRequest) {
   try {
     // Get the request body as text
     const body = await request.text();
-    
+
     // Get the signature from the headers
     const signature = request.headers.get('X-WC-Webhook-Signature') || '';
-    
+
     // Verify the webhook
     if (!verifyWooCommerceWebhook(request, signature, body)) {
       console.error('Invalid webhook signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
-    
+
     const data = JSON.parse(body);
     const topic = request.headers.get('X-WC-Webhook-Topic') || '';
-    
+
     console.log(`Received webhook: ${topic}`);
-    
+
     // Handle product creation/update
     if (topic === 'product.created' || topic === 'product.updated') {
       const transformedProduct = transformProduct(data);
-      
+
       // Upsert the product to Typesense
       await typesenseClient.collections('products').documents().upsert(transformedProduct);
-      
+
       console.log(`Product ${data.id} ${topic === 'product.created' ? 'created' : 'updated'} in Typesense`);
       return NextResponse.json({ success: true });
     }
-    
+
     // Handle product deletion
     if (topic === 'product.deleted') {
       // Delete the product from Typesense
       await typesenseClient.collections('products').documents(data.id.toString()).delete();
-      
+
       console.log(`Product ${data.id} deleted from Typesense`);
       return NextResponse.json({ success: true });
     }
-    
+
+    // Since WooCommerce doesn't support product_variation.updated webhook,
+    // we'll handle stock updates through the product.updated webhook
+    // The code below is kept for reference but won't be triggered
+    if (topic === 'product_variation.updated') {
+      try {
+        // Get the parent product ID
+        const parentId = data.parent_id;
+        console.log(`Variation updated for product ${parentId}, fetching parent product...`);
+
+        // Fetch the parent product from WooCommerce
+        const parentProduct = await fetchProductFromWooCommerce(parentId);
+        console.log(`Parent product fetched: ${parentProduct.name}`);
+
+        // Transform and update the parent product in Typesense
+        const transformedProduct = transformProduct(parentProduct);
+        await typesenseClient.collections('products').documents().upsert(transformedProduct);
+
+        console.log(`Product ${parentId} updated in Typesense due to variation update`);
+        return NextResponse.json({ success: true });
+      } catch (error) {
+        console.error('Error processing variation update:', error);
+        return NextResponse.json({ error: 'Failed to process variation update' }, { status: 500 });
+      }
+    }
+
     // Handle other events
     return NextResponse.json({ success: true, message: 'Webhook received but no action taken' });
   } catch (error) {

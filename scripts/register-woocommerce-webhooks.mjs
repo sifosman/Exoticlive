@@ -63,7 +63,7 @@ const webhooks = [
   },
   {
     name: 'Product stock updated',
-    topic: 'product.stock_status_changed',
+    topic: 'product.updated',
     delivery_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/woocommerce`
   }
 ];
@@ -95,7 +95,7 @@ async function registerWebhook(webhook) {
       ...webhook,
       secret: process.env.WEBHOOK_SECRET
     });
-    
+
     console.log(`✅ Registered webhook: ${webhook.name} (ID: ${response.data.id})`);
     return response.data;
   } catch (error) {
@@ -108,37 +108,37 @@ async function registerWebhooks() {
   try {
     // Get existing webhooks
     const existingWebhooks = await getExistingWebhooks();
-    
+
     // Delete existing webhooks with the same delivery URL
     const webhookUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/woocommerce`;
-    const webhooksToDelete = existingWebhooks.filter(webhook => 
+    const webhooksToDelete = existingWebhooks.filter(webhook =>
       webhook.delivery_url === webhookUrl
     );
-    
+
     console.log(`🔄 Found ${webhooksToDelete.length} existing webhooks to update...`);
-    
+
     for (const webhook of webhooksToDelete) {
       await deleteWebhook(webhook.id);
     }
-    
+
     // Register the new webhooks
     console.log('🔄 Registering webhooks...');
     const results = [];
-    
+
     for (const webhook of webhooks) {
       const result = await registerWebhook(webhook);
       if (result) results.push(result);
     }
-    
+
     console.log(`🎉 Successfully registered ${results.length} webhooks`);
-    
+
     // Test connection to the webhooks
     console.log('🧪 Testing webhook delivery...');
     if (results.length > 0) {
       await WooCommerce.get(`webhooks/${results[0].id}/deliveries`);
       console.log('✅ Webhook connection test successful');
     }
-    
+
     return results;
   } catch (error) {
     console.error('❌ Error registering webhooks:', error.message);
@@ -153,7 +153,7 @@ registerWebhooks().then(webhooks => {
   console.log('TYPESENSE_CLOUD_HOST=your_typesense_cloud_host');
   console.log('TYPESENSE_CLOUD_API_KEY=your_typesense_admin_api_key');
   console.log(`WEBHOOK_SECRET=${process.env.WEBHOOK_SECRET}`);
-  
+
   // Check if NEXT_PUBLIC vars are properly set
   console.log('\n⚠️ Make sure these are also set in your public environment variables:');
   console.log('NEXT_PUBLIC_TYPESENSE_HOST=your_typesense_cloud_host');
