@@ -38,10 +38,18 @@ export default function CartPage() {
     };
   }, { subtotal: 0 }); // Remove shipping from cart page
 
-  const total = subtotal - discountAmount;
+  const deliveryFee = 99;
+const total = subtotal - discountAmount + deliveryFee;
 
   // Format price consistently
   const formatPrice = (price: number) => `R${price.toFixed(2)}`;
+
+const OrderSummaryItem = ({ label, value }: { label: string; value: number }) => (
+  <div className="flex justify-between py-2">
+    <span className={`text-gray-600 ${lato.className}`}>{label}</span>
+    <span className={`font-medium ${lato.className}`}>{formatPrice(value)}</span>
+  </div>
+);
 
   // Handle quantity changes
   const handleQuantityChange = (
@@ -347,17 +355,16 @@ export default function CartPage() {
               
               {/* Order Details */}
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className={`text-gray-500 ${lato.className}`}>Subtotal</span>
-                  <span className={`font-medium ${lato.className}`}>{formatPrice(subtotal)}</span>
-                </div>
+                <OrderSummaryItem label="Subtotal" value={subtotal} />
                 
                 {discountAmount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span className={`text-gray-500 ${lato.className}`}>Discount</span>
-                    <span className={`font-medium ${lato.className}`}>-{formatPrice(discountAmount)}</span>
-                  </div>
+                  <OrderSummaryItem 
+                    label="Discount" 
+                    value={-discountAmount} 
+                  />
                 )}
+                
+                <OrderSummaryItem label="Delivery Fee" value={deliveryFee} />
                 
                 <div className="border-t border-gray-100 pt-3 flex justify-between font-semibold">
                   <span className={`text-gray-500 ${lato.className}`}>Total</span>
