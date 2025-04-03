@@ -23,13 +23,11 @@ envContent.split('\n').forEach(line => {
 });
 
 // Get the webhook secret from environment variables
-const webhookSecret = envVars.WEBHOOK_SECRET;
+const webhookSecret = envVars.WEBHOOK_SECRET || 'a415388c0f3f17bffa3618600ffdcc1db6990a067a543bb80a6c4fdaec7348eb';
 const siteUrl = envVars.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
-if (!webhookSecret) {
-  console.error('❌ WEBHOOK_SECRET not found in .env file');
-  process.exit(1);
-}
+console.log('Using webhook secret:', webhookSecret);
+console.log('Using site URL:', siteUrl);
 
 // Create a test payload
 const payload = {
@@ -53,7 +51,7 @@ async function testWebhook() {
     console.log(`🔗 URL: ${siteUrl}/api/webhooks/woocommerce`);
     console.log(`📦 Payload: ${payloadString}`);
     console.log(`🔑 Signature: ${signature}`);
-    
+
     const response = await fetch(`${siteUrl}/api/webhooks/woocommerce`, {
       method: 'POST',
       headers: {
@@ -63,12 +61,12 @@ async function testWebhook() {
       },
       body: payloadString
     });
-    
+
     const responseText = await response.text();
-    
+
     console.log(`🔄 Response status: ${response.status}`);
     console.log(`🔄 Response body: ${responseText}`);
-    
+
     if (response.ok) {
       console.log('✅ Webhook test successful!');
     } else {

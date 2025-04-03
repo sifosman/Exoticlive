@@ -122,7 +122,8 @@ function transformProduct(product: any) {
   const variationsCount = product.variations ? product.variations.length : 0;
   const inStockVariationsCount = 0; // Would need additional API calls to determine this
 
-  return {
+  // Create the transformed product with all required fields
+  const transformedProduct = {
     id: product.id.toString(),
     name: product.name,
     description: product.description ?
@@ -146,21 +147,47 @@ function transformProduct(product: any) {
     is_featured: !!product.featured,
     is_on_sale: isOnSale,
     average_rating: parseFloat(product.average_rating || 0),
-    date_created: dateCreated
+    date_created: dateCreated,
+
+    // Add fields that might be required by the Typesense schema
+    catalog_visibility: product.catalog_visibility || 'visible',
+    short_description: product.short_description ? product.short_description.replace(/<[^>]*>?/gm, '') : '',
+    sku: product.sku || '',
+    status: product.status || 'publish',
+    weight: product.weight || '',
+    dimensions: product.dimensions || { length: '', width: '', height: '' },
+    shipping_class: product.shipping_class || '',
+    shipping_class_id: product.shipping_class_id || 0,
+    cross_sell_ids: product.cross_sell_ids || [],
+    upsell_ids: product.upsell_ids || [],
+    purchasable: product.purchasable !== undefined ? product.purchasable : true
   };
+
+  // Log the transformed product for debugging
+  console.log('Transformed product:', JSON.stringify(transformedProduct).substring(0, 200) + '...');
+
+  return transformedProduct;
 }
 
 // Handle POST requests (when a product is created or updated)
 export async function POST(request: NextRequest) {
   try {
+    console.log('Received webhook request');
+    console.log('Headers:', JSON.stringify(Object.fromEntries(request.headers.entries())));
+
     // Get the request body as text
     const body = await request.text();
+    console.log('Request body:', body.substring(0, 200) + (body.length > 200 ? '...' : ''));
 
     // Get the signature from the headers
     const signature = request.headers.get('X-WC-Webhook-Signature') || '';
-    console.log('Received webhook signature:', signature ? 'Present' : 'Missing');
+    console.log('Received webhook signature:', signature ? signature : 'Missing');
 
-    // Verify the webhook
+    // For testing purposes, accept all webhooks
+    console.log('Skipping signature verification for testing');
+
+    // Verify the webhook (commented out for testing)
+    /*
     if (!verifyWooCommerceWebhook(request, signature, body)) {
       console.error('Invalid webhook signature');
       // For now, we'll accept the webhook even if the signature doesn't match
@@ -169,10 +196,17 @@ export async function POST(request: NextRequest) {
       // Uncomment the line below to enforce signature verification in production
       // return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
+    */
 
-    const data = JSON.parse(body);
+    let data;
+    try {
+      data = JSON.parse(body);
+    } catch (error) {
+      console.error('Error parsing webhook payload:', error);
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
+
     const topic = request.headers.get('X-WC-Webhook-Topic') || '';
-
     console.log(`Received webhook: ${topic}`);
 
     // Handle product creation/update
@@ -224,7 +258,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, message: 'Webhook received but no action taken' });
   } catch (error) {
     console.error('Error handling webhook:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace available');
+    return NextResponse.json({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 }
 
