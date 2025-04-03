@@ -12,6 +12,8 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Truck } from 'lucide-react';
 import { Lato } from 'next/font/google';
+import YocoLogo from '@/components/ui/YocoLogo';
+import PageLoading from '@/components/ui/PageLoading';
 
 declare global {
   interface Window {
@@ -49,6 +51,7 @@ export default function CheckoutPage() {
   const [showBankingDetails, setShowBankingDetails] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageLoaded, setPageLoaded] = useState(false);
 
   // State variables for shipping information
   const [firstName, setFirstName] = useState('');
@@ -62,6 +65,13 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setIsClient(true);
+
+    // Set page as loaded after a short delay
+    const timer = setTimeout(() => {
+      setPageLoaded(true);
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity || 0), 0);
@@ -78,12 +88,12 @@ export default function CheckoutPage() {
       // Check if the string is actually base64 encoded
       // Base64 strings only contain A-Z, a-z, 0-9, +, /, and = for padding
       const isBase64 = /^[A-Za-z0-9+/=]+$/.test(encodedId);
-      
+
       if (!isBase64) {
         console.log('ID is not base64 encoded, using as-is:', encodedId);
         return encodedId;
       }
-      
+
       // Try to decode the base64 string
       const decoded = atob(encodedId);
       console.log('Converting ID:', encodedId, 'to:', decoded);
@@ -183,12 +193,12 @@ export default function CheckoutPage() {
           }
         ]
       };
-      
+
       console.log('Order payload:', JSON.stringify(orderPayload, null, 2));
 
       // Create order in WooCommerce
       const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL?.replace(/\/+$/, '') || 'https://wp.exoticshoes.co.za';
-      
+
       console.log('Creating order at:', `${wpUrl}/wp-json/wc/v3/orders`);
       const response = await fetch(`${wpUrl}/wp-json/wc/v3/orders`, {
         method: 'POST',
@@ -209,10 +219,10 @@ export default function CheckoutPage() {
 
       // Note: WooCommerce will automatically reduce stock when we use the _reduce_stock meta field
       // We don't need to manually call the reduce-stock endpoint, which was causing a 404 error
-      
+
       // Clear cart after successful order
       clearCart();
-      
+
       return order;
     } catch (error) {
       console.error('Error creating WooCommerce order:', error);
@@ -292,46 +302,46 @@ export default function CheckoutPage() {
         setPaymentError('Your cart is empty. Please add items before checking out.');
         return;
       }
-      
+
       // Validate required fields
       if (!firstName || !lastName || !email || !phone || !address) {
         setPaymentError('Please fill out all required fields.');
         return;
       }
-      
+
       console.log('Cart items for checkout:', cart);
-      
+
       // Verify all items are in stock before proceeding
       for (const item of cart) {
         if (item.stockStatus === 'outofstock') {
           setPaymentError(`Sorry, ${item.name} is out of stock. Please remove it from your cart to continue.`);
           return;
         }
-        
+
         console.log(`Item ${item.id} - Stock status: ${item.stockStatus}`, item);
       }
-      
+
       // Prepare line items for WooCommerce order
       const lineItems = cart.map(item => {
         const lineItem: any = {
           product_id: item.mainProductId || item.id,
           quantity: item.quantity
         };
-        
+
         // If this is a variation, add the variation_id
         if (item.variationId) {
           lineItem.variation_id = item.variationId;
         }
-        
+
         return lineItem;
       });
-      
+
       console.log('Line items for order:', lineItems);
-      
+
       // Create a unique transaction reference
       const timestamp = Date.now();
       const transactionReference = `EXO-${timestamp}`;
-      
+
       // Save order data to localStorage to avoid URL length limits
       const orderData = {
         lineItems,
@@ -342,14 +352,14 @@ export default function CheckoutPage() {
         address,
         totalAmount: total
       };
-      
+
       // Store the order data in localStorage keyed by the transaction reference
       localStorage.setItem(`ozow_order_${transactionReference}`, JSON.stringify(orderData));
       console.log('Order data saved to localStorage with key:', `ozow_order_${transactionReference}`);
-      
+
       // Full website URL from env or default
       const baseUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://exoticshoes.co.za';
-      
+
       // Construct the Ozow payment request
       const ozowPayload = {
         siteCode: process.env.NEXT_PUBLIC_OZOW_SITE_CODE,
@@ -365,12 +375,12 @@ export default function CheckoutPage() {
         successUrl: `${baseUrl}/order-success?ref=${transactionReference}`,
         notifyUrl: `${baseUrl}/api/ozow-notification?ref=${transactionReference}`
       };
-      
+
       console.log('Initializing Ozow payment with site code:', process.env.NEXT_PUBLIC_OZOW_SITE_CODE);
       console.log('Transaction reference:', transactionReference);
       console.log('Amount:', total.toFixed(2));
       console.log('Test mode:', process.env.NEXT_PUBLIC_OZOW_TEST_MODE === 'true' ? 'true' : 'false');
-      
+
       console.log('Making request to endpoint:', '/api/ozow-payment');
       const response = await fetch('/api/ozow-payment', {
         method: 'POST',
@@ -379,17 +389,17 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify(ozowPayload)
       });
-      
+
       const data = await response.json();
       console.log('Payment response data:', data);
-      
+
       if (!data.success) {
         throw new Error(data.message || 'Failed to initialize payment');
       }
-      
+
       // Redirect to Ozow payment page
       console.log('Redirecting to Ozow payment page:', data.paymentUrl);
-      
+
       // Set up error handling for Ozow redirect
       const errorCheckTimer = setTimeout(() => {
         // Check if we've been redirected to an error page
@@ -398,13 +408,13 @@ export default function CheckoutPage() {
           setPaymentError('Payment gateway returned an error. Please check your payment details and try again.');
         }
       }, 5000); // Check after 5 seconds
-      
+
       // Cleanup timer if we successfully navigate away
       window.addEventListener('beforeunload', () => clearTimeout(errorCheckTimer));
-      
+
       // Redirect to Ozow
       window.location.href = data.paymentUrl;
-      
+
     } catch (error) {
       console.error('Error during payment process:', error);
       setPaymentError('An error occurred during payment. Please try again.');
@@ -413,9 +423,10 @@ export default function CheckoutPage() {
 
   return (
     <div className={`min-h-screen bg-white ${lato.className}`}>
+      {!pageLoaded && <PageLoading />}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-[60px] pb-8 sm:pb-12">
         <style>{styles.popupOverride}</style>
-        
+
         <h1 className="text-xl sm:text-2xl font-bold mb-6 text-center" style={{fontFamily: 'var(--font-lato)'}}>
           Checkout
         </h1>
@@ -428,7 +439,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>First Name</Label>
-                  <Input 
+                  <Input
                     id="firstName"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
@@ -439,7 +450,7 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <Label htmlFor="lastName" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Last Name</Label>
-                  <Input 
+                  <Input
                     id="lastName"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
@@ -453,7 +464,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="email" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Email</Label>
-                  <Input 
+                  <Input
                     id="email"
                     type="email"
                     value={email}
@@ -465,7 +476,7 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <Label htmlFor="phone" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Phone</Label>
-                  <Input 
+                  <Input
                     id="phone"
                     type="tel"
                     value={phone}
@@ -479,7 +490,7 @@ export default function CheckoutPage() {
 
               <div>
                 <Label htmlFor="address" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Address</Label>
-                <Input 
+                <Input
                   id="address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
@@ -492,7 +503,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="city" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>City</Label>
-                  <Input 
+                  <Input
                     id="city"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
@@ -503,7 +514,7 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <Label htmlFor="province" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Province</Label>
-                  <Input 
+                  <Input
                     id="province"
                     value={province}
                     onChange={(e) => setProvince(e.target.value)}
@@ -517,7 +528,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="postalCode" className="text-sm" style={{fontFamily: 'var(--font-lato)'}}>Postal Code</Label>
-                  <Input 
+                  <Input
                     id="postalCode"
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
@@ -533,34 +544,30 @@ export default function CheckoutPage() {
           {/* Payment Method Section */}
           <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
             <h2 className="text-lg sm:text-xl font-semibold mb-4" style={{fontFamily: 'var(--font-lato)'}}>Payment Method</h2>
-            <RadioGroup 
-              value={paymentMethod} 
+            <RadioGroup
+              value={paymentMethod}
               onValueChange={(value) => {
                 setPaymentMethod(value);
                 // Reset any previous payment errors when changing payment method
                 setPaymentError('');
-              }} 
+              }}
               className="space-y-3"
             >
               <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                 <RadioGroupItem value="yoco" id="yoco" />
                 <Label htmlFor="yoco" className="flex items-center space-x-2" style={{fontFamily: 'var(--font-lato)'}}>
                   <span>Yoco Payment Gateway</span>
-                  <img 
-                    src="/yoco-logo.png" 
-                    alt="Yoco" 
-                    className="h-4 w-auto object-contain"
-                  />
+                  <YocoLogo height={16} />
                 </Label>
               </div>
-              
+
               <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                 <RadioGroupItem value="ozow" id="ozow" />
                 <Label htmlFor="ozow" className="flex items-center space-x-2" style={{fontFamily: 'var(--font-lato)'}}>
                   <span>Ozow Instant EFT</span>
-                  <img 
-                    src="/ozow-logo.png" 
-                    alt="Ozow Payment" 
+                  <img
+                    src="/ozow-logo.png"
+                    alt="Ozow Payment"
                     className="h-5 w-auto object-contain"
                   />
                 </Label>
@@ -570,9 +577,9 @@ export default function CheckoutPage() {
                 <RadioGroupItem value="bank_transfer" id="bank_transfer" />
                 <Label htmlFor="bank_transfer" className="flex items-center space-x-2" style={{fontFamily: 'var(--font-lato)'}}>
                   <span>Bank Transfer</span>
-                  <img 
-                    src="/eft-logo.png" 
-                    alt="EFT Payment" 
+                  <img
+                    src="/eft-logo.png"
+                    alt="EFT Payment"
                     className="h-5 w-auto object-contain"
                   />
                 </Label>
@@ -583,9 +590,9 @@ export default function CheckoutPage() {
             {paymentMethod === 'bank_transfer' && (
               <div className="mt-4 p-4 bg-gray-50 rounded-lg text-sm">
                 <p className="mb-2" style={{fontFamily: 'var(--font-lato)'}}>Please note: After placing your order, you will need to make the payment using the banking details below. Your order will be processed once payment is received.</p>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   size="sm"
                   onClick={() => setShowBankingDetails(!showBankingDetails)}
                   className="w-full justify-between"
@@ -593,7 +600,7 @@ export default function CheckoutPage() {
                 >
                   {showBankingDetails ? 'Hide Banking Details' : 'Show Banking Details'}
                 </Button>
-                
+
                 {showBankingDetails && (
                   <div className="mt-3 p-3 bg-white rounded-lg space-y-1" style={{fontFamily: 'var(--font-lato)'}}>
                     <p className="font-semibold">Banking Details:</p>
@@ -613,7 +620,7 @@ export default function CheckoutPage() {
               <h2 className="text-lg sm:text-xl font-semibold mb-4 text-white" style={{fontFamily: 'var(--font-lato)'}}>
                 Order Summary
               </h2>
-              
+
               {/* Order Items */}
               <div className="space-y-2 text-sm sm:text-base" style={{fontFamily: 'var(--font-lato)'}}>
                 {cart.map((item) => (
@@ -645,8 +652,8 @@ export default function CheckoutPage() {
           </div>
 
           {/* Place Order Button */}
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full py-3 text-base sm:text-lg font-semibold bg-black hover:bg-gray-800 text-white"
             disabled={isLoading}
             style={{fontFamily: 'var(--font-lato)'}}
@@ -668,9 +675,9 @@ export default function CheckoutPage() {
 
         {/* Trust Banner */}
         <div className="mt-8 relative rounded-lg overflow-hidden max-w-4xl mx-auto">
-          <img 
-            src="/checkout-banner.webp" 
-            alt="Checkout Banner" 
+          <img
+            src="/checkout-banner.webp"
+            alt="Checkout Banner"
             className="w-full h-auto"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-black/20 flex items-center justify-center">
