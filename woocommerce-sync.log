@@ -1,10 +1,10 @@
-WooCommerce to Typesense Sync - 2025-03-29T14:35:24.499Z
+WooCommerce to Typesense Sync - 2025-04-03T19:14:58.305Z
 
 
 ================================================================================
 Starting WooCommerce to Typesense Sync
 ================================================================================
-Typesense collection 'products' exists with 1 documents
+Typesense collection 'products' exists with 1082 documents
 
 ================================================================================
 Clearing Typesense Collection
@@ -40,8 +40,8 @@ Fetched 100 products (total so far: 900)
 Fetching page 10...
 Fetched 100 products (total so far: 1000)
 Fetching page 11...
-Fetched 82 products (total so far: 1082)
-Successfully fetched 1082 products from WooCommerce
+Fetched 83 products (total so far: 1083)
+Successfully fetched 1083 products from WooCommerce
 
 ================================================================================
 Indexing Products in Typesense
@@ -367,10 +367,11 @@ Found 2 variations for product 11340
 Fetching variations for variable product 24440: Compartment Bag
 Found 2 variations for product 24440
 ✅ Indexed product: 24440 - Compartment Bag
+✅ Indexed product: 58312 - Courier fee for safety boot
+Processing batch 19 of 109
 Fetching variations for variable product 19513: Croft & Barrow
 Found 36 variations for product 19513
 ✅ Indexed product: 19513 - Croft & Barrow
-Processing batch 19 of 109
 Fetching variations for variable product 19529: Cutwork Design Shoes
 Found 6 variations for product 19529
 ✅ Indexed product: 19529 - Cutwork Design Shoes
@@ -386,8 +387,8 @@ Found 8 variations for product 24673
 ✅ Indexed product: 14318 - Denim pumps dark blue 5
 ✅ Indexed product: 14321 - Denim pumps dark blue 6
 ✅ Indexed product: 14322 - denim pumps dark blue 8
-✅ Indexed product: 14690 - Denim Shoe New Black 3
 Processing batch 20 of 109
+✅ Indexed product: 14690 - Denim Shoe New Black 3
 Fetching variations for variable product 56400: Denim Shoes - Lace Style
 Found 24 variations for product 56400
 ✅ Indexed product: 56400 - Denim Shoes - Lace Style
@@ -409,10 +410,10 @@ Found 6 variations for product 12171
 Fetching variations for variable product 57225: Double Stripe Gum Sole Sneakers
 Found 6 variations for product 57225
 ✅ Indexed product: 57225 - Double Stripe Gum Sole Sneakers
+Processing batch 21 of 109
 Fetching variations for variable product 20061: Draya 1
 Found 6 variations for product 20061
 ✅ Indexed product: 20061 - Draya 1
-Processing batch 21 of 109
 Fetching variations for variable product 22850: Dream Pairs
 Found 7 variations for product 22850
 ✅ Indexed product: 22850 - Dream Pairs
@@ -438,10 +439,10 @@ Found 2 variations for product 20231
 Fetching variations for variable product 20197: Ducati SWP006
 Found 3 variations for product 20197
 ✅ Indexed product: 20197 - Ducati SWP006
+Processing batch 22 of 109
 Fetching variations for variable product 20309: Ducati T032
 Found 3 variations for product 20309
 ✅ Indexed product: 20309 - Ducati T032
-Processing batch 22 of 109
 ✅ Indexed product: 20987 - Ducati xl
 Fetching variations for variable product 23898: Duck Slippers
 Found 9 variations for product 23898
@@ -463,10 +464,10 @@ Found 11 variations for product 8361
 Fetching variations for variable product 17732: Embroidery design Boots
 Found 15 variations for product 17732
 ✅ Indexed product: 17732 - Embroidery design Boots
+Processing batch 23 of 109
 Fetching variations for variable product 56181: Espadrille Pumps
 Found 7 variations for product 56181
 ✅ Indexed product: 56181 - Espadrille Pumps
-Processing batch 23 of 109
 Fetching variations for variable product 21274: Espadrille Wedge static
 Found 5 variations for product 21274
 ✅ Indexed product: 21274 - Espadrille Wedge static
@@ -490,8 +491,8 @@ Fetching variations for variable product 22986: Feather Heels
 Found 6 variations for product 22986
 ✅ Indexed product: 22986 - Feather Heels
 ✅ Indexed product: 56649 - Flask set
-✅ Indexed product: 56690 - Flask set
 Processing batch 24 of 109
+✅ Indexed product: 56690 - Flask set
 Fetching variations for variable product 21031: Fliegen color Takkies
 Found 42 variations for product 21031
 ✅ Indexed product: 21031 - Fliegen color Takkies
@@ -509,8 +510,8 @@ Found 36 variations for product 23278
 ✅ Indexed product: 23278 - Florida Locker - Ladies
 ✅ Indexed product: 15453 - Flower bead pumps size 7
 ✅ Indexed product: 56878 - Flower Decor Necklace
-✅ Indexed product: 56961 - Flower Pearl Necklace
 Processing batch 25 of 109
+✅ Indexed product: 56961 - Flower Pearl Necklace
 ✅ Indexed product: 20388 - Flower sneakers assorted
 ✅ Indexed product: 16742 - foot flex
 ✅ Indexed product: 20935 - foot flex
@@ -526,10 +527,10 @@ Found 6 variations for product 24990
 ✅ Indexed product: 24990 - Foot Flex Heel Shoe
 ✅ Indexed product: 56490 - Foot flex sandals
 ✅ Indexed product: 56495 - Foot flex sandals
+Processing batch 26 of 109
 Fetching variations for variable product 24972: Foot Flex Sandals - Flower Cutwork
 Found 6 variations for product 24972
 ✅ Indexed product: 24972 - Foot Flex Sandals - Flower Cutwork
-Processing batch 26 of 109
 ✅ Indexed product: 56493 - Foot flex shoes
 ✅ Indexed product: 56488 - Foot flex shoes black and navy
 ✅ Indexed product: 58169 - Foot flex slip on shoes
@@ -545,8 +546,8 @@ Found 11 variations for product 11289
 Fetching variations for variable product 20070: Frida 1
 Found 12 variations for product 20070
 ✅ Indexed product: 20070 - Frida 1
-✅ Indexed product: 19251 - Fuel 9
 Processing batch 27 of 109
+✅ Indexed product: 19251 - Fuel 9
 Fetching variations for variable product 12243: Fur Ankle Boots
 Found 12 variations for product 12243
 ✅ Indexed product: 12243 - Fur Ankle Boots
@@ -566,8 +567,8 @@ Fetching variations for variable product 9198: G Sandals
 Found 18 variations for product 9198
 ✅ Indexed product: 9198 - G Sandals
 ✅ Indexed product: 13956 - Gemo pumps size 6
-✅ Indexed product: 13953 - Gemo pumps size 7
 Processing batch 28 of 109
+✅ Indexed product: 13953 - Gemo pumps size 7
 ✅ Indexed product: 56968 - Geometric necklace
 Fetching variations for variable product 15086: Gladiator Sandals
 Found 23 variations for product 15086
@@ -587,8 +588,8 @@ Found 11 variations for product 58151
 ✅ Indexed product: 58151 - GrittGear - Dolomite Cow Leather
 ✅ Indexed product: 57983 - Grittgear safety boots
 ✅ Indexed product: 19737 - H26 Heel brown 6
-✅ Indexed product: 19735 - H26 high heel brown 6
 Processing batch 29 of 109
+✅ Indexed product: 19735 - H26 high heel brown 6
 Fetching variations for variable product 24177: Halston Boots
 Found 22 variations for product 24177
 ✅ Indexed product: 24177 - Halston Boots
@@ -614,8 +615,8 @@ Fetching variations for variable product 56442: IOCEQ Mens
 Found 24 variations for product 56442
 ✅ Indexed product: 56442 - IOCEQ Mens
 ✅ Indexed product: 57256 - Kiddies High Tops
-✅ Indexed product: 15216 - Kiddies Takkies
 Processing batch 30 of 109
+✅ Indexed product: 15216 - Kiddies Takkies
 Fetching variations for variable product 56556: Kiddies Takkies - Two Colors
 Found 18 variations for product 56556
 ✅ Indexed product: 56556 - Kiddies Takkies - Two Colors
@@ -633,8 +634,8 @@ Found 2 variations for product 9484
 ✅ Indexed product: 56903 - L7330673 formal look slip
 ✅ Indexed product: 14734 - Lace Black Denim 7
 ✅ Indexed product: 14731 - Lace Dark Denim blue Size 7
-✅ Indexed product: 14738 - lace Denim Black size 6
 Processing batch 31 of 109
+✅ Indexed product: 14738 - lace Denim Black size 6
 Fetching variations for variable product 19875: Lace Long Boots
 Found 10 variations for product 19875
 ✅ Indexed product: 19875 - Lace Long Boots
@@ -658,10 +659,10 @@ Found 6 variations for product 22734
 Fetching variations for variable product 57057: Ladies Black Lace Takkies
 Found 6 variations for product 57057
 ✅ Indexed product: 57057 - Ladies Black Lace Takkies
+Processing batch 32 of 109
 Fetching variations for variable product 22752: Ladies Color Takkies
 Found 24 variations for product 22752
 ✅ Indexed product: 22752 - Ladies Color Takkies
-Processing batch 32 of 109
 Fetching variations for variable product 21296: Ladies Court Shoes
 Found 6 variations for product 21296
 ✅ Indexed product: 21296 - Ladies Court Shoes
@@ -687,10 +688,10 @@ Found 7 variations for product 19488
 Fetching variations for variable product 18826: Ladies slippers
 Found 16 variations for product 18826
 ✅ Indexed product: 18826 - Ladies slippers
+Processing batch 33 of 109
 Fetching variations for variable product 57511: Ladies Slouch Handbag
 Found 2 variations for product 57511
 ✅ Indexed product: 57511 - Ladies Slouch Handbag
-Processing batch 33 of 109
 Fetching variations for variable product 55989: Ladies Two Stripe
 Found 6 variations for product 55989
 ✅ Indexed product: 55989 - Ladies Two Stripe
@@ -710,10 +711,10 @@ Fetching variations for variable product 57269: Leopard Lace
 Found 6 variations for product 57269
 ✅ Indexed product: 57269 - Leopard Lace
 ✅ Indexed product: 15719 - Leopard Size 7 Missing pair
+Processing batch 34 of 109
 Fetching variations for variable product 55661: Light Blue Denim
 Found 6 variations for product 55661
 ✅ Indexed product: 55661 - Light Blue Denim
-Processing batch 34 of 109
 ✅ Indexed product: 14736 - Light Blue Denim lace size 4
 ✅ Indexed product: 16582 - Light-Weight Wedge Size 6
 Fetching variations for variable product 22441: Lilly
@@ -731,10 +732,10 @@ Found 6 variations for product 17954
 Fetching variations for variable product 18807: Long Fur Boots Beige
 Found 6 variations for product 18807
 ✅ Indexed product: 18807 - Long Fur Boots Beige
+Processing batch 35 of 109
 Fetching variations for variable product 24775: Long Stretch Back Boots
 Found 6 variations for product 24775
 ✅ Indexed product: 24775 - Long Stretch Back Boots
-Processing batch 35 of 109
 ✅ Indexed product: 14282 - Long V boot Black 5
 ✅ Indexed product: 14490 - LONG V BOOTS Black 5
 ✅ Indexed product: 14182 - love rose slip on - black 4
@@ -744,10 +745,10 @@ Processing batch 35 of 109
 ✅ Indexed product: 56727 - lunch box
 ✅ Indexed product: 57522 - Lunch box
 ✅ Indexed product: 56286 - Lunch box 3 layer - Pink
+Processing batch 36 of 109
 Fetching variations for variable product 55855: Lunch Boxes
 Found 4 variations for product 55855
 ✅ Indexed product: 55855 - Lunch Boxes
-Processing batch 36 of 109
 ✅ Indexed product: 57620 - Lunch boxes 2 each colour
 ✅ Indexed product: 14284 - Lv bag
 ✅ Indexed product: 14714 - lv purse beige
@@ -761,10 +762,10 @@ Found 7 variations for product 17704
 Fetching variations for variable product 17721: Massimo ankle boots
 Found 6 variations for product 17721
 ✅ Indexed product: 17721 - Massimo ankle boots
+Processing batch 37 of 109
 Fetching variations for variable product 23206: Medic
 Found 6 variations for product 23206
 ✅ Indexed product: 23206 - Medic
-Processing batch 37 of 109
 Fetching variations for variable product 56818: Medicus
 Found 7 variations for product 56818
 ✅ Indexed product: 56818 - Medicus
@@ -792,10 +793,10 @@ Found 16 variations for product 19544
 Fetching variations for variable product 55712: Mens Fur Slippers
 Found 4 variations for product 55712
 ✅ Indexed product: 55712 - Mens Fur Slippers
+Processing batch 38 of 109
 Fetching variations for variable product 24668: Mens Grey Lace Top
 Found 3 variations for product 24668
 ✅ Indexed product: 24668 - Mens Grey Lace Top
-Processing batch 38 of 109
 Fetching variations for variable product 19789: Mens loafer
 Found 18 variations for product 19789
 ✅ Indexed product: 19789 - Mens loafer
@@ -817,8 +818,8 @@ Found 10 variations for product 15128
 Fetching variations for variable product 56678: Mens shoes with lace
 Found 6 variations for product 56678
 ✅ Indexed product: 56678 - Mens shoes with lace
-✅ Indexed product: 24575 - mens slippers 9/10
 Processing batch 39 of 109
+✅ Indexed product: 24575 - mens slippers 9/10
 Fetching variations for variable product 17774: Mens Strap Sandals
 Found 5 variations for product 17774
 ✅ Indexed product: 17774 - Mens Strap Sandals
@@ -842,10 +843,10 @@ Found 4 variations for product 58063
 Fetching variations for variable product 57211: Modascapa Black Denim Sandals
 Found 5 variations for product 57211
 ✅ Indexed product: 57211 - Modascapa Black Denim Sandals
+Processing batch 40 of 109
 Fetching variations for variable product 23910: Mudd
 Found 7 variations for product 23910
 ✅ Indexed product: 23910 - Mudd
-Processing batch 40 of 109
 Fetching variations for variable product 24792: Naturella
 Found 5 variations for product 24792
 ✅ Indexed product: 24792 - Naturella
@@ -859,8 +860,8 @@ Found 6 variations for product 20450
 ✅ Indexed product: 19360 - New aerosole 3.5
 ✅ Indexed product: 19442 - New aerosole 4 5 6
 ✅ Indexed product: 19464 - New aerosole 4 6
-✅ Indexed product: 19484 - New Aerosole 4.5
 Processing batch 41 of 109
+✅ Indexed product: 19484 - New Aerosole 4.5
 ✅ Indexed product: 19444 - New Aerosole 5
 ✅ Indexed product: 19467 - New Aerosole 5
 ✅ Indexed product: 19362 - New aerosole 7 or 7.5
@@ -870,8 +871,8 @@ Processing batch 41 of 109
 ✅ Indexed product: 19332 - New Aerosole wedge size 5
 ✅ Indexed product: 18021 - New Ankle Leopard Boot
 ✅ Indexed product: 24373 - New Bag
-✅ Indexed product: 14694 - New Denim Shoe 3 x Size 8
 Processing batch 42 of 109
+✅ Indexed product: 14694 - New Denim Shoe 3 x Size 8
 ✅ Indexed product: 15867 - New Espadrilles Size 4
 ✅ Indexed product: 18024 - New FB Boot
 ✅ Indexed product: 17871 - New fur Tom boots sand 3
@@ -881,8 +882,8 @@ Processing batch 42 of 109
 ✅ Indexed product: 13262 - New Lace Ankle Boot Blk 6
 ✅ Indexed product: 13263 - New Lace Back Boot 86-15 Black 8
 ✅ Indexed product: 13226 - New Lace Front Black 3.5
-✅ Indexed product: 13219 - New Lace Front Brown 3.5
 Processing batch 43 of 109
+✅ Indexed product: 13219 - New Lace Front Brown 3.5
 ✅ Indexed product: 13224 - New Lace Front Brown 4.5
 ✅ Indexed product: 13225 - New Lace Front Brown 4.5
 ✅ Indexed product: 13255 - New Lace front Brown 6
@@ -892,8 +893,8 @@ Processing batch 43 of 109
 ✅ Indexed product: 13234 - New Long Lace Boot Brown 2.5
 ✅ Indexed product: 20016 - New long pull up boots Black 4
 ✅ Indexed product: 20018 - New long pull up boots white 4
-✅ Indexed product: 14950 - New low black heel size 4
 Processing batch 44 of 109
+✅ Indexed product: 14950 - New low black heel size 4
 ✅ Indexed product: 15584 - New Material bow Pumps Black 5
 ✅ Indexed product: 14897 - New pumps
 ✅ Indexed product: 13974 - New pumps 5 n 8
@@ -903,8 +904,8 @@ Processing batch 44 of 109
 ✅ Indexed product: 15414 - New takkies black 7
 ✅ Indexed product: 13467 - New tc boot Black 6 , Brown 6
 ✅ Indexed product: 16002 - New Wedges
-✅ Indexed product: 15996 - New Wedges 3 x Size 6
 Processing batch 45 of 109
+✅ Indexed product: 15996 - New Wedges 3 x Size 6
 ✅ Indexed product: 19427 - New white mountain 6 & 7
 ✅ Indexed product: 19440 - New white mountain size 5
 ✅ Indexed product: 20321 - Nova Fashion black 9
@@ -920,10 +921,10 @@ Found 11 variations for product 18090
 Fetching variations for variable product 21568: NY&C Black Heels
 Found 6 variations for product 21568
 ✅ Indexed product: 21568 - NY&C Black Heels
+Processing batch 46 of 109
 Fetching variations for variable product 19130: NY&C Green
 Found 4 variations for product 19130
 ✅ Indexed product: 19130 - NY&C Green
-Processing batch 46 of 109
 ✅ Indexed product: 14804 - Old Style Dark blue 3 and 7
 Fetching variations for variable product 56999: Olive Takkies
 Found 6 variations for product 56999
@@ -943,10 +944,10 @@ Found 6 variations for product 57662
 Fetching variations for variable product 56343: Oxford Style Shoes
 Found 6 variations for product 56343
 ✅ Indexed product: 56343 - Oxford Style Shoes
+Processing batch 47 of 109
 Fetching variations for variable product 20662: Pearl Heels
 Found 6 variations for product 20662
 ✅ Indexed product: 20662 - Pearl Heels
-Processing batch 47 of 109
 ✅ Indexed product: 56965 - Pearl Leaves
 Fetching variations for variable product 15924: Peep Toe Wedges
 Found 12 variations for product 15924
@@ -966,10 +967,10 @@ Found 6 variations for product 22973
 Fetching variations for variable product 47961: Pink oversized t-shirt
 Found 5 variations for product 47961
 ✅ Indexed product: 47961 - Pink oversized t-shirt
+Processing batch 48 of 109
 Fetching variations for variable product 11334: Pink Takkies
 Found 3 variations for product 11334
 ✅ Indexed product: 11334 - Pink Takkies
-Processing batch 48 of 109
 Fetching variations for variable product 58231: Plum Heel Boots
 Found 6 variations for product 58231
 ✅ Indexed product: 58231 - Plum Heel Boots
@@ -987,10 +988,10 @@ Found 2 variations for product 11533
 ✅ Indexed product: 57525 - Pull & Bear
 ✅ Indexed product: 16747 - Pumps black
 ✅ Indexed product: 16745 - Pumps case of 21
+Processing batch 49 of 109
 Fetching variations for variable product 55544: Pumps With Leather Uppers
 Found 6 variations for product 55544
 ✅ Indexed product: 55544 - Pumps With Leather Uppers
-Processing batch 49 of 109
 Fetching variations for variable product 58092: Quilt Bow Pumps
 Found 18 variations for product 58092
 ✅ Indexed product: 58092 - Quilt Bow Pumps
@@ -1014,8 +1015,8 @@ Found 21 variations for product 9365
 ✅ Indexed product: 9365 - Rose Wedges
 ✅ Indexed product: 16920 - Rose Wedges Black 5
 ✅ Indexed product: 16922 - Rose Wedges Black 6
-✅ Indexed product: 16924 - Rose Wedges Black 6
 Processing batch 50 of 109
+✅ Indexed product: 16924 - Rose Wedges Black 6
 Fetching variations for variable product 17401: ruched ankle boots
 Found 18 variations for product 17401
 ✅ Indexed product: 17401 - ruched ankle boots
@@ -1031,8 +1032,8 @@ Found 12 variations for product 20552
 ✅ Indexed product: 20546 - safari tan 4
 ✅ Indexed product: 20536 - Safari tan 6
 ✅ Indexed product: 25337 - Safety boots
-✅ Indexed product: 56697 - Safety Boots Size 9
 Processing batch 51 of 109
+✅ Indexed product: 56697 - Safety Boots Size 9
 ✅ Indexed product: 57081 - Sandals black 7
 ✅ Indexed product: 57883 - Sandals replacement
 ✅ Indexed product: 22690 - Sarah j white heel size 4
@@ -1048,10 +1049,10 @@ Found 4 variations for product 16051
 ✅ Indexed product: 16051 - Senda R.O.A.D
 ✅ Indexed product: 20847 - Senda Road
 ✅ Indexed product: 20857 - Senda road 4
+Processing batch 52 of 109
 Fetching variations for variable product 55698: Seven7 Footwear
 Found 6 variations for product 55698
 ✅ Indexed product: 55698 - Seven7 Footwear
-Processing batch 52 of 109
 Fetching variations for variable product 24471: Seychelles
 Found 10 variations for product 24471
 ✅ Indexed product: 24471 - Seychelles
@@ -1073,8 +1074,8 @@ Fetching variations for variable product 23191: Slip Pumps - 2 Colors
 Found 12 variations for product 23191
 ✅ Indexed product: 23191 - Slip Pumps - 2 Colors
 ✅ Indexed product: 21076 - Slip sandals  code 5003
-✅ Indexed product: 20937 - softlite
 Processing batch 53 of 109
+✅ Indexed product: 20937 - softlite
 Fetching variations for variable product 57410: Sooz Girls
 Found 14 variations for product 57410
 ✅ Indexed product: 57410 - Sooz Girls
@@ -1100,10 +1101,10 @@ Found 12 variations for product 25212
 Fetching variations for variable product 55653: Strap Boots Camel
 Found 6 variations for product 55653
 ✅ Indexed product: 55653 - Strap Boots Camel
+Processing batch 54 of 109
 Fetching variations for variable product 21596: Studded Gladiator Sandals
 Found 18 variations for product 21596
 ✅ Indexed product: 21596 - Studded Gladiator Sandals
-Processing batch 54 of 109
 Fetching variations for variable product 21379: Sylvine Sandals Silver
 Found 7 variations for product 21379
 ✅ Indexed product: 21379 - Sylvine Sandals Silver
@@ -1127,8 +1128,8 @@ Fetching variations for variable product 11373: Takkies M1912
 Found 2 variations for product 11373
 ✅ Indexed product: 11373 - Takkies M1912
 ✅ Indexed product: 56117 - Takkies New Black 4
-✅ Indexed product: 15444 - Takkies New Grey 7 , Black 6
 Processing batch 55 of 109
+✅ Indexed product: 15444 - Takkies New Grey 7 , Black 6
 ✅ Indexed product: 56115 - Takkies New Navy 4
 Fetching variations for variable product 25320: Tan V Elastic
 Found 6 variations for product 25320
@@ -1150,10 +1151,10 @@ Found 30 variations for product 9591
 Fetching variations for variable product 55847: TC Kitty Heels
 Found 6 variations for product 55847
 ✅ Indexed product: 55847 - TC Kitty Heels
+Processing batch 56 of 109
 Fetching variations for variable product 55895: TC Low Heels - Black
 Found 6 variations for product 55895
 ✅ Indexed product: 55895 - TC Low Heels - Black
-Processing batch 56 of 109
 ✅ Indexed product: 15033 - TC low Wedge Shoe Size 7
 ✅ Indexed product: 15039 - TC Low Wedge Size 6
 ✅ Indexed product: 15041 - Tc Low Wedge Size 6
@@ -1173,10 +1174,10 @@ Found 6 variations for product 57809
 Fetching variations for variable product 57633: Tomtom print
 Found 6 variations for product 57633
 ✅ Indexed product: 57633 - Tomtom print
+Processing batch 57 of 109
 Fetching variations for variable product 57643: Tomtom Slip On Sandals - Black/White
 Found 6 variations for product 57643
 ✅ Indexed product: 57643 - Tomtom Slip On Sandals - Black/White
-Processing batch 57 of 109
 Fetching variations for variable product 57501: Tote Bag
 Found 1 variations for product 57501
 ✅ Indexed product: 57501 - Tote Bag
@@ -1200,8 +1201,8 @@ Found 8 variations for product 17370
 ✅ Indexed product: 17370 - Uggs kids/adults
 ✅ Indexed product: 23334 - Urban zone silver
 ✅ Indexed product: 23336 - Urban zone silver  size 6
-✅ Indexed product: 19237 - Uzzi size 5
 Processing batch 58 of 109
+✅ Indexed product: 19237 - Uzzi size 5
 ✅ Indexed product: 19239 - Uzzi size 5
 Fetching variations for variable product 20216: VW GTI - P032
 Found 6 variations for product 20216
@@ -1225,10 +1226,10 @@ Found 1 variations for product 20316
 Fetching variations for variable product 21252: VW Windgear
 Found 2 variations for product 21252
 ✅ Indexed product: 21252 - VW Windgear
+Processing batch 59 of 109
 Fetching variations for variable product 21248: VW- SWP030 Blue
 Found 2 variations for product 21248
 ✅ Indexed product: 21248 - VW- SWP030 Blue
-Processing batch 59 of 109
 Fetching variations for variable product 16938: Wanted Boots
 Found 13 variations for product 16938
 ✅ Indexed product: 16938 - Wanted Boots
@@ -1250,8 +1251,8 @@ Fetching variations for variable product 19574: White Mountain Ankle Boots
 Found 12 variations for product 19574
 ✅ Indexed product: 19574 - White Mountain Ankle Boots
 ✅ Indexed product: 15460 - White sole slip on navy 8
-✅ Indexed product: 13265 - WL22004 Beige fur lace ankle boots Size 4
 Processing batch 60 of 109
+✅ Indexed product: 13265 - WL22004 Beige fur lace ankle boots Size 4
 Fetching variations for variable product 58185: Womens Platform Slides With Pattern
 Found 12 variations for product 58185
 ✅ Indexed product: 58185 - Womens Platform Slides With Pattern
@@ -1277,10 +1278,10 @@ Found 1 variations for product 11583
 Fetching variations for variable product 11047: 3 Buckle Heel Boot
 Found 1 variations for product 11047
 ✅ Indexed product: 11047 - 3 Buckle Heel Boot
+Processing batch 61 of 109
 Fetching variations for variable product 10743: 3 Buckle Long Boot
 Found 2 variations for product 10743
 ✅ Indexed product: 10743 - 3 Buckle Long Boot
-Processing batch 61 of 109
 Fetching variations for variable product 10076: 3 Button Uggs
 Found 10 variations for product 10076
 ✅ Indexed product: 10076 - 3 Button Uggs
@@ -1308,10 +1309,10 @@ Found 1 variations for product 11543
 Fetching variations for variable product 10352: Adorn Sandals
 Found 6 variations for product 10352
 ✅ Indexed product: 10352 - Adorn Sandals
+Processing batch 62 of 109
 Fetching variations for variable product 23214: Adrun
 Found 4 variations for product 23214
 ✅ Indexed product: 23214 - Adrun
-Processing batch 62 of 109
 Fetching variations for variable product 19470: Aerosole Elastic
 Found 12 variations for product 19470
 ✅ Indexed product: 19470 - Aerosole Elastic
@@ -1339,10 +1340,10 @@ Found 6 variations for product 12072
 Fetching variations for variable product 10540: Ankle Bling Boot
 Found 6 variations for product 10540
 ✅ Indexed product: 10540 - Ankle Bling Boot
+Processing batch 63 of 109
 Fetching variations for variable product 10123: Ankle Boot
 Found 2 variations for product 10123
 ✅ Indexed product: 10123 - Ankle Boot
-Processing batch 63 of 109
 Fetching variations for variable product 10764: Ankle Boot
 Found 11 variations for product 10764
 ✅ Indexed product: 10764 - Ankle Boot
@@ -1370,10 +1371,10 @@ Found 6 variations for product 12164
 Fetching variations for variable product 12105: Ankle Elastic Boots
 Found 6 variations for product 12105
 ✅ Indexed product: 12105 - Ankle Elastic Boots
+Processing batch 64 of 109
 Fetching variations for variable product 11052: Ankle Elastic Side Boot
 Found 1 variations for product 11052
 ✅ Indexed product: 11052 - Ankle Elastic Side Boot
-Processing batch 64 of 109
 Fetching variations for variable product 9922: Ankle Fashion Boot
 Found 3 variations for product 9922
 ✅ Indexed product: 9922 - Ankle Fashion Boot
@@ -1401,10 +1402,10 @@ Found 4 variations for product 9895
 Fetching variations for variable product 9990: Ankle Heel Buckle Boot
 Found 2 variations for product 9990
 ✅ Indexed product: 9990 - Ankle Heel Buckle Boot
+Processing batch 65 of 109
 Fetching variations for variable product 12083: Ankle Heel Buckle Boot
 Found 6 variations for product 12083
 ✅ Indexed product: 12083 - Ankle Heel Buckle Boot
-Processing batch 65 of 109
 Fetching variations for variable product 10760: Ankle Heel Stretch
 Found 2 variations for product 10760
 ✅ Indexed product: 10760 - Ankle Heel Stretch
@@ -1432,10 +1433,10 @@ Found 1 variations for product 10851
 Fetching variations for variable product 9904: Ankle Taupe Boots
 Found 1 variations for product 9904
 ✅ Indexed product: 9904 - Ankle Taupe Boots
+Processing batch 66 of 109
 Fetching variations for variable product 9916: Ankle Timberland Look
 Found 3 variations for product 9916
 ✅ Indexed product: 9916 - Ankle Timberland Look
-Processing batch 66 of 109
 Fetching variations for variable product 9928: Ankle Wedge Boot
 Found 3 variations for product 9928
 ✅ Indexed product: 9928 - Ankle Wedge Boot
@@ -1463,10 +1464,10 @@ Found 6 variations for product 21420
 Fetching variations for variable product 21220: Aobetu Slide - Black And Brown
 Found 12 variations for product 21220
 ✅ Indexed product: 21220 - Aobetu Slide - Black And Brown
+Processing batch 67 of 109
 Fetching variations for variable product 24215: Apache
 Found 6 variations for product 24215
 ✅ Indexed product: 24215 - Apache
-Processing batch 67 of 109
 Fetching variations for variable product 23140: Army
 Found 6 variations for product 23140
 ✅ Indexed product: 23140 - Army
@@ -1494,10 +1495,10 @@ Found 15 variations for product 22910
 Fetching variations for variable product 10838: Beaded Fur Long Boots
 Found 2 variations for product 10838
 ✅ Indexed product: 10838 - Beaded Fur Long Boots
+Processing batch 68 of 109
 Fetching variations for variable product 16005: Bebe Sport
 Found 27 variations for product 16005
 ✅ Indexed product: 16005 - Bebe Sport
-Processing batch 68 of 109
 Fetching variations for variable product 11448: Black - Grey - Orange Ankle Boots
 Found 6 variations for product 11448
 ✅ Indexed product: 11448 - Black - Grey - Orange Ankle Boots
@@ -1525,10 +1526,10 @@ Found 6 variations for product 8715
 Fetching variations for variable product 12204: Black Lace Up Boots
 Found 7 variations for product 12204
 ✅ Indexed product: 12204 - Black Lace Up Boots
+Processing batch 69 of 109
 Fetching variations for variable product 10650: Black Long Boot
 Found 7 variations for product 10650
 ✅ Indexed product: 10650 - Black Long Boot
-Processing batch 69 of 109
 Fetching variations for variable product 13167: Black Long Mini Heel Boots
 Found 3 variations for product 13167
 ✅ Indexed product: 13167 - Black Long Mini Heel Boots
@@ -1556,10 +1557,10 @@ Found 1 variations for product 10705
 Fetching variations for variable product 14136: Black/Pink Striped Takkies
 Found 6 variations for product 14136
 ✅ Indexed product: 14136 - Black/Pink Striped Takkies
+Processing batch 70 of 109
 Fetching variations for variable product 10956: Blakes Fur Front Boot
 Found 13 variations for product 10956
 ✅ Indexed product: 10956 - Blakes Fur Front Boot
-Processing batch 70 of 109
 Fetching variations for variable product 21908: Blanco
 Found 6 variations for product 21908
 ✅ Indexed product: 21908 - Blanco
@@ -1587,10 +1588,10 @@ Found 6 variations for product 21207
 Fetching variations for variable product 8558: Bling Sandals
 Found 6 variations for product 8558
 ✅ Indexed product: 8558 - Bling Sandals
+Processing batch 71 of 109
 Fetching variations for variable product 8728: Bling Sandals
 Found 1 variations for product 8728
 ✅ Indexed product: 8728 - Bling Sandals
-Processing batch 71 of 109
 Fetching variations for variable product 13961: Bling Wedge Sandals
 Found 6 variations for product 13961
 ✅ Indexed product: 13961 - Bling Wedge Sandals
@@ -1618,10 +1619,10 @@ Found 7 variations for product 55788
 Fetching variations for variable product 11957: Brown Boot Elastic
 Found 9 variations for product 11957
 ✅ Indexed product: 11957 - Brown Boot Elastic
+Processing batch 72 of 109
 Fetching variations for variable product 9887: Brown Boot Style 2
 Found 3 variations for product 9887
 ✅ Indexed product: 9887 - Brown Boot Style 2
-Processing batch 72 of 109
 Fetching variations for variable product 23242: Brown boots Buckle 3 Stud 8-9880
 Found 6 variations for product 23242
 ✅ Indexed product: 23242 - Brown boots Buckle 3 Stud 8-9880
@@ -1649,10 +1650,10 @@ Found 6 variations for product 24480
 Fetching variations for variable product 24645: Cacatua Heel Boots
 Found 18 variations for product 24645
 ✅ Indexed product: 24645 - Cacatua Heel Boots
+Processing batch 73 of 109
 Fetching variations for variable product 12063: Calf Length Boots
 Found 6 variations for product 12063
 ✅ Indexed product: 12063 - Calf Length Boots
-Processing batch 73 of 109
 Fetching variations for variable product 9443: Candy Bands Sandals
 Found 6 variations for product 9443
 ✅ Indexed product: 9443 - Candy Bands Sandals
@@ -1680,10 +1681,10 @@ Found 14 variations for product 23621
 Fetching variations for variable product 23605: Ceriz HR383
 Found 14 variations for product 23605
 ✅ Indexed product: 23605 - Ceriz HR383
+Processing batch 74 of 109
 Fetching variations for variable product 12154: Choc Fur Ankle Boots
 Found 6 variations for product 12154
 ✅ Indexed product: 12154 - Choc Fur Ankle Boots
-Processing batch 74 of 109
 Fetching variations for variable product 19120: Chunky Black Heels
 Found 7 variations for product 19120
 ✅ Indexed product: 19120 - Chunky Black Heels
@@ -1711,10 +1712,10 @@ Found 6 variations for product 56351
 Fetching variations for variable product 10091: Chunsen Boot
 Found 6 variations for product 10091
 ✅ Indexed product: 10091 - Chunsen Boot
+Processing batch 75 of 109
 Fetching variations for variable product 10415: Chunsen Boot
 Found 6 variations for product 10415
 ✅ Indexed product: 10415 - Chunsen Boot
-Processing batch 75 of 109
 Fetching variations for variable product 13790: Chunsen Buckle Pumps
 Found 30 variations for product 13790
 ✅ Indexed product: 13790 - Chunsen Buckle Pumps
@@ -1742,10 +1743,10 @@ Found 9 variations for product 12967
 Fetching variations for variable product 22074: Closed Front Wedges
 Found 27 variations for product 22074
 ✅ Indexed product: 22074 - Closed Front Wedges
+Processing batch 76 of 109
 Fetching variations for variable product 57509: Coach - WFBS944
 Found 1 variations for product 57509
 ✅ Indexed product: 57509 - Coach - WFBS944
-Processing batch 76 of 109
 Fetching variations for variable product 21304: Color Heels
 Found 12 variations for product 21304
 ✅ Indexed product: 21304 - Color Heels
@@ -1773,10 +1774,10 @@ Found 21 variations for product 9963
 Fetching variations for variable product 11186: Cork Wedge Heel
 Found 5 variations for product 11186
 ✅ Indexed product: 11186 - Cork Wedge Heel
+Processing batch 77 of 109
 Fetching variations for variable product 10278: Cowbow Ankle Boots
 Found 8 variations for product 10278
 ✅ Indexed product: 10278 - Cowbow Ankle Boots
-Processing batch 77 of 109
 Fetching variations for variable product 10588: Cowboy Ankle Boot
 Found 6 variations for product 10588
 ✅ Indexed product: 10588 - Cowboy Ankle Boot
@@ -1804,10 +1805,10 @@ Found 3 variations for product 56258
 Fetching variations for variable product 56253: Deer square set
 Found 3 variations for product 56253
 ✅ Indexed product: 56253 - Deer square set
+Processing batch 78 of 109
 Fetching variations for variable product 15048: Denim Bow Pumps
 Found 15 variations for product 15048
 ✅ Indexed product: 15048 - Denim Bow Pumps
-Processing batch 78 of 109
 Fetching variations for variable product 15657: Denim Design Pump
 Found 18 variations for product 15657
 ✅ Indexed product: 15657 - Denim Design Pump
@@ -1835,10 +1836,10 @@ Found 1 variations for product 8731
 Fetching variations for variable product 11665: Dkny Black Boots
 Found 9 variations for product 11665
 ✅ Indexed product: 11665 - Dkny Black Boots
+Processing batch 79 of 109
 Fetching variations for variable product 11811: Dkny Black Wedge
 Found 9 variations for product 11811
 ✅ Indexed product: 11811 - Dkny Black Wedge
-Processing batch 79 of 109
 Fetching variations for variable product 11267: DKNY Heels
 Found 6 variations for product 11267
 ✅ Indexed product: 11267 - DKNY Heels
@@ -1866,10 +1867,10 @@ Found 1 variations for product 21175
 Fetching variations for variable product 10793: Elastic 3 Buckle Boot
 Found 2 variations for product 10793
 ✅ Indexed product: 10793 - Elastic 3 Buckle Boot
+Processing batch 80 of 109
 Fetching variations for variable product 10938: Elastic Back Boot
 Found 3 variations for product 10938
 ✅ Indexed product: 10938 - Elastic Back Boot
-Processing batch 80 of 109
 Fetching variations for variable product 10553: Elastic Back Long Boot
 Found 16 variations for product 10553
 ✅ Indexed product: 10553 - Elastic Back Long Boot
@@ -1897,10 +1898,10 @@ Found 6 variations for product 56605
 Fetching variations for variable product 10258: Flat Ankle Boot
 Found 12 variations for product 10258
 ✅ Indexed product: 10258 - Flat Ankle Boot
+Processing batch 81 of 109
 Fetching variations for variable product 11032: Flat Bling Boot
 Found 1 variations for product 11032
 ✅ Indexed product: 11032 - Flat Bling Boot
-Processing batch 81 of 109
 Fetching variations for variable product 9692: Floral Foot Flex Sandals
 Found 12 variations for product 9692
 ✅ Indexed product: 9692 - Floral Foot Flex Sandals
@@ -1926,10 +1927,10 @@ Found 6 variations for product 22779
 Fetching variations for variable product 9790: Foil Takkies
 Found 4 variations for product 9790
 ✅ Indexed product: 9790 - Foil Takkies
+Processing batch 82 of 109
 Fetching variations for variable product 9730: Fold Up Pumps
 Found 9 variations for product 9730
 ✅ Indexed product: 9730 - Fold Up Pumps
-Processing batch 82 of 109
 Fetching variations for variable product 22892: Foot Flex Mink Sandals
 Found 6 variations for product 22892
 ✅ Indexed product: 22892 - Foot Flex Mink Sandals
@@ -1957,10 +1958,10 @@ Found 6 variations for product 12088
 Fetching variations for variable product 12008: Fur Long Boots - Grey
 Found 6 variations for product 12008
 ✅ Indexed product: 12008 - Fur Long Boots - Grey
+Processing batch 83 of 109
 Fetching variations for variable product 12096: Fur Long Boots – Black
 Found 6 variations for product 12096
 ✅ Indexed product: 12096 - Fur Long Boots – Black
-Processing batch 83 of 109
 Fetching variations for variable product 8806: Fur Sandals
 Found 7 variations for product 8806
 ✅ Indexed product: 8806 - Fur Sandals
@@ -1988,10 +1989,10 @@ Found 5 variations for product 13536
 Fetching variations for variable product 10875: Gold Zip Buckle Boots
 Found 4 variations for product 10875
 ✅ Indexed product: 10875 - Gold Zip Buckle Boots
+Processing batch 84 of 109
 Fetching variations for variable product 23043: Grey Mens 2652
 Found 5 variations for product 23043
 ✅ Indexed product: 23043 - Grey Mens 2652
-Processing batch 84 of 109
 Fetching variations for variable product 14001: Grey Pumps
 Found 6 variations for product 14001
 ✅ Indexed product: 14001 - Grey Pumps
@@ -2019,10 +2020,10 @@ Found 5 variations for product 56432
 Fetching variations for variable product 16972: Italia
 Found 4 variations for product 16972
 ✅ Indexed product: 16972 - Italia
+Processing batch 85 of 109
 Fetching variations for variable product 10275: JD Williams Boot
 Found 1 variations for product 10275
 ✅ Indexed product: 10275 - JD Williams Boot
-Processing batch 85 of 109
 Fetching variations for variable product 8930: Jelly Bow Pumps
 Found 6 variations for product 8930
 ✅ Indexed product: 8930 - Jelly Bow Pumps
@@ -2050,10 +2051,10 @@ Found 7 variations for product 9995
 Fetching variations for variable product 11309: Lace Back Boot
 Found 1 variations for product 11309
 ✅ Indexed product: 11309 - Lace Back Boot
+Processing batch 86 of 109
 Fetching variations for variable product 13341: Lace Back Boot
 Found 18 variations for product 13341
 ✅ Indexed product: 13341 - Lace Back Boot
-Processing batch 86 of 109
 Fetching variations for variable product 18815: Lace Back Boots
 Found 4 variations for product 18815
 ✅ Indexed product: 18815 - Lace Back Boots
@@ -2081,10 +2082,10 @@ Found 6 variations for product 23226
 Fetching variations for variable product 20646: Ladies Pointed Front Sandals
 Found 6 variations for product 20646
 ✅ Indexed product: 20646 - Ladies Pointed Front Sandals
+Processing batch 87 of 109
 Fetching variations for variable product 21713: Ladies Sneakers
 Found 24 variations for product 21713
 ✅ Indexed product: 21713 - Ladies Sneakers
-Processing batch 87 of 109
 Fetching variations for variable product 9610: Ladies Takkies - Badge
 Found 21 variations for product 9610
 ✅ Indexed product: 9610 - Ladies Takkies - Badge
@@ -2112,10 +2113,10 @@ Found 8 variations for product 24141
 Fetching variations for variable product 16585: lightweight Wedge
 Found 6 variations for product 16585
 ✅ Indexed product: 16585 - lightweight Wedge
+Processing batch 88 of 109
 Fetching variations for variable product 16661: London Fog
 Found 22 variations for product 16661
 ✅ Indexed product: 16661 - London Fog
-Processing batch 88 of 109
 Fetching variations for variable product 10525: Long Boot
 Found 8 variations for product 10525
 ✅ Indexed product: 10525 - Long Boot
@@ -2143,10 +2144,10 @@ Found 2 variations for product 14880
 Fetching variations for variable product 12314: Long Diamond Boots
 Found 6 variations for product 12314
 ✅ Indexed product: 12314 - Long Diamond Boots
+Processing batch 89 of 109
 Fetching variations for variable product 12860: Long Elastic Heel Boots
 Found 6 variations for product 12860
 ✅ Indexed product: 12860 - Long Elastic Heel Boots
-Processing batch 89 of 109
 Fetching variations for variable product 10709: Long Grey Boot
 Found 4 variations for product 10709
 ✅ Indexed product: 10709 - Long Grey Boot
@@ -2174,10 +2175,10 @@ Found 1 variations for product 11016
 Fetching variations for variable product 10213: Long Lace Up Boot
 Found 10 variations for product 10213
 ✅ Indexed product: 10213 - Long Lace Up Boot
+Processing batch 90 of 109
 Fetching variations for variable product 13401: Long Lace Up Boot
 Found 5 variations for product 13401
 ✅ Indexed product: 13401 - Long Lace Up Boot
-Processing batch 90 of 109
 Fetching variations for variable product 17282: Long Pescatore Boots
 Found 12 variations for product 17282
 ✅ Indexed product: 17282 - Long Pescatore Boots
@@ -2205,10 +2206,10 @@ Found 1 variations for product 11305
 Fetching variations for variable product 24633: Love rose ankle bling
 Found 6 variations for product 24633
 ✅ Indexed product: 24633 - Love rose ankle bling
+Processing batch 91 of 109
 Fetching variations for variable product 14226: Love Rose Slip On
 Found 18 variations for product 14226
 ✅ Indexed product: 14226 - Love Rose Slip On
-Processing batch 91 of 109
 Fetching variations for variable product 14824: Love Rose Takkies
 Found 18 variations for product 14824
 ✅ Indexed product: 14824 - Love Rose Takkies
@@ -2236,10 +2237,10 @@ Found 7 variations for product 17033
 Fetching variations for variable product 20670: Marco Tozzi Court
 Found 12 variations for product 20670
 ✅ Indexed product: 20670 - Marco Tozzi Court
+Processing batch 92 of 109
 Fetching variations for variable product 15587: Material Bow Pumps
 Found 24 variations for product 15587
 ✅ Indexed product: 15587 - Material Bow Pumps
-Processing batch 92 of 109
 Fetching variations for variable product 56929: Medic Soft Comfort
 Found 7 variations for product 56929
 ✅ Indexed product: 56929 - Medic Soft Comfort
@@ -2267,10 +2268,10 @@ Found 12 variations for product 23050
 Fetching variations for variable product 24354: Mens Red Checked Slippers
 Found 4 variations for product 24354
 ✅ Indexed product: 24354 - Mens Red Checked Slippers
+Processing batch 93 of 109
 Fetching variations for variable product 17713: Mens slip on sandals
 Found 5 variations for product 17713
 ✅ Indexed product: 17713 - Mens slip on sandals
-Processing batch 93 of 109
 Fetching variations for variable product 21149: Mens Slip On Shoes
 Found 14 variations for product 21149
 ✅ Indexed product: 21149 - Mens Slip On Shoes
@@ -2298,10 +2299,10 @@ Found 20 variations for product 12518
 Fetching variations for variable product 9475: Miss Kiss Wedge
 Found 1 variations for product 9475
 ✅ Indexed product: 9475 - Miss Kiss Wedge
+Processing batch 94 of 109
 Fetching variations for variable product 9134: Missy Missi Pumps
 Found 5 variations for product 9134
 ✅ Indexed product: 9134 - Missy Missi Pumps
-Processing batch 94 of 109
 Fetching variations for variable product 9122: Mocassin Pumps
 Found 6 variations for product 9122
 ✅ Indexed product: 9122 - Mocassin Pumps
@@ -2329,10 +2330,10 @@ Found 8 variations for product 16040
 Fetching variations for variable product 11886: Navy Elastic Boots
 Found 6 variations for product 11886
 ✅ Indexed product: 11886 - Navy Elastic Boots
+Processing batch 95 of 109
 Fetching variations for variable product 19370: Navy mens shoes U
 Found 7 variations for product 19370
 ✅ Indexed product: 19370 - Navy mens shoes U
-Processing batch 95 of 109
 Fetching variations for variable product 10370: No Parking
 Found 3 variations for product 10370
 ✅ Indexed product: 10370 - No Parking
@@ -2360,8 +2361,8 @@ Found 6 variations for product 21991
 Fetching variations for variable product 9869: Pearl Handbags
 Found 3 variations for product 9869
 ✅ Indexed product: 9869 - Pearl Handbags
-✅ Indexed product: 20600 - Pink Glitter bag
 Processing batch 96 of 109
+✅ Indexed product: 20600 - Pink Glitter bag
 Fetching variations for variable product 15978: Pink Heels
 Found 6 variations for product 15978
 ✅ Indexed product: 15978 - Pink Heels
@@ -2389,10 +2390,10 @@ Found 12 variations for product 11462
 Fetching variations for variable product 12034: Pointy Lace Heel Boots
 Found 14 variations for product 12034
 ✅ Indexed product: 12034 - Pointy Lace Heel Boots
+Processing batch 97 of 109
 Fetching variations for variable product 11550: Polo Bag
 Found 3 variations for product 11550
 ✅ Indexed product: 11550 - Polo Bag
-Processing batch 97 of 109
 Fetching variations for variable product 9603: Polo Sandals 2
 Found 6 variations for product 9603
 ✅ Indexed product: 9603 - Polo Sandals 2
@@ -2420,10 +2421,10 @@ Found 6 variations for product 14971
 Fetching variations for variable product 11968: Quilted Takkies
 Found 11 variations for product 11968
 ✅ Indexed product: 11968 - Quilted Takkies
+Processing batch 98 of 109
 Fetching variations for variable product 10425: Rage Boot Long
 Found 8 variations for product 10425
 ✅ Indexed product: 10425 - Rage Boot Long
-Processing batch 98 of 109
 Fetching variations for variable product 18695: Ready salted
 Found 5 variations for product 18695
 ✅ Indexed product: 18695 - Ready salted
@@ -2451,10 +2452,10 @@ Found 21 variations for product 9402
 Fetching variations for variable product 8802: Rose Sandals
 Found 9 variations for product 8802
 ✅ Indexed product: 8802 - Rose Sandals
+Processing batch 99 of 109
 Fetching variations for variable product 17079: Rugged Pink Shoes
 Found 6 variations for product 17079
 ✅ Indexed product: 17079 - Rugged Pink Shoes
-Processing batch 99 of 109
 Fetching variations for variable product 23259: Rugged Sneakers
 Found 10 variations for product 23259
 ✅ Indexed product: 23259 - Rugged Sneakers
@@ -2482,10 +2483,10 @@ Found 14 variations for product 21945
 Fetching variations for variable product 22339: Sandals - black and White
 Found 12 variations for product 22339
 ✅ Indexed product: 22339 - Sandals - black and White
+Processing batch 100 of 109
 Fetching variations for variable product 22593: Sandals 4 colors (D24)
 Found 24 variations for product 22593
 ✅ Indexed product: 22593 - Sandals 4 colors (D24)
-Processing batch 100 of 109
 Fetching variations for variable product 23588: Sandals Back Strap HR 400
 Found 14 variations for product 23588
 ✅ Indexed product: 23588 - Sandals Back Strap HR 400
@@ -2511,10 +2512,10 @@ Found 3 variations for product 8349
 Fetching variations for variable product 10206: Silver Shimmer Boot
 Found 4 variations for product 10206
 ✅ Indexed product: 10206 - Silver Shimmer Boot
+Processing batch 101 of 109
 Fetching variations for variable product 9290: Skaloni Heel
 Found 1 variations for product 9290
 ✅ Indexed product: 9290 - Skaloni Heel
-Processing batch 101 of 109
 Fetching variations for variable product 10748: Skaloni Long Boot
 Found 1 variations for product 10748
 ✅ Indexed product: 10748 - Skaloni Long Boot
@@ -2542,10 +2543,10 @@ Found 12 variations for product 23454
 Fetching variations for variable product 15755: Sooz Buckle Sandal
 Found 18 variations for product 15755
 ✅ Indexed product: 15755 - Sooz Buckle Sandal
+Processing batch 102 of 109
 Fetching variations for variable product 10669: Sooz fur closed front sandals
 Found 24 variations for product 10669
 ✅ Indexed product: 10669 - Sooz fur closed front sandals
-Processing batch 102 of 109
 Fetching variations for variable product 15614: Sooz Sandals
 Found 18 variations for product 15614
 ✅ Indexed product: 15614 - Sooz Sandals
@@ -2573,10 +2574,10 @@ Found 5 variations for product 13165
 Fetching variations for variable product 8876: Spring Sandals
 Found 8 variations for product 8876
 ✅ Indexed product: 8876 - Spring Sandals
+Processing batch 103 of 109
 Fetching variations for variable product 11205: Steve madden takkies
 Found 7 variations for product 11205
 ✅ Indexed product: 11205 - Steve madden takkies
-Processing batch 103 of 109
 Fetching variations for variable product 21408: Stone Court Heels
 Found 6 variations for product 21408
 ✅ Indexed product: 21408 - Stone Court Heels
@@ -2604,10 +2605,10 @@ Found 8 variations for product 9545
 Fetching variations for variable product 10716: Tan Ankle Boot
 Found 7 variations for product 10716
 ✅ Indexed product: 10716 - Tan Ankle Boot
+Processing batch 104 of 109
 Fetching variations for variable product 10361: Tango Boots
 Found 2 variations for product 10361
 ✅ Indexed product: 10361 - Tango Boots
-Processing batch 104 of 109
 Fetching variations for variable product 10031: Taupe Long Boot
 Found 4 variations for product 10031
 ✅ Indexed product: 10031 - Taupe Long Boot
@@ -2635,10 +2636,10 @@ Found 6 variations for product 15077
 Fetching variations for variable product 56198: TC Slip On Takkies
 Found 6 variations for product 56198
 ✅ Indexed product: 56198 - TC Slip On Takkies
+Processing batch 105 of 109
 Fetching variations for variable product 9470: TC Wedge
 Found 1 variations for product 9470
 ✅ Indexed product: 9470 - TC Wedge
-Processing batch 105 of 109
 Fetching variations for variable product 24938: Tom Floral
 Found 6 variations for product 24938
 ✅ Indexed product: 24938 - Tom Floral
@@ -2666,10 +2667,10 @@ Found 2 variations for product 10843
 Fetching variations for variable product 10805: Two Buckle Fur Long Boots
 Found 5 variations for product 10805
 ✅ Indexed product: 10805 - Two Buckle Fur Long Boots
+Processing batch 106 of 109
 Fetching variations for variable product 11064: Uggs
 Found 1 variations for product 11064
 ✅ Indexed product: 11064 - Uggs
-Processing batch 106 of 109
 Fetching variations for variable product 18777: Universal Thread Lace Ankle
 Found 10 variations for product 18777
 ✅ Indexed product: 18777 - Universal Thread Lace Ankle
@@ -2697,10 +2698,10 @@ Found 1 variations for product 20188
 Fetching variations for variable product 20196: VW GTI - SWP016 Black
 Found 2 variations for product 20196
 ✅ Indexed product: 20196 - VW GTI - SWP016 Black
+Processing batch 107 of 109
 Fetching variations for variable product 20211: VW GTI - SWP024
 Found 2 variations for product 20211
 ✅ Indexed product: 20211 - VW GTI - SWP024
-Processing batch 107 of 109
 Fetching variations for variable product 20225: VW GTI - SWP033
 Found 3 variations for product 20225
 ✅ Indexed product: 20225 - VW GTI - SWP033
@@ -2728,10 +2729,10 @@ Found 18 variations for product 14192
 Fetching variations for variable product 19537: Wedges 1970
 Found 5 variations for product 19537
 ✅ Indexed product: 19537 - Wedges 1970
+Processing batch 108 of 109
 Fetching variations for variable product 12720: White Chunky Boots
 Found 7 variations for product 12720
 ✅ Indexed product: 12720 - White Chunky Boots
-Processing batch 108 of 109
 Fetching variations for variable product 22965: White Floral
 Found 6 variations for product 22965
 ✅ Indexed product: 22965 - White Floral
@@ -2759,21 +2760,21 @@ Found 5 variations for product 11151
 Fetching variations for variable product 10607: Zip Flat Ankle Boot
 Found 14 variations for product 10607
 ✅ Indexed product: 10607 - Zip Flat Ankle Boot
+Processing batch 109 of 109
 Fetching variations for variable product 20638: Zip Lace Wedge
 Found 6 variations for product 20638
 ✅ Indexed product: 20638 - Zip Lace Wedge
-Processing batch 109 of 109
 Fetching variations for variable product 22803: Zip Sneakers
 Found 12 variations for product 22803
 ✅ Indexed product: 22803 - Zip Sneakers
 Fetching variations for variable product 17350: Zomax Ankle Boots
 Found 18 variations for product 17350
 ✅ Indexed product: 17350 - Zomax Ankle Boots
-Indexing complete. Success: 1082, Errors: 0
+Indexing complete. Success: 1083, Errors: 0
 
 ================================================================================
 Sync Complete
 ================================================================================
-Total products processed: 1082
-Successfully indexed: 1082
+Total products processed: 1083
+Successfully indexed: 1083
 Failed to index: 0

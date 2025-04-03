@@ -16,6 +16,7 @@ const FastSellingProducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [isFallbackMode, setIsFallbackMode] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -26,7 +27,7 @@ const FastSellingProducts = () => {
           query_by: 'name,description,brand',
           sort_by: 'price:asc', // Sort by price as it's definitely available for sorting
           per_page: 200, // Increase to get more potential products
-          filter_by: 'stock_status:=instock && categories:=FastSellingProducts', // Only in-stock products from FastSellingProducts category
+          filter_by: 'stock_status:=instock && categories:=[FastSellingProducts, fastsellingproducts, "Fast Selling Products", "fast selling products"]', // Try multiple variations of the category name
           include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
         });
 
@@ -64,9 +65,68 @@ const FastSellingProducts = () => {
         console.log('Fast Selling products sample:', processedProducts.slice(0, 2));
         console.log('Fast Selling products categories:', processedProducts.slice(0, 5).map(p => ({ id: p.id, categories: p.categories })));
 
-        // Get more products for the carousel
-        setProducts(processedProducts.slice(0, 12));
-        setError(null);
+        // Log all unique categories found in the results for debugging
+        const allCategories = new Set();
+        processedProducts.forEach(p => {
+          if (p.categories && Array.isArray(p.categories)) {
+            p.categories.forEach(cat => allCategories.add(cat));
+          }
+        });
+        console.log('All unique categories found:', [...allCategories]);
+        console.log('Total products found:', processedProducts.length);
+
+        // Check if we found any products in the FastSellingProducts category
+        if (processedProducts.length === 0) {
+          console.log('No products found in FastSellingProducts category. Fetching recent products instead...');
+
+          // Fallback: Fetch recent products instead
+          try {
+            const recentResults = await searchProducts({
+              q: '*',
+              query_by: 'name,description,brand',
+              sort_by: 'id:desc', // Sort by ID descending as a proxy for recency
+              per_page: 12,
+              filter_by: 'stock_status:=instock',
+              include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
+            });
+
+            // Process the recent products
+            const recentProcessedProducts = recentResults.products.filter((product: Product) =>
+              product.image_url &&
+              !product.image_url.includes('placeholder') &&
+              !product.image_url.includes('woocommerce-placeholder')
+            ).map(product => {
+              const regular_price = typeof product.regular_price === 'string'
+                ? parseFloat(product.regular_price)
+                : product.regular_price || 0;
+
+              const sale_price = product.sale_price
+                ? (typeof product.sale_price === 'string'
+                    ? parseFloat(product.sale_price)
+                    : product.sale_price)
+                : null;
+
+              const finalRegularPrice = regular_price || (product.price ? (typeof product.price === 'string' ? parseFloat(product.price) : product.price) : 0);
+
+              return {
+                ...product,
+                regular_price: finalRegularPrice,
+                sale_price: sale_price
+              };
+            });
+
+            console.log('Found recent products instead:', recentProcessedProducts.length);
+            setProducts(recentProcessedProducts.slice(0, 12));
+            setIsFallbackMode(true);
+          } catch (err) {
+            console.error('Error fetching recent products:', err);
+            setError('No products found in FastSellingProducts category');
+          }
+        } else {
+          // Use the products from the FastSellingProducts category
+          setProducts(processedProducts.slice(0, 12));
+          setError(null);
+        }
       } catch (err) {
         console.error('Error fetching products:', err);
         setError(err instanceof Error ? err.message : 'Error loading products');
@@ -86,9 +146,17 @@ const FastSellingProducts = () => {
         <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
           Fast Selling Products
         </h2>
-        <p className="text-gray-500 text-center py-8">
-          No products found in the FastSellingProducts category. Please add products to this category in WooCommerce.
-        </p>
+        <div className="text-gray-500 text-center py-8">
+          <p className="mb-4">
+            No products found in the FastSellingProducts category.
+          </p>
+          <p className="mb-4">
+            To display products here, please add products to the "FastSellingProducts" category in WooCommerce.
+          </p>
+          <p>
+            After adding products to the category, run the sync script: <code>node scripts/complete-woocommerce-sync.mjs</code>
+          </p>
+        </div>
       </div>
     );
   }
@@ -96,7 +164,7 @@ const FastSellingProducts = () => {
   return (
     <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
       <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
-        Fast Selling Products
+        {isFallbackMode ? 'Newest Arrivals' : 'Fast Selling Products'}
       </h2>
 
       <div className="relative fast-selling-carousel">
