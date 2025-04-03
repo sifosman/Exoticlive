@@ -24,10 +24,10 @@ const FastSellingProducts = () => {
         const results = await searchProducts({
           q: '*',
           query_by: 'name,description,brand',
-          sort_by: 'date_created:desc,createdAt:desc,id:desc', // Sort by date created descending (newest first) with fallbacks
+          sort_by: 'id:desc', // Sort by ID descending (newest first) as a reliable fallback
           per_page: 200, // Increase to get more potential products
           filter_by: 'stock_status:=instock', // Only in-stock products
-          include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes,date_created,createdAt'
+          include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
         });
 
         // Filter out products without valid images
@@ -62,11 +62,7 @@ const FastSellingProducts = () => {
 
         // Log sample processed products for debugging
         console.log('Newest products sample:', processedProducts.slice(0, 2));
-        console.log('Date fields available:', processedProducts.slice(0, 2).map(p => ({
-          id: p.id,
-          date_created: p.date_created,
-          createdAt: p.createdAt
-        })));
+        console.log('Product IDs (sorted newest first):', processedProducts.slice(0, 5).map(p => p.id));
 
         // Get more products for the carousel
         setProducts(processedProducts.slice(0, 12));
