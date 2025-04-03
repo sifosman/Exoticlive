@@ -589,3 +589,14 @@ const Header = () => {
 };
 
 export default Header;
+
+<Image
+  src="/logo.png"
+  alt="Exotic Live Logo"
+  width={160}
+  height={60}
+  className={`transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+  onLoadingComplete={() => setLoaded(true)}
+  placeholder="blur"
+  blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+/>
