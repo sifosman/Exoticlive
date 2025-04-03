@@ -4,9 +4,8 @@ import { Inter, Playfair_Display, Lato } from 'next/font/google';
 import ThemeRegistry from './ThemeRegistry';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import ApolloWrapper from '@/components/ApolloWrapper';
-import { CartProvider } from '@/lib/cartContext';
-import { Toaster } from '@/components/ui/toaster';
+import dynamic from 'next/dynamic';
+import ClientProviders from './ClientProviders';
 
 const inter = Inter({ subsets: ['latin'] });
 const playfairDisplay = Playfair_Display({ 
@@ -34,16 +33,13 @@ export default function RootLayout({
     <html lang="en" className={`${playfairDisplay.variable} ${lato.variable}`}>
       <body className={`bg-white`}>
         <ThemeRegistry>
-          <ApolloWrapper>
-            <CartProvider>
+          <ClientProviders>
               <Header />
               <main className="min-h-screen pt-[36px]">
                 {children}
               </main>
               <Footer />
-              <Toaster />
-            </CartProvider>
-          </ApolloWrapper>
+            </ClientProviders>
         </ThemeRegistry>
       </body>
     </html>

@@ -54,6 +54,7 @@ const categories: Category[] = [
 ];
 
 const Header = () => {
+  const [imageLoaded, setImageLoaded] = useState(false);
   const { cart } = useCart();
   const router = useRouter();
   const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -589,18 +590,3 @@ const Header = () => {
 };
 
 export default Header;
-
-const [imageLoaded, setImageLoaded] = useState(false);
-{!imageLoaded && (
-        <div className="absolute w-[160px] h-[60px] bg-gray-100 animate-pulse rounded-lg" />
-      )}
-      <Image
-        src="/logo.png"
-        alt="Exotic Live Logo"
-        width={160}
-        height={60}
-        className={`h-auto transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-        onLoadingComplete={() => setImageLoaded(true)}
-        placeholder="blur"
-        blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-      />
