@@ -405,6 +405,12 @@
     "description": "The unique resource identifier path"
   },
   {
+    "name": "visibility",
+    "type": "String",
+    "description": "Product visibility status",
+    "facet": true
+  },
+  {
     "name": "visibleProducts",
     "type": "ProductToVisibleProductConnection",
     "description": "Connection between the Product type and the visibleProduct type"
