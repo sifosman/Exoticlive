@@ -74,5 +74,15 @@ export async function POST(request: Request) {
       message: 'Notification received successfully',
       reference: transactionReference
     });
+  } catch (error) {
+    console.error('Error processing Ozow notification:', error);
+    return NextResponse.json(
+      { 
+        status: 'error',
+        message: 'Failed to process notification',
+        error: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
   }
 }
