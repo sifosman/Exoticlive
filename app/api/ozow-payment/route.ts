@@ -67,8 +67,17 @@ export async function POST(request: Request) {
     console.log('Private Key exists:', !!privateKey, 'Length:', privateKey ? privateKey.length : 0);
     console.log('API Key exists:', !!apiKey, 'Length:', apiKey ? apiKey.length : 0);
 
+    // Check if there's an environment variable for isTest
+    const envIsTest = process.env.OZOW_IS_TEST;
+    console.log('OZOW_IS_TEST environment variable:', envIsTest || '(not set)');
+
     // Always use "false" string for production mode
-    const isTestString = 'false';
+    const isTestString = envIsTest || 'false';
+
+    // Make sure we're using the same value in both places
+    const isTestValue = isTestString;
+
+    console.log('Using isTestValue:', isTestValue);
 
     if (!privateKey || !siteCodeToUse || !apiKey) {
       console.error('Missing Ozow configuration:', {
@@ -112,7 +121,7 @@ export async function POST(request: Request) {
     params.append('Amount', amountFormatted);
     params.append('TransactionReference', reference);
     params.append('BankReference', bankReference);
-    params.append('IsTest', isTestString);
+    params.append('IsTest', isTestValue);
 
     // Customer information
     if (customerName) {
@@ -163,7 +172,7 @@ export async function POST(request: Request) {
       errorUrl +               // ErrorUrl
       successUrl +             // SuccessUrl
       notifyUrl +              // NotifyUrl
-      isTestString +           // IsTest
+      isTestValue +           // IsTest
       privateKey;              // PrivateKey
 
     console.log('Raw hash input (with redacted private key):', hashInput.replace(privateKey, '[REDACTED]'));
@@ -195,7 +204,7 @@ export async function POST(request: Request) {
     console.log('8. ErrorUrl:', errorUrl);
     console.log('9. SuccessUrl:', successUrl);
     console.log('10. NotifyUrl:', notifyUrl);
-    console.log('11. IsTest:', isTestString);
+    console.log('11. IsTest:', isTestValue);
     console.log('12. PrivateKey: [REDACTED]');
 
     // Log redacted hash input for debugging
@@ -203,6 +212,20 @@ export async function POST(request: Request) {
     console.log('Redacted hash input:', redactedHashInput);
     console.log('Lowercase hash input (redacted):', lowercaseHashInput.replace(privateKey.toLowerCase(), '[REDACTED]'));
     console.log('Full hash input length:', hashInput.length);
+
+    // Check for any 'true' string in the hash input
+    console.log('Hash input contains "true" string:', hashInput.includes('true'));
+    if (hashInput.includes('true')) {
+      console.log('WARNING: Hash input contains "true" but isTestValue is set to:', isTestValue);
+      console.log('This might cause hash verification to fail!');
+
+      // Try to find where 'true' appears in the hash input
+      const trueIndex = hashInput.indexOf('true');
+      if (trueIndex >= 0) {
+        const context = hashInput.substring(Math.max(0, trueIndex - 20), Math.min(hashInput.length, trueIndex + 24));
+        console.log('Context around "true":', context.replace(privateKey, '[REDACTED]'));
+      }
+    }
 
     // Debug URL encoding issues
     console.log('\n===== URL ENCODING CHECK =====');
@@ -225,7 +248,7 @@ export async function POST(request: Request) {
     console.log('Hash input contains error URL:', hashInput.includes(errorUrl));
     console.log('Hash input contains success URL:', hashInput.includes(successUrl));
     console.log('Hash input contains notify URL:', hashInput.includes(notifyUrl));
-    console.log('Hash input contains isTest:', hashInput.includes(isTestString));
+    console.log('Hash input contains isTest:', hashInput.includes(isTestValue));
     console.log('Hash input ends with private key:', hashInput.endsWith(privateKey));
 
     // Generate SHA512 hash as required by Ozow
