@@ -344,8 +344,8 @@ export default function CheckoutPage() {
       };
       
       // Store the order data in localStorage keyed by the transaction reference
-      localStorage.setItem(`order_${transactionReference}`, JSON.stringify(orderData));
-      console.log('Order data saved to localStorage with key:', `order_${transactionReference}`);
+      localStorage.setItem(`ozow_order_${transactionReference}`, JSON.stringify(orderData));
+      console.log('Order data saved to localStorage with key:', `ozow_order_${transactionReference}`);
       
       // Full website URL from env or default
       const baseUrl = process.env.NEXT_PUBLIC_WEBSITE_URL || 'https://exoticshoes.co.za';
