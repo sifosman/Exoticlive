@@ -78,6 +78,39 @@ async function fetchProductFromWooCommerce(productId: number) {
   }
 }
 
+// Fetch variations for a product from WooCommerce
+async function fetchVariationsFromWooCommerce(productId: number) {
+  try {
+    // WooCommerce API credentials
+    const wcKey = process.env.WC_CONSUMER_KEY || '';
+    const wcSecret = process.env.WC_CONSUMER_SECRET || '';
+    const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || '';
+
+    if (!wcKey || !wcSecret || !wpUrl) {
+      throw new Error('WooCommerce API credentials not configured');
+    }
+
+    // Create authentication header
+    const authString = Buffer.from(`${wcKey}:${wcSecret}`).toString('base64');
+
+    // Fetch variations from WooCommerce
+    const response = await fetch(`${wpUrl}/wp-json/wc/v3/products/${productId}/variations?per_page=100`, {
+      headers: {
+        'Authorization': `Basic ${authString}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch variations for product ${productId} from WooCommerce: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching variations from WooCommerce:`, error);
+    throw error;
+  }
+}
+
 // Transform a WooCommerce product to Typesense format
 function transformProduct(product: any) {
   // Extract categories
@@ -211,13 +244,63 @@ export async function POST(request: NextRequest) {
 
     // Handle product creation/update
     if (topic === 'product.created' || topic === 'product.updated') {
-      const transformedProduct = transformProduct(data);
+      try {
+        console.log(`Processing ${topic} webhook for product ${data.id}`);
 
-      // Upsert the product to Typesense
-      await typesenseClient.collections('products').documents().upsert(transformedProduct);
+        // Check if this is a variable product
+        const isVariableProduct = data.type === 'variable';
+        console.log(`Product type: ${data.type}, Is variable: ${isVariableProduct}`);
 
-      console.log(`Product ${data.id} ${topic === 'product.created' ? 'created' : 'updated'} in Typesense`);
-      return NextResponse.json({ success: true });
+        // For variable products, we need to fetch variations
+        if (isVariableProduct) {
+          console.log(`Fetching variations for product ${data.id}...`);
+          const variations = await fetchVariationsFromWooCommerce(data.id);
+          console.log(`Fetched ${variations.length} variations for product ${data.id}`);
+
+          // Process variations
+          const processedVariations = variations.map((variation: any) => {
+            // Map variation attributes
+            const variationAttributes = variation.attributes.map((attr: any) => ({
+              name: attr.name,
+              option: attr.option
+            }));
+
+            return {
+              id: variation.id.toString(),
+              price: parseFloat(variation.price || '0'),
+              regular_price: parseFloat(variation.regular_price || '0'),
+              sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
+              stock_status: variation.stock_status || 'outofstock',
+              stock_quantity: variation.stock_quantity || 0,
+              attributes: variationAttributes
+            };
+          });
+
+          // Add variations to the product data
+          data.variations = processedVariations;
+          data.variations_json = JSON.stringify(processedVariations);
+
+          // Log variation stock status for debugging
+          processedVariations.forEach((variation: any) => {
+            console.log(`Variation ${variation.id} stock status: ${variation.stock_status}, quantity: ${variation.stock_quantity}`);
+          });
+        }
+
+        // Transform the product with variations
+        const transformedProduct = transformProduct(data);
+
+        // Upsert the product to Typesense
+        await typesenseClient.collections('products').documents().upsert(transformedProduct);
+
+        console.log(`Product ${data.id} ${topic === 'product.created' ? 'created' : 'updated'} in Typesense`);
+        return NextResponse.json({ success: true });
+      } catch (error) {
+        console.error(`Error processing ${topic} webhook:`, error);
+        return NextResponse.json({
+          error: `Failed to process ${topic} webhook`,
+          message: error instanceof Error ? error.message : String(error)
+        }, { status: 500 });
+      }
     }
 
     // Handle product deletion
