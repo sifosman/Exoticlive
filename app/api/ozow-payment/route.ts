@@ -119,7 +119,7 @@ export async function POST(request: Request) {
     }
     
     if (customerId) {
-      params.append('CustomerId', customerId);
+      params.append('optional1', customerId);
     }
     
     // URLs - all required
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
       `BankReference=${encodeURIComponent(bankReference)}`,
       `IsTest=${encodeURIComponent(isTestString)}`,
       ...(customerName ? [`CustomerInformation=${encodeURIComponent(customerName)}`] : []),
-      ...(customerId ? [`CustomerId=${encodeURIComponent(customerId)}`] : []),
+      ...(customerId ? [`optional1=${encodeURIComponent(customerId)}`] : []),
       `CancelUrl=${encodeURIComponent(cancelUrl)}`,
       `ErrorUrl=${encodeURIComponent(errorUrl)}`,
       `SuccessUrl=${encodeURIComponent(successUrl)}`,
