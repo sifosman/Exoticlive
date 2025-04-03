@@ -146,23 +146,27 @@ export async function POST(request: Request) {
       paramsForHash.push(`${key}=${paramsObj[key]}`);
     }
 
-    // Build hash input according to Ozow documentation
-    // Concatenate values (not key=value pairs) in the exact order without separators
-    // Only include the specific fields mentioned in the documentation
-    const hashInput = [
-      siteCodeToUse,           // SiteCode
-      'ZA',                    // CountryCode
-      'ZAR',                   // CurrencyCode
-      amountFormatted,         // Amount
-      reference,               // TransactionReference
-      bankReference,           // BankReference
-      cancelUrl,               // CancelUrl
-      errorUrl,                // ErrorUrl
-      successUrl,              // SuccessUrl
-      notifyUrl,               // NotifyUrl
-      isTestString,            // IsTest
-      privateKey               // PrivateKey
-    ].join('');
+    // Build hash input according to Ozow documentation example
+    // Following the exact example from their documentation
+    console.log('\n===== IMPLEMENTING EXACT OZOW EXAMPLE =====');
+
+    // Step 1: Create the input string exactly as in their example
+    // Example from docs: TSTSTE0001ZAZAR25.00123ABC123http://demo.ozow.com/cancel.aspxhttp://demo.ozow.com/error.aspxhttp://demo.ozow.com/success.aspxhttp://demo.ozow.com/notify.aspxfalse[YOUR PRIVATE KEY]
+    const hashInput =
+      siteCodeToUse +          // SiteCode
+      'ZA' +                   // CountryCode
+      'ZAR' +                  // CurrencyCode
+      amountFormatted +        // Amount
+      reference +              // TransactionReference
+      bankReference +          // BankReference
+      cancelUrl +              // CancelUrl
+      errorUrl +               // ErrorUrl
+      successUrl +             // SuccessUrl
+      notifyUrl +              // NotifyUrl
+      isTestString +           // IsTest
+      privateKey;              // PrivateKey
+
+    console.log('Raw hash input (with redacted private key):', hashInput.replace(privateKey, '[REDACTED]'));
 
     // Convert to lowercase as per Ozow documentation
     const lowercaseHashInput = hashInput.toLowerCase();
@@ -172,6 +176,7 @@ export async function POST(request: Request) {
     console.log('2. Only include: SiteCode, CountryCode, CurrencyCode, Amount, TransactionReference, BankReference, CancelUrl, ErrorUrl, SuccessUrl, NotifyUrl, IsTest, PrivateKey');
     console.log('3. Convert the entire string to lowercase');
     console.log('4. Calculate SHA512 hash of the resulting string');
+    console.log('Note: Following the exact C# example from Ozow documentation');
     console.log('Note: CustomerInformation and optional1 are NOT included in the hash calculation');
 
     // Log detailed parameter information
@@ -199,19 +204,77 @@ export async function POST(request: Request) {
     console.log('Lowercase hash input (redacted):', lowercaseHashInput.replace(privateKey.toLowerCase(), '[REDACTED]'));
     console.log('Full hash input length:', hashInput.length);
 
+    // Debug URL encoding issues
+    console.log('\n===== URL ENCODING CHECK =====');
+    console.log('CancelUrl raw:', cancelUrl);
+    console.log('CancelUrl encoded:', encodeURIComponent(cancelUrl));
+    console.log('ErrorUrl raw:', errorUrl);
+    console.log('ErrorUrl encoded:', encodeURIComponent(errorUrl));
+    console.log('SuccessUrl raw:', successUrl);
+    console.log('SuccessUrl encoded:', encodeURIComponent(successUrl));
+    console.log('NotifyUrl raw:', notifyUrl);
+    console.log('NotifyUrl encoded:', encodeURIComponent(notifyUrl));
+
+    // Verify the hash input format
+    console.log('\n===== HASH INPUT VERIFICATION =====');
+    console.log('Hash input starts with site code:', hashInput.startsWith(siteCodeToUse));
+    console.log('Hash input contains amount:', hashInput.includes(amountFormatted));
+    console.log('Hash input contains transaction reference:', hashInput.includes(reference));
+    console.log('Hash input contains bank reference:', hashInput.includes(bankReference));
+    console.log('Hash input contains cancel URL:', hashInput.includes(cancelUrl));
+    console.log('Hash input contains error URL:', hashInput.includes(errorUrl));
+    console.log('Hash input contains success URL:', hashInput.includes(successUrl));
+    console.log('Hash input contains notify URL:', hashInput.includes(notifyUrl));
+    console.log('Hash input contains isTest:', hashInput.includes(isTestString));
+    console.log('Hash input ends with private key:', hashInput.endsWith(privateKey));
+
     // Generate SHA512 hash as required by Ozow
-    const hash = crypto
+    // Try both lowercase and uppercase versions
+    const hashLowercase = crypto
       .createHash('sha512')
       .update(lowercaseHashInput, 'utf8')
       .digest('hex').toLowerCase();
 
+    const hashUppercase = crypto
+      .createHash('sha512')
+      .update(lowercaseHashInput, 'utf8')
+      .digest('hex').toUpperCase();
+
+    // Use uppercase hash as some payment gateways require this
+    const hash = hashUppercase;
+
+    // Verify the hash is 128 characters long (512 bits = 128 hex characters)
+    console.log('Hash length is correct (128 chars):', hash.length === 128);
+    console.log('Lowercase hash:', hashLowercase);
+    console.log('Uppercase hash:', hashUppercase);
+
     console.log('Generated hash:', hash);
 
-    // Add hash to parameters - Ozow documentation doesn't specify case for the final hash
-    // Using lowercase as that's what the example in the documentation shows
+    // Add hash to parameters - Try uppercase for the HashCheck parameter
+    // The Ozow documentation example shows lowercase hash but doesn't explicitly specify
     params.append('HashCheck', hash);
 
-    const paymentUrl = `${baseUrl}?${params.toString()}`;
+    // Log the final parameters
+    console.log('\n===== FINAL PARAMETERS =====');
+    const finalParams: Record<string, string> = {};
+    params.forEach((value, key) => {
+      if (key !== 'HashCheck') {
+        finalParams[key] = value;
+      } else {
+        finalParams[key] = '[HASH REDACTED]';
+      }
+    });
+    console.log('Parameters being sent to Ozow:', JSON.stringify(finalParams, null, 2));
+
+    // Try a different approach to constructing the URL
+    // Build the URL manually to ensure proper encoding
+    let paymentUrlParams = '';
+    params.forEach((value, key) => {
+      if (paymentUrlParams) paymentUrlParams += '&';
+      paymentUrlParams += `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+    });
+
+    const paymentUrl = `${baseUrl}?${paymentUrlParams}`;
 
     // Log the final URL for debugging
     console.log('===== FINAL PAYMENT URL =====');
