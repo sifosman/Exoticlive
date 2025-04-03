@@ -146,54 +146,69 @@ export async function POST(request: Request) {
       paramsForHash.push(`${key}=${paramsObj[key]}`);
     }
 
-    // Concatenate with '&' and append private key
-    // Rebuild parameters in exact order required by Ozow
-    // Remove the alphabetical sorting
-    // Build hash input with Ozow's required order
-    const ozowOrderedParams = [
-    `SiteCode=${encodeURIComponent(siteCodeToUse)}`,
-    `CountryCode=${encodeURIComponent('ZA')}`,
-    `CurrencyCode=${encodeURIComponent('ZAR')}`,
-    `Amount=${encodeURIComponent(amountFormatted)}`,
-    `TransactionReference=${encodeURIComponent(reference)}`,
-    `BankReference=${encodeURIComponent(bankReference)}`,
-    `IsTest=${encodeURIComponent(isTestString)}`,
-    ...(customerName ? [`CustomerInformation=${encodeURIComponent(customerName)}`] : []),
-    ...(optional1 ? [`optional1=${encodeURIComponent(optional1)}`] : []),
-    `CancelUrl=${encodeURIComponent(cancelUrl)}`,
-    `ErrorUrl=${encodeURIComponent(errorUrl)}`,
-    `SuccessUrl=${encodeURIComponent(successUrl)}`,
-    `NotifyUrl=${encodeURIComponent(notifyUrl)}`
-    ];
+    // Build hash input according to Ozow documentation
+    // Concatenate values (not key=value pairs) in the exact order without separators
+    // Only include the specific fields mentioned in the documentation
+    const hashInput = [
+      siteCodeToUse,           // SiteCode
+      'ZA',                    // CountryCode
+      'ZAR',                   // CurrencyCode
+      amountFormatted,         // Amount
+      reference,               // TransactionReference
+      bankReference,           // BankReference
+      cancelUrl,               // CancelUrl
+      errorUrl,                // ErrorUrl
+      successUrl,              // SuccessUrl
+      notifyUrl,               // NotifyUrl
+      isTestString,            // IsTest
+      privateKey               // PrivateKey
+    ].join('');
 
-    const hashInput = ozowOrderedParams.join('&') + `&PrivateKey=${privateKey}`;
+    // Convert to lowercase as per Ozow documentation
+    const lowercaseHashInput = hashInput.toLowerCase();
 
     console.log('Hash calculation method:');
-    console.log('1. Order parameters in the exact order required by Ozow');
-    console.log('2. Format as "Key=Value" for each parameter');
-    console.log('3. Join with "&" character');
-    console.log('4. Append "&PrivateKey=YOUR_PRIVATE_KEY"');
-    console.log('5. Calculate SHA512 hash of the resulting string');
-    console.log('Note: Using optional1 instead of CustomerID as per Ozow requirements');
+    console.log('1. Concatenate values in the exact order required by Ozow (without separators or key names)');
+    console.log('2. Only include: SiteCode, CountryCode, CurrencyCode, Amount, TransactionReference, BankReference, CancelUrl, ErrorUrl, SuccessUrl, NotifyUrl, IsTest, PrivateKey');
+    console.log('3. Convert the entire string to lowercase');
+    console.log('4. Calculate SHA512 hash of the resulting string');
+    console.log('Note: CustomerInformation and optional1 are NOT included in the hash calculation');
 
     // Log detailed parameter information
-    console.log('Parameters for hash calculation (sorted):', JSON.stringify(paramsObj, null, 2));
+    console.log('Parameters being sent to Ozow:', JSON.stringify(paramsObj, null, 2));
     console.log('Private key length:', privateKey.length);
+
+    // Log the values used in hash calculation in the exact order
+    console.log('Values used in hash calculation (in order):');
+    console.log('1. SiteCode:', siteCodeToUse);
+    console.log('2. CountryCode: ZA');
+    console.log('3. CurrencyCode: ZAR');
+    console.log('4. Amount:', amountFormatted);
+    console.log('5. TransactionReference:', reference);
+    console.log('6. BankReference:', bankReference);
+    console.log('7. CancelUrl:', cancelUrl);
+    console.log('8. ErrorUrl:', errorUrl);
+    console.log('9. SuccessUrl:', successUrl);
+    console.log('10. NotifyUrl:', notifyUrl);
+    console.log('11. IsTest:', isTestString);
+    console.log('12. PrivateKey: [REDACTED]');
 
     // Log redacted hash input for debugging
     const redactedHashInput = hashInput.replace(privateKey, '[REDACTED]');
     console.log('Redacted hash input:', redactedHashInput);
+    console.log('Lowercase hash input (redacted):', lowercaseHashInput.replace(privateKey.toLowerCase(), '[REDACTED]'));
     console.log('Full hash input length:', hashInput.length);
 
     // Generate SHA512 hash as required by Ozow
     const hash = crypto
       .createHash('sha512')
-      .update(hashInput, 'utf8')
-      .digest('hex').toUpperCase();
+      .update(lowercaseHashInput, 'utf8')
+      .digest('hex').toLowerCase();
 
     console.log('Generated hash:', hash);
 
-    // Add hash to parameters
+    // Add hash to parameters - Ozow documentation doesn't specify case for the final hash
+    // Using lowercase as that's what the example in the documentation shows
     params.append('HashCheck', hash);
 
     const paymentUrl = `${baseUrl}?${params.toString()}`;
