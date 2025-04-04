@@ -35,17 +35,19 @@ const VARIABLE_PRODUCTS_QUERY = gql`
         id
         databaseId
         name
-        variations {
-          nodes {
-            id
-            databaseId
-            name
-            stockStatus
-            stockQuantity
-            attributes {
-              nodes {
-                name
-                value
+        ... on VariableProduct {
+          variations {
+            nodes {
+              id
+              databaseId
+              name
+              stockStatus
+              stockQuantity
+              attributes {
+                nodes {
+                  name
+                  value
+                }
               }
             }
           }
