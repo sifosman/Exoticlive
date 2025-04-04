@@ -3,5 +3,11 @@
     "deploymentEnabled": {
       "complete-features": true
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/sync-stock?key=${CRON_API_KEY}",
+      "schedule": "*/2 * * * *"
+    }
+  ]
 }
