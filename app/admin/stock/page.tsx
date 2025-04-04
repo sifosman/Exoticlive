@@ -336,15 +336,21 @@ export default function StockUpdatePage() {
                           defaultValue={variation.stockQuantity || 0}
                           size="small"
                           sx={{ width: 80, mr: 1 }}
+                          id={`stock-input-${variation.databaseId}`}
                         />
                         <Button
                           variant="contained"
                           size="small"
-                          onClick={(e) => {
+                          onClick={() => {
                             console.log('Update button clicked for variation:', variation.databaseId);
-                            const input = e.currentTarget.previousSibling as HTMLInputElement;
-                            console.log('Input value:', input.value);
-                            handleStockChange(variation.databaseId.toString(), input.value);
+                            const input = document.getElementById(`stock-input-${variation.databaseId}`) as HTMLInputElement;
+                            console.log('Input element:', input);
+                            console.log('Input value:', input?.value);
+                            if (input && input.value) {
+                              handleStockChange(variation.databaseId.toString(), input.value);
+                            } else {
+                              console.error('Could not find input element or value is empty');
+                            }
                           }}
                         >
                           Update
