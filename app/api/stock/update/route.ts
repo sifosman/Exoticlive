@@ -23,27 +23,44 @@ async function updateWooCommerceStock(parentProductId: number, variationId: numb
     const wcSecret = process.env.WC_CONSUMER_SECRET || '';
     const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || '';
 
+    console.log('WooCommerce API credentials:');
+    console.log(`WC_CONSUMER_KEY: ${wcKey ? '✅ Set' : '❌ Not set'}`);
+    console.log(`WC_CONSUMER_SECRET: ${wcSecret ? '✅ Set' : '❌ Not set'}`);
+    console.log(`NEXT_PUBLIC_WORDPRESS_URL: ${wpUrl}`);
+
     if (!wcKey || !wcSecret || !wpUrl) {
       throw new Error('WooCommerce API credentials not configured');
     }
 
     // Create authentication header
     const authString = Buffer.from(`${wcKey}:${wcSecret}`).toString('base64');
+    console.log('Auth header created (base64 encoded)');
+
+    // Prepare request URL and body
+    const url = `${wpUrl}/wp-json/wc/v3/products/${parentProductId}/variations/${variationId}`;
+    const body = JSON.stringify({
+      stock_quantity: stockQuantity,
+      stock_status: stockQuantity > 0 ? 'instock' : 'outofstock'
+    });
+
+    console.log(`Making request to: ${url}`);
+    console.log(`Request body: ${body}`);
 
     // Update variation in WooCommerce
-    const response = await fetch(`${wpUrl}/wp-json/wc/v3/products/${parentProductId}/variations/${variationId}`, {
+    const response = await fetch(url, {
       method: 'PUT',
       headers: {
         'Authorization': `Basic ${authString}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        stock_quantity: stockQuantity,
-        stock_status: stockQuantity > 0 ? 'instock' : 'outofstock'
-      })
+      body: body
     });
 
+    console.log(`Response status: ${response.status} ${response.statusText}`);
+
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Error response body: ${errorText}`);
       throw new Error(`Failed to update variation in WooCommerce: ${response.statusText}`);
     }
 
