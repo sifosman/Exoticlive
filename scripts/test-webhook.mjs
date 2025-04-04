@@ -40,7 +40,7 @@ const payload = {
   tax_status: 'taxable',
   tax_class: '',
   manage_stock: true,
-  stock_quantity: 3,
+  stock_quantity: 6,
   stock_status: 'instock',
   backorders: 'no',
   backorders_allowed: false,
