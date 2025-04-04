@@ -231,12 +231,15 @@ function transformProduct(product: any, variations: any[] = []) {
 // Handle POST requests (when a product is created or updated)
 export async function POST(request: NextRequest) {
   try {
-    console.log('Received webhook request');
-    console.log('Headers:', JSON.stringify(Object.fromEntries(request.headers.entries())));
+    console.log('=== WEBHOOK DEBUG: Received webhook request ===');
+    console.log('Request URL:', request.url);
+    console.log('Request method:', request.method);
+    console.log('Headers:', JSON.stringify(Object.fromEntries(request.headers.entries()), null, 2));
 
     // Get the request body as text
     const body = await request.text();
-    console.log('Request body:', body.substring(0, 200) + (body.length > 200 ? '...' : ''));
+    console.log('Request body (first 500 chars):', body.substring(0, 500) + (body.length > 500 ? '...' : ''));
+    console.log('Request body length:', body.length);
 
     // Get the signature from the headers
     const signature = request.headers.get('X-WC-Webhook-Signature') || '';
@@ -284,12 +287,17 @@ export async function POST(request: NextRequest) {
     // Handle product creation/update
     if (topic === 'product.created' || topic === 'product.updated') {
       try {
-        console.log(`Processing ${topic} webhook for product ${data.id}`);
+        console.log(`=== WEBHOOK DEBUG: Processing ${topic} webhook for product ${data.id} ===`);
+        console.log('Product data:', JSON.stringify(data, null, 2).substring(0, 1000) + '...');
 
         // Check if this is a variation
         if (data.parent_id) {
           // This is a variation, handle it as a variation update
-          console.log(`This is a variation of product ${data.parent_id}, handling as variation update`);
+          console.log(`=== WEBHOOK DEBUG: This is a variation of product ${data.parent_id}, handling as variation update ===`);
+          console.log('Variation ID:', data.id);
+          console.log('Parent ID:', data.parent_id);
+          console.log('Variation stock status:', data.stock_status);
+          console.log('Variation stock quantity:', data.stock_quantity);
 
           // Get the parent product ID
           const parentId = data.parent_id;
@@ -306,7 +314,15 @@ export async function POST(request: NextRequest) {
           const transformedProduct = transformProduct(parentProduct, variations);
 
           // Update the parent product in Typesense
-          await typesenseClient.collections('products').documents().upsert(transformedProduct);
+          console.log(`=== WEBHOOK DEBUG: Updating product ${parentId} in Typesense with ${variations.length} variations ===`);
+          try {
+            await typesenseClient.collections('products').documents().upsert(transformedProduct);
+            console.log(`=== WEBHOOK DEBUG: Successfully updated product ${parentId} in Typesense ===`);
+          } catch (typesenseError) {
+            console.error(`=== WEBHOOK DEBUG: Error updating product in Typesense: ${typesenseError} ===`);
+            console.error('Typesense error details:', typesenseError);
+            throw typesenseError;
+          }
 
           console.log(`Product ${parentId} updated in Typesense with ${variations.length} variations`);
           return NextResponse.json({ success: true });
@@ -334,7 +350,15 @@ export async function POST(request: NextRequest) {
           const transformedProduct = transformProduct(data, variations);
 
           // Upsert the product to Typesense
-          await typesenseClient.collections('products').documents().upsert(transformedProduct);
+          console.log(`=== WEBHOOK DEBUG: Upserting product ${data.id} to Typesense ===`);
+          try {
+            await typesenseClient.collections('products').documents().upsert(transformedProduct);
+            console.log(`=== WEBHOOK DEBUG: Successfully upserted product ${data.id} to Typesense ===`);
+          } catch (typesenseError) {
+            console.error(`=== WEBHOOK DEBUG: Error upserting product to Typesense: ${typesenseError} ===`);
+            console.error('Typesense error details:', typesenseError);
+            throw typesenseError;
+          }
 
           console.log(`Product ${data.id} ${topic === 'product.created' ? 'created' : 'updated'} in Typesense`);
           return NextResponse.json({ success: true });
@@ -362,7 +386,11 @@ export async function POST(request: NextRequest) {
       try {
         // Get the parent product ID
         const parentId = data.parent_id;
-        console.log(`Variation updated for product ${parentId}, fetching parent product...`);
+        console.log(`=== WEBHOOK DEBUG: Variation updated for product ${parentId}, fetching parent product... ===`);
+        console.log('Variation ID:', data.id);
+        console.log('Parent ID:', parentId);
+        console.log('Variation stock status:', data.stock_status);
+        console.log('Variation stock quantity:', data.stock_quantity);
 
         // Fetch the parent product from WooCommerce
         const parentProduct = await fetchProductFromWooCommerce(parentId);
@@ -376,7 +404,15 @@ export async function POST(request: NextRequest) {
         const transformedProduct = transformProduct(parentProduct, variations);
 
         // Update the parent product in Typesense
-        await typesenseClient.collections('products').documents().upsert(transformedProduct);
+        console.log(`=== WEBHOOK DEBUG: Updating product ${parentId} in Typesense with ${variations.length} variations ===`);
+        try {
+          await typesenseClient.collections('products').documents().upsert(transformedProduct);
+          console.log(`=== WEBHOOK DEBUG: Successfully updated product ${parentId} in Typesense ===`);
+        } catch (typesenseError) {
+          console.error(`=== WEBHOOK DEBUG: Error updating product in Typesense: ${typesenseError} ===`);
+          console.error('Typesense error details:', typesenseError);
+          throw typesenseError;
+        }
 
         console.log(`Product ${parentId} updated in Typesense with ${variations.length} variations`);
         return NextResponse.json({ success: true });
