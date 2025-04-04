@@ -242,20 +242,19 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('X-WC-Webhook-Signature') || '';
     console.log('Received webhook signature:', signature ? signature : 'Missing');
 
-    // For testing purposes, accept all webhooks
-    console.log('Skipping signature verification for testing');
-
-    // Verify the webhook (commented out for testing)
-    /*
+    // Verify the webhook signature
     if (!verifyWooCommerceWebhook(request, signature, body)) {
       console.error('Invalid webhook signature');
-      // For now, we'll accept the webhook even if the signature doesn't match
-      // This helps debug the issue while still allowing stock updates to work
-      console.warn('Proceeding despite invalid signature for debugging purposes');
-      // Uncomment the line below to enforce signature verification in production
-      // return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+
+      // For test pings, we'll still accept the request
+      if (body.trim() === '' || body.includes('webhook_id')) {
+        console.log('Test ping detected, accepting despite invalid signature');
+      } else {
+        // For actual webhooks, enforce signature verification
+        console.error('Rejecting webhook with invalid signature');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
     }
-    */
 
     let data;
     try {
