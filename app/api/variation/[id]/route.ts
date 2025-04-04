@@ -12,72 +12,55 @@ const typesenseClient = new Typesense.Client({
   connectionTimeoutSeconds: 10
 });
 
-// Fetch a variation from WooCommerce
-async function fetchVariationFromWooCommerce(variationId: string) {
+// Fetch a variation from Typesense
+async function fetchVariationFromTypesense(variationId: string) {
   try {
-    console.log(`Fetching variation ${variationId} from WooCommerce...`);
-
-    // WooCommerce API credentials
-    const wcKey = process.env.WC_CONSUMER_KEY || '';
-    const wcSecret = process.env.WC_CONSUMER_SECRET || '';
-    const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || '';
-
-    if (!wcKey || !wcSecret || !wpUrl) {
-      throw new Error('WooCommerce API credentials not configured');
+    console.log(`Fetching variation ${variationId} from Typesense...`);
+    
+    // Search for products that contain this variation ID
+    const searchResponse = await typesenseClient
+      .collections('products')
+      .documents()
+      .search({
+        q: '*',
+        filter_by: `variations.id:=${variationId}`,
+        per_page: 1
+      });
+    
+    if (searchResponse.found === 0 || searchResponse.hits.length === 0) {
+      throw new Error(`No products found containing variation ${variationId}`);
     }
-
-    // Create authentication header
-    const authString = Buffer.from(`${wcKey}:${wcSecret}`).toString('base64');
-
-    // First, we need to find which product this variation belongs to
-    const response = await fetch(`${wpUrl}/wp-json/wc/v3/products?per_page=100`, {
-      headers: {
-        'Authorization': `Basic ${authString}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch products: ${response.statusText}`);
-    }
-
-    const products = await response.json();
-
-    // Find the parent product
-    let parentProduct = null;
+    
+    const product = searchResponse.hits[0].document;
+    console.log(`Found product: ${product.name} (ID: ${product.id})`);
+    
+    // Find the specific variation
     let variation = null;
-
-    for (const product of products) {
-      if (product.type === 'variable') {
-        // Fetch variations for this product
-        const variationsResponse = await fetch(`${wpUrl}/wp-json/wc/v3/products/${product.id}/variations?per_page=100`, {
-          headers: {
-            'Authorization': `Basic ${authString}`
-          }
-        });
-
-        if (variationsResponse.ok) {
-          const variations = await variationsResponse.json();
-
-          // Check if this variation belongs to this product
-          const foundVariation = variations.find(v => v.id.toString() === variationId);
-
-          if (foundVariation) {
-            parentProduct = product;
-            variation = foundVariation;
-            console.log(`Found variation ${variationId} in product ${product.id}`);
-            break;
-          }
+    
+    // Try to find in variations array
+    if (product.variations && Array.isArray(product.variations)) {
+      variation = product.variations.find(v => v.id === variationId);
+    }
+    
+    // If not found and variations_json exists, try parsing that
+    if (!variation && product.variations_json) {
+      try {
+        const parsedVariations = JSON.parse(product.variations_json);
+        if (Array.isArray(parsedVariations)) {
+          variation = parsedVariations.find(v => v.id === variationId);
         }
+      } catch (error) {
+        console.error('Error parsing variations_json:', error);
       }
     }
-
+    
     if (!variation) {
-      throw new Error(`Variation ${variationId} not found`);
+      throw new Error(`Variation ${variationId} not found in product ${product.id}`);
     }
-
-    return { variation, parentProduct };
+    
+    return { variation, product };
   } catch (error) {
-    console.error(`Error fetching variation from WooCommerce:`, error);
+    console.error(`Error fetching variation from Typesense:`, error);
     throw error;
   }
 }
@@ -89,138 +72,51 @@ export async function GET(
 ) {
   try {
     const variationId = params.id;
-
+    
     if (!variationId) {
       return NextResponse.json(
         { success: false, message: 'Variation ID is required' },
         { status: 400 }
       );
     }
-
-    console.log(`Fetching variation ${variationId}...`);
-
-    // Try to fetch from WooCommerce first for the most up-to-date data
+    
+    console.log(`Fetching variation ${variationId} from Typesense...`);
+    
     try {
-      const { variation, parentProduct } = await fetchVariationFromWooCommerce(variationId);
-
-      // Format the variation data
-      const formattedVariation = {
-        id: variation.id.toString(),
-        parent_id: parentProduct.id.toString(),
-        name: variation.name || parentProduct.name,
-        stock_status: variation.stock_status || 'outofstock',
-        stock_quantity: variation.stock_quantity || 0,
-        price: variation.price,
-        regular_price: variation.regular_price,
-        sale_price: variation.sale_price,
-        attributes: variation.attributes.map((attr: any) => ({
-          name: attr.name,
-          option: attr.option
-        }))
-      };
-
-      // Try to update Typesense with the latest stock information
-      try {
-        // Find the product in Typesense
-        const searchResponse = await typesenseClient
-          .collections('products')
-          .documents()
-          .search({
-            q: '*',
-            filter_by: `id:=${parentProduct.id}`,
-            per_page: 1
-          });
-
-        if (searchResponse.hits && searchResponse.hits.length > 0) {
-          const product = searchResponse.hits[0].document;
-
-          // Get variations from either the array or the JSON string
-          let variations = [];
-          if (product.variations && Array.isArray(product.variations)) {
-            variations = [...product.variations];
-          } else if (product.variations_json) {
-            try {
-              variations = JSON.parse(product.variations_json);
-            } catch (error) {
-              console.error('Error parsing variations_json:', error);
-              variations = [];
-            }
-          }
-
-          // Find and update the variation
-          const variationIndex = variations.findIndex(v => v.id === variationId);
-
-          if (variationIndex !== -1) {
-            variations[variationIndex] = {
-              ...variations[variationIndex],
-              stock_status: variation.stock_status,
-              stock_quantity: variation.stock_quantity
-            };
-
-            // Update the product in Typesense
-            await typesenseClient
-              .collections('products')
-              .documents(parentProduct.id.toString())
-              .update({
-                variations: variations,
-                variations_json: JSON.stringify(variations)
-              });
-
-            console.log(`Updated variation ${variationId} in Typesense`);
-          }
-        }
-      } catch (error) {
-        console.error('Error updating Typesense:', error);
-        // Continue even if Typesense update fails
-      }
-
+      const { variation, product } = await fetchVariationFromTypesense(variationId);
+      
       return NextResponse.json({
         success: true,
-        variation: formattedVariation,
+        variation: {
+          ...variation,
+          parent_id: product.id
+        },
         sources: {
-          wooCommerce: true,
-          typesense: false
+          wooCommerce: false,
+          typesense: true
         }
       });
-    } catch (wooError) {
-      console.error('Error fetching from WooCommerce, falling back to Typesense:', wooError);
-
-      // Fall back to Typesense
-      // Find the variation in Typesense
-      const searchResponse = await typesenseClient
-        .collections('products')
-        .documents()
-        .search({
-          q: '*',
-          filter_by: `variations.id:=${variationId}`,
-          per_page: 1
-        });
-
-      if (searchResponse.hits && searchResponse.hits.length > 0) {
-        const product = searchResponse.hits[0].document;
-        const variation = product.variations.find((v: any) => v.id === variationId);
-
-        if (variation) {
-          return NextResponse.json({
-            success: true,
-            variation: {
-              ...variation,
-              parent_id: product.id
-            },
-            sources: {
-              wooCommerce: false,
-              typesense: true
-            }
-          });
-        }
-      }
-
-      throw new Error(`Variation ${variationId} not found in Typesense`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`Error fetching from Typesense:`, errorMessage);
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Variation not found in Typesense',
+          error: errorMessage
+        },
+        { status: 404 }
+      );
     }
   } catch (error) {
     console.error('Error fetching variation:', error);
     return NextResponse.json(
-      { success: false, message: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        success: false, 
+        message: 'Failed to fetch variation',
+        error: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }

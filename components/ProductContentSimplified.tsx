@@ -333,20 +333,8 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
       let variationToUse = matchingVariation;
       let freshData = null;
 
-      try {
-        // Only fetch fresh data if the product has real-time stock data available
-        if (product._dataSource?.realTimeStock) {
-          freshData = await fetchFreshVariationData(matchingVariation.id);
-          if (freshData) {
-            variationToUse = freshData;
-            console.log('Using fresh variation data:', freshData);
-          }
-        } else {
-          console.log('Skipping fresh data fetch - real-time stock data not available');
-        }
-      } catch (error) {
-        console.error('Error fetching fresh variation data:', error);
-      }
+      // We're only using Typesense data, so we don't need to fetch fresh data
+      console.log('Using Typesense data for variation:', matchingVariation.id);
 
       const inStock = isVariationInStock(variationToUse);
 
