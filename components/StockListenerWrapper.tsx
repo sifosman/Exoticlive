@@ -1,22 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-
-// Dynamically import the StockListener component with client-side only rendering
-const StockListener = dynamic(() => import('./StockListener'), {
-  ssr: false,
-});
+/**
+ * This component has been deprecated.
+ * We now use a cron job to sync stock data from WooCommerce to Typesense.
+ * See /api/cron/sync-stock for the new implementation.
+ */
 
 export default function StockListenerWrapper() {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  // Only render the StockListener on the client side
-  if (!isClient) return null;
-
-  return <StockListener />;
+  // Return null (component is not used anymore)
+  return null;
 }

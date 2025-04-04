@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
 
     // Update the status
     try {
-      const statusUpdateResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/status`, {
+      const statusUpdateResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/status-db`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

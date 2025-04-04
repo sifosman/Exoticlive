@@ -23,7 +23,7 @@ export default function StatusPage() {
     async function fetchStatus() {
       try {
         setLoading(true);
-        const response = await fetch('/api/status');
+        const response = await fetch('/api/status-db');
 
         if (!response.ok) {
           throw new Error(`Failed to fetch status: ${response.statusText}`);

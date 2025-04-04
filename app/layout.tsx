@@ -5,7 +5,7 @@ import ThemeRegistry from './ThemeRegistry';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ClientProviders from './ClientProviders';
-import StockListenerWrapper from '@/components/StockListenerWrapper';
+// StockListenerWrapper removed - we now use a cron job for stock updates
 
 const inter = Inter({ subsets: ['latin'] });
 const playfairDisplay = Playfair_Display({
@@ -34,8 +34,7 @@ export default function RootLayout({
       <body className={`bg-white`}>
         <ThemeRegistry>
           <ClientProviders>
-              {/* Stock listener for WooCommerce sync */}
-              <StockListenerWrapper />
+              {/* Stock listener removed - we now use a cron job for stock updates */}
 
               <Header />
               <main className="min-h-screen pt-[36px]">
