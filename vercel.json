@@ -6,11 +6,7 @@
   },
   "crons": [
     {
-      "path": "/api/cron/sync-stock",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/test",
+      "path": "/api/cron-vercel",
       "schedule": "*/2 * * * *"
     }
   ]

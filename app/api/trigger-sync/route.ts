@@ -10,15 +10,8 @@ export async function GET(request: NextRequest) {
   try {
     console.log('Manual trigger requested for stock sync');
 
-    // Get the API key from environment variables
-    const apiKey = process.env.CRON_API_KEY;
-
-    if (!apiKey) {
-      throw new Error('CRON_API_KEY environment variable is not set');
-    }
-
-    // Call the cron job endpoint with the API key
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin}/api/cron/sync-stock?key=${apiKey}`, {
+    // Call the simplified sync API endpoint
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin}/api/sync-simple`, {
       headers: {
         // Add a custom header to identify this as a manual trigger
         'x-manual-trigger': 'true',
