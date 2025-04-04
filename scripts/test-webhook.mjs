@@ -11,7 +11,7 @@ const PRODUCT_ID = 58264; // Athlefit Sandals
 const VARIATION_ID = 58271; // Size 9
 
 // The webhook URL
-const WEBHOOK_URL = 'https://exoticshoes.co.za/api/webhooks/woocommerce';
+const WEBHOOK_URL = 'https://exoticshoes.co.za/api/webhooks/test';
 
 // Create a test payload that simulates a product update webhook
 const payload = {
