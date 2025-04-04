@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 // Store the last sync time in memory
 let lastSyncTime: string | null = null;
 
+// Log outside the handler to see if the file is being loaded
+console.log(`=== CRON JOB FILE LOADED at ${new Date().toISOString()} ===`);
+
 // Handle GET requests to trigger the stock sync
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +15,13 @@ export async function GET(request: NextRequest) {
     console.log('Request URL:', request.url);
     console.log('Request headers:', JSON.stringify(Object.fromEntries(request.headers.entries()), null, 2));
     console.log('Is Vercel cron:', request.headers.get('x-vercel-cron') === 'true' ? 'Yes' : 'No');
+    console.log('Environment variables:');
+    console.log('- CRON_API_KEY set:', !!process.env.CRON_API_KEY);
+    console.log('- SYNC_API_KEY set:', !!process.env.SYNC_API_KEY);
+    console.log('- TYPESENSE_HOST set:', !!process.env.TYPESENSE_HOST);
+    console.log('- TYPESENSE_API_KEY set:', !!process.env.TYPESENSE_API_KEY);
+    console.log('- WC_CONSUMER_KEY set:', !!process.env.WC_CONSUMER_KEY);
+    console.log('- WC_CONSUMER_SECRET set:', !!process.env.WC_CONSUMER_SECRET);
     console.log('Syncing stock...');
 
     // Logs page has been removed
@@ -20,9 +30,17 @@ export async function GET(request: NextRequest) {
     const apiKey = request.nextUrl.searchParams.get('key');
     const isVercelCron = request.headers.get('x-vercel-cron') === 'true';
 
-    // Check if this is a Vercel cron job (which doesn't need an API key)
-    if (!isVercelCron) {
+    console.log('Is Vercel cron job:', isVercelCron ? 'Yes' : 'No');
+
+    // IMPORTANT: Always allow Vercel cron jobs
+    if (isVercelCron) {
+      console.log('=== VERCEL CRON JOB DETECTED ===');
+      console.log('Allowing request without API key');
+      console.log('Vercel cron header:', request.headers.get('x-vercel-cron'));
+      console.log('All headers:', JSON.stringify(Object.fromEntries(request.headers.entries()), null, 2));
+    } else {
       // For all other requests, require a valid API key
+      console.log('Not a Vercel cron job, checking API key');
       if (apiKey !== process.env.CRON_API_KEY) {
         console.log('Invalid API key provided');
         console.log('Expected:', process.env.CRON_API_KEY);
