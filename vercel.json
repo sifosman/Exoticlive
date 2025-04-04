@@ -3,11 +3,5 @@
     "deploymentEnabled": {
       "complete-features": true
     }
-  },
-  "crons": [
-    {
-      "path": "/api/cron-vercel",
-      "schedule": "*/2 * * * *"
-    }
-  ]
+  }
 }

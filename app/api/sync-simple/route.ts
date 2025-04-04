@@ -27,32 +27,32 @@ const getWooCommerceAuthHeader = () => {
 async function fetchRecentlyUpdatedProducts() {
   try {
     console.log('Fetching recently updated products from WooCommerce...');
-    
+
     if (!wcApiUrl || !wcConsumerKey || !wcConsumerSecret) {
       throw new Error('WooCommerce API credentials not configured');
     }
-    
+
     // Get products updated in the last 5 minutes
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    
+
     // Build the URL with query parameters
     const url = `${wcApiUrl}/wp-json/wc/v3/products?per_page=20&orderby=modified&order=desc&modified_after=${fiveMinutesAgo}`;
-    
+
     console.log(`Fetching products from: ${url}`);
-    
+
     const response = await fetch(url, {
       headers: {
         'Authorization': getWooCommerceAuthHeader()
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch products: ${response.statusText}`);
     }
-    
+
     const products = await response.json();
     console.log(`Found ${products.length} recently updated products in WooCommerce`);
-    
+
     return products;
   } catch (error) {
     console.error('Error fetching products from WooCommerce:', error);
@@ -64,24 +64,24 @@ async function fetchRecentlyUpdatedProducts() {
 async function fetchVariationsFromWooCommerce(productId: number) {
   try {
     console.log(`Fetching variations for product ${productId} from WooCommerce...`);
-    
+
     if (!wcApiUrl || !wcConsumerKey || !wcConsumerSecret) {
       throw new Error('WooCommerce API credentials not configured');
     }
-    
+
     const response = await fetch(`${wcApiUrl}/wp-json/wc/v3/products/${productId}/variations?per_page=100`, {
       headers: {
         'Authorization': getWooCommerceAuthHeader()
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch variations: ${response.statusText}`);
     }
-    
+
     const variations = await response.json();
     console.log(`Found ${variations.length} variations for product ${productId}`);
-    
+
     return variations;
   } catch (error) {
     console.error(`Error fetching variations for product ${productId}:`, error);
@@ -93,7 +93,7 @@ async function fetchVariationsFromWooCommerce(productId: number) {
 async function updateProductInTypesense(productId: string, variations: any[]) {
   try {
     console.log(`Updating product ${productId} in Typesense...`);
-    
+
     // Process variations
     const processedVariations = variations.map(variation => {
       return {
@@ -109,16 +109,16 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
         }))
       };
     });
-    
+
     // Check if the product exists in Typesense
     try {
       const product = await typesenseClient
         .collections('products')
         .documents(productId)
         .retrieve();
-      
+
       console.log(`Found product in Typesense: ${product.name}`);
-      
+
       // Update the product in Typesense
       const updateData = {
         variations: processedVariations,
@@ -127,18 +127,95 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
         in_stock_variations_count: processedVariations.filter(v => v.stock_status === 'instock').length,
         stock_status: processedVariations.some(v => v.stock_status === 'instock') ? 'instock' : 'outofstock'
       };
-      
+
       const updateResult = await typesenseClient
         .collections('products')
         .documents(productId)
         .update(updateData);
-      
+
       console.log(`Product ${productId} updated in Typesense with ${processedVariations.length} variations`);
-      
+
       return updateResult;
     } catch (error) {
-      console.log(`Product ${productId} not found in Typesense, skipping update`);
-      return null;
+      // If the product doesn't exist in Typesense, create it
+      if (error.toString().includes('Not Found') || error.toString().includes('404')) {
+        console.log(`Product ${productId} not found in Typesense, creating it...`);
+
+        // We need more product data to create a new product
+        // Fetch the full product data from WooCommerce
+        try {
+          const productResponse = await fetch(`${wcApiUrl}/wp-json/wc/v3/products/${productId}`, {
+            headers: {
+              'Authorization': getWooCommerceAuthHeader()
+            }
+          });
+
+          if (!productResponse.ok) {
+            throw new Error(`Failed to fetch product details: ${productResponse.statusText}`);
+          }
+
+          const productData = await productResponse.json();
+          console.log(`Fetched product details for ${productId}: ${productData.name}`);
+
+          // Create a new product document for Typesense
+          const newProduct = {
+            id: productId,
+            name: productData.name || '',
+            description: productData.description ? productData.description.replace(/<[^>]*>?/gm, '') : '',
+            price: parseFloat(productData.price || '0'),
+            sale_price: productData.sale_price ? parseFloat(productData.sale_price) : null,
+            regular_price: productData.regular_price ? parseFloat(productData.regular_price) : null,
+            categories: productData.categories?.map((cat: any) => cat.name) || [],
+            tags: productData.tags?.map((tag: any) => tag.name) || [],
+            attributes: productData.attributes?.map((attr: any) => attr.name) || [],
+            colors: productData.attributes?.find((attr: any) => attr.name === 'Color')?.options || [],
+            sizes: productData.attributes?.find((attr: any) => attr.name === 'Size')?.options || [],
+            image_url: productData.images && productData.images.length > 0 ? productData.images[0].src : '',
+            gallery_images: productData.images?.map((img: any) => img.src) || [],
+            slug: productData.slug || '',
+            stock_status: productData.stock_status || 'outofstock',
+            stock_quantity: productData.stock_quantity || 0,
+            variations_count: processedVariations.length,
+            in_stock_variations_count: processedVariations.filter(v => v.stock_status === 'instock').length,
+            variations: processedVariations,
+            variations_json: JSON.stringify(processedVariations),
+            featured: productData.featured !== undefined ? productData.featured : false,
+            is_featured: productData.featured !== undefined ? !!productData.featured : false,
+            is_on_sale: productData.on_sale !== undefined ? productData.on_sale : false,
+            average_rating: parseFloat(productData.average_rating || '0'),
+            date_created: productData.date_created || new Date().toISOString(),
+            catalog_visibility: productData.catalog_visibility || 'visible',
+            short_description: productData.short_description ? productData.short_description.replace(/<[^>]*>?/gm, '') : '',
+            sku: productData.sku || '',
+            status: productData.status || 'publish',
+            weight: productData.weight || '',
+            dimensions: productData.dimensions || { length: '', width: '', height: '' },
+            shipping_class: productData.shipping_class || '',
+            shipping_class_id: productData.shipping_class_id || 0,
+            type: productData.type || 'simple',
+            virtual: productData.virtual !== undefined ? productData.virtual : false,
+            downloadable: productData.downloadable !== undefined ? productData.downloadable : false,
+            tax_status: productData.tax_status || 'taxable',
+            tax_class: productData.tax_class || ''
+          };
+
+          // Create the product in Typesense
+          const createResult = await typesenseClient
+            .collections('products')
+            .documents()
+            .create(newProduct);
+
+          console.log(`Created new product in Typesense: ${productId} - ${productData.name}`);
+          return createResult;
+        } catch (createError) {
+          console.error(`Error creating product ${productId} in Typesense:`, createError);
+          return null;
+        }
+      } else {
+        // Some other error occurred
+        console.error(`Error retrieving product ${productId} from Typesense:`, error);
+        return null;
+      }
     }
   } catch (error) {
     console.error(`Error updating product ${productId} in Typesense:`, error);
@@ -151,32 +228,32 @@ export async function GET(request: NextRequest) {
   try {
     const syncStartTime = Date.now();
     console.log(`=== SIMPLE SYNC STARTED at ${new Date().toISOString()} ===`);
-    
+
     // Fetch recently updated products from WooCommerce
     const products = await fetchRecentlyUpdatedProducts();
-    
+
     // If no products were updated, return early
     if (products.length === 0) {
       console.log('No products updated in the last 5 minutes');
-      
+
       return NextResponse.json({
         success: true,
         message: 'No products updated',
         timestamp: new Date().toISOString()
       });
     }
-    
+
     // Process each product
     const results = [];
-    
+
     for (const product of products) {
       try {
         // Fetch variations for this product
         const variations = await fetchVariationsFromWooCommerce(product.id);
-        
+
         // Update the product in Typesense
         await updateProductInTypesense(product.id.toString(), variations);
-        
+
         results.push({
           id: product.id,
           name: product.name,
@@ -185,7 +262,7 @@ export async function GET(request: NextRequest) {
         });
       } catch (error) {
         console.error(`Error processing product ${product.id}:`, error);
-        
+
         results.push({
           id: product.id,
           name: product.name,
@@ -194,15 +271,15 @@ export async function GET(request: NextRequest) {
         });
       }
     }
-    
+
     const syncEndTime = Date.now();
     const syncDuration = syncEndTime - syncStartTime;
-    
+
     console.log(`=== SIMPLE SYNC COMPLETED in ${syncDuration}ms ===`);
     console.log('Products processed:', results.length);
     console.log('Successful updates:', results.filter(r => r.success).length);
     console.log('Failed updates:', results.filter(r => !r.success).length);
-    
+
     return NextResponse.json({
       success: true,
       message: `Synced ${results.filter(r => r.success).length} of ${results.length} products in ${syncDuration}ms`,
@@ -212,10 +289,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error syncing stock:', error);
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Error syncing stock',
         error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
