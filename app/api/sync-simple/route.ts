@@ -23,10 +23,10 @@ const getWooCommerceAuthHeader = () => {
   return `Basic ${auth}`;
 };
 
-// Fetch recently updated products from WooCommerce
+// Fetch recently updated and created products from WooCommerce
 async function fetchRecentlyUpdatedProducts() {
   try {
-    console.log('Fetching recently updated products from WooCommerce...');
+    console.log('Fetching recently updated and created products from WooCommerce...');
 
     if (!wcApiUrl || !wcConsumerKey || !wcConsumerSecret) {
       throw new Error('WooCommerce API credentials not configured');
@@ -35,25 +35,55 @@ async function fetchRecentlyUpdatedProducts() {
     // Get products updated in the last 5 minutes
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-    // Build the URL with query parameters
-    const url = `${wcApiUrl}/wp-json/wc/v3/products?per_page=20&orderby=modified&order=desc&modified_after=${fiveMinutesAgo}`;
+    // Build the URL with query parameters for updated products
+    const updatedUrl = `${wcApiUrl}/wp-json/wc/v3/products?per_page=20&orderby=modified&order=desc&modified_after=${fiveMinutesAgo}`;
 
-    console.log(`Fetching products from: ${url}`);
+    console.log(`Fetching updated products from: ${updatedUrl}`);
 
-    const response = await fetch(url, {
+    const updatedResponse = await fetch(updatedUrl, {
       headers: {
         'Authorization': getWooCommerceAuthHeader()
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch products: ${response.statusText}`);
+    if (!updatedResponse.ok) {
+      throw new Error(`Failed to fetch updated products: ${updatedResponse.statusText}`);
     }
 
-    const products = await response.json();
-    console.log(`Found ${products.length} recently updated products in WooCommerce`);
+    const updatedProducts = await updatedResponse.json();
+    console.log(`Found ${updatedProducts.length} recently updated products in WooCommerce`);
 
-    return products;
+    // Build the URL with query parameters for recently created products
+    const createdUrl = `${wcApiUrl}/wp-json/wc/v3/products?per_page=20&orderby=date&order=desc&after=${fiveMinutesAgo}`;
+
+    console.log(`Fetching newly created products from: ${createdUrl}`);
+
+    const createdResponse = await fetch(createdUrl, {
+      headers: {
+        'Authorization': getWooCommerceAuthHeader()
+      }
+    });
+
+    if (!createdResponse.ok) {
+      throw new Error(`Failed to fetch newly created products: ${createdResponse.statusText}`);
+    }
+
+    const createdProducts = await createdResponse.json();
+    console.log(`Found ${createdProducts.length} newly created products in WooCommerce`);
+
+    // Combine the results, removing duplicates by ID
+    const allProducts = [...updatedProducts];
+
+    // Add created products that aren't already in the updated products list
+    for (const product of createdProducts) {
+      if (!allProducts.some(p => p.id === product.id)) {
+        allProducts.push(product);
+      }
+    }
+
+    console.log(`Total unique products to process: ${allProducts.length}`);
+
+    return allProducts;
   } catch (error) {
     console.error('Error fetching products from WooCommerce:', error);
     throw error;
@@ -182,6 +212,7 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
             featured: productData.featured !== undefined ? productData.featured : false,
             is_featured: productData.featured !== undefined ? !!productData.featured : false,
             is_on_sale: productData.on_sale !== undefined ? productData.on_sale : false,
+            on_sale: productData.on_sale !== undefined ? productData.on_sale : false,
             average_rating: parseFloat(productData.average_rating || '0'),
             date_created: productData.date_created || new Date().toISOString(),
             catalog_visibility: productData.catalog_visibility || 'visible',
@@ -232,16 +263,21 @@ export async function GET(request: NextRequest) {
     // Fetch recently updated products from WooCommerce
     const products = await fetchRecentlyUpdatedProducts();
 
-    // If no products were updated, return early
+    // If no products were updated or created, return early
     if (products.length === 0) {
-      console.log('No products updated in the last 5 minutes');
+      console.log('No products updated or created in the last 5 minutes');
 
       return NextResponse.json({
         success: true,
-        message: 'No products updated',
+        message: 'No products updated or created',
         timestamp: new Date().toISOString()
       });
     }
+
+    console.log('Products to process:');
+    products.forEach(product => {
+      console.log(`- ${product.name} (ID: ${product.id}, Type: ${product.type})`);
+    });
 
     // Process each product
     const results = [];
