@@ -180,7 +180,7 @@ function transformProduct(product: any, variations: any[] = []) {
   // Create the transformed product with all required fields
   const transformedProduct = {
     id: product.id.toString(),
-    name: product.name,
+    name: product.name || '',
     description: product.description ?
       product.description.replace(/<[^>]*>?/gm, '') : '', // Strip HTML
     price: parseFloat(product.price || 0),
@@ -194,12 +194,13 @@ function transformProduct(product: any, variations: any[] = []) {
     image_url: product.images && product.images.length > 0 ?
       product.images[0].src : '',
     gallery_images: galleryImages,
-    slug: product.slug,
+    slug: product.slug || '',
     stock_status: product.stock_status || 'outofstock',
     stock_quantity: product.stock_quantity || 0,
     variations_count: variationsCount,
     in_stock_variations_count: inStockVariationsCount,
-    is_featured: !!product.featured,
+    featured: product.featured !== undefined ? product.featured : false,
+    is_featured: product.featured !== undefined ? !!product.featured : false,
     is_on_sale: isOnSale,
     average_rating: parseFloat(product.average_rating || 0),
     date_created: dateCreated,
@@ -219,7 +220,23 @@ function transformProduct(product: any, variations: any[] = []) {
     shipping_class_id: product.shipping_class_id || 0,
     cross_sell_ids: product.cross_sell_ids || [],
     upsell_ids: product.upsell_ids || [],
-    purchasable: product.purchasable !== undefined ? product.purchasable : true
+    purchasable: product.purchasable !== undefined ? product.purchasable : true,
+
+    // Add any other fields that might be required by the Typesense schema
+    type: product.type || 'simple',
+    virtual: product.virtual !== undefined ? product.virtual : false,
+    downloadable: product.downloadable !== undefined ? product.downloadable : false,
+    tax_status: product.tax_status || 'taxable',
+    tax_class: product.tax_class || '',
+    manage_stock: product.manage_stock !== undefined ? product.manage_stock : false,
+    backorders: product.backorders || 'no',
+    backorders_allowed: product.backorders_allowed !== undefined ? product.backorders_allowed : false,
+    backordered: product.backordered !== undefined ? product.backordered : false,
+    sold_individually: product.sold_individually !== undefined ? product.sold_individually : false,
+    reviews_allowed: product.reviews_allowed !== undefined ? product.reviews_allowed : true,
+    rating_count: product.rating_count || 0,
+    parent_id: product.parent_id || 0,
+    menu_order: product.menu_order || 0
   };
 
   // Log the transformed product for debugging
