@@ -9,21 +9,7 @@ export async function GET(request: NextRequest) {
     const cronStartTime = Date.now();
     console.log(`Cron job triggered at ${new Date().toISOString()}: Syncing stock...`);
 
-    // Log to the logs endpoint
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/logs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.SYNC_API_KEY || ''
-        },
-        body: JSON.stringify({
-          message: `Cron job triggered: Syncing stock...`
-        })
-      });
-    } catch (logError) {
-      console.error('Error logging to logs endpoint:', logError);
-    }
+    // Logs page has been removed
 
     // Get the API key from the request
     const apiKey = request.nextUrl.searchParams.get('key');
@@ -64,48 +50,9 @@ export async function GET(request: NextRequest) {
     console.log(`Stock sync completed in ${cronDuration}ms: ${result.message}`);
     console.log('New last sync time:', lastSyncTime);
 
-    // Log to the logs endpoint
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/logs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.SYNC_API_KEY || ''
-        },
-        body: JSON.stringify({
-          message: `Stock sync completed in ${cronDuration}ms: ${result.message}`
-        })
-      });
-    } catch (logError) {
-      console.error('Error logging to logs endpoint:', logError);
-    }
+    // Logs page has been removed
 
-    // Update the status
-    try {
-      const statusUpdateResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/status-db`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.SYNC_API_KEY || ''
-        },
-        body: JSON.stringify({
-          timestamp: new Date().toISOString(),
-          duration: cronDuration,
-          productsProcessed: result.result?.results?.length || 0,
-          successCount: result.result?.results?.filter(r => r.success).length || 0,
-          errorCount: result.result?.results?.filter(r => !r.success).length || 0,
-          error: null
-        })
-      });
-
-      if (!statusUpdateResponse.ok) {
-        console.error('Failed to update status:', await statusUpdateResponse.text());
-      } else {
-        console.log('Status updated successfully');
-      }
-    } catch (statusError) {
-      console.error('Error updating status:', statusError);
-    }
+    // Status page has been removed
 
     return NextResponse.json({
       success: true,

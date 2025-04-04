@@ -218,21 +218,7 @@ export async function GET(request: NextRequest) {
     if (products.length === 0) {
       console.log('No products updated since', updatedSince || 'last check');
 
-      // Log this to the logs endpoint
-      try {
-        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/logs`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': process.env.SYNC_API_KEY || ''
-          },
-          body: JSON.stringify({
-            message: `No products updated since ${updatedSince || 'last check'}`
-          })
-        });
-      } catch (logError) {
-        console.error('Error logging to logs endpoint:', logError);
-      }
+      // Logs page has been removed
 
       return NextResponse.json({
         success: true,
@@ -290,21 +276,7 @@ export async function GET(request: NextRequest) {
 
     console.log(`Stock sync completed in ${syncDuration}ms`);
 
-    // Log this to the logs endpoint
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/logs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.SYNC_API_KEY || ''
-        },
-        body: JSON.stringify({
-          message: `Stock sync completed in ${syncDuration}ms. Processed ${results.length} products. Success: ${results.filter(r => r.success).length}, Errors: ${results.filter(r => !r.success).length}`
-        })
-      });
-    } catch (logError) {
-      console.error('Error logging to logs endpoint:', logError);
-    }
+    // Logs page has been removed
 
     return NextResponse.json({
       success: true,
