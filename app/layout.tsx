@@ -4,13 +4,8 @@ import { Inter, Playfair_Display, Lato } from 'next/font/google';
 import ThemeRegistry from './ThemeRegistry';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import dynamic from 'next/dynamic';
 import ClientProviders from './ClientProviders';
-
-// Import the StockListener component
-const StockListener = dynamic(() => import('@/components/StockListener'), {
-  ssr: false,
-});
+import StockListenerWrapper from '@/components/StockListenerWrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 const playfairDisplay = Playfair_Display({
@@ -40,7 +35,7 @@ export default function RootLayout({
         <ThemeRegistry>
           <ClientProviders>
               {/* Stock listener for WooCommerce sync */}
-              <StockListener />
+              <StockListenerWrapper />
 
               <Header />
               <main className="min-h-screen pt-[36px]">
