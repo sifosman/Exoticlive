@@ -16,15 +16,18 @@ export async function GET(request: NextRequest) {
 
     // Logs page has been removed
 
-    // Check if this is a Vercel cron job
+    // Check if this is a Vercel cron job or a manual trigger
     const isVercelCron = request.headers.get('x-vercel-cron') === 'true';
+    const isManualTrigger = request.headers.get('x-manual-trigger') === 'true';
+    const isLocalRequest = request.headers.get('host')?.includes('localhost') || false;
 
-    // If it's not a Vercel cron job, check for API key
-    if (!isVercelCron) {
+    // Allow the request if it's a Vercel cron job, a manual trigger, or a local request
+    if (!isVercelCron && !isManualTrigger && !isLocalRequest) {
       const apiKey = request.nextUrl.searchParams.get('key');
 
       // Check if the API key is valid
       if (apiKey !== process.env.CRON_API_KEY) {
+        console.log('Invalid API key provided');
         return NextResponse.json(
           { success: false, message: 'Invalid API key' },
           { status: 401 }
@@ -61,8 +64,8 @@ export async function GET(request: NextRequest) {
     console.log('Result message:', result.message);
     console.log('New last sync time:', lastSyncTime);
     console.log('Products processed:', result.result?.results?.length || 0);
-    console.log('Successful updates:', result.result?.results?.filter(r => r.success).length || 0);
-    console.log('Failed updates:', result.result?.results?.filter(r => !r.success).length || 0);
+    console.log('Successful updates:', result.result?.results?.filter((r: any) => r.success).length || 0);
+    console.log('Failed updates:', result.result?.results?.filter((r: any) => !r.success).length || 0);
 
     // Logs page has been removed
 
