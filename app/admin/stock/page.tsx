@@ -191,6 +191,31 @@ export default function StockUpdatePage() {
         message: data.message
       });
 
+      // If we have a product slug, try to revalidate the product page
+      if (data.productSlug) {
+        console.log(`Attempting to revalidate product page for slug: ${data.productSlug}`);
+        try {
+          // Call the revalidation API
+          const revalidateResponse = await fetch('/api/revalidate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              path: `/product/${data.productSlug}`
+            })
+          });
+
+          const revalidateData = await revalidateResponse.json();
+          console.log('Revalidation response:', revalidateData);
+
+          // Open the product page in a new tab to show the updated version
+          window.open(`/product/${data.productSlug}?t=${Date.now()}`, '_blank');
+        } catch (error) {
+          console.error('Error revalidating product page:', error);
+        }
+      }
+
       // Refresh the products after update
       console.log('Refreshing products after update');
       fetchProducts();

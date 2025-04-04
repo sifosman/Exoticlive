@@ -184,12 +184,27 @@ export async function POST(request: NextRequest) {
     // Update stock in Typesense
     await updateTypesenseStock(parentProductId, variationId, stockQuantity);
 
+    // Get the product slug for cache revalidation
+    let productSlug = '';
+    try {
+      const product = await typesenseClient
+        .collections('products')
+        .documents(parentProductId.toString())
+        .retrieve();
+
+      productSlug = product.slug;
+      console.log(`Found product slug for revalidation: ${productSlug}`);
+    } catch (error) {
+      console.error('Error getting product slug for revalidation:', error);
+    }
+
     // Return success response
     const response = {
       success: true,
       message: `Stock updated successfully for variation ${variationId} of product ${parentProductId}`,
       stockQuantity,
-      stockStatus: stockQuantity > 0 ? 'instock' : 'outofstock'
+      stockStatus: stockQuantity > 0 ? 'instock' : 'outofstock',
+      productSlug
     };
 
     console.log('Sending success response:', response);
