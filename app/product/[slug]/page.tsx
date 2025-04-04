@@ -1,13 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ProductContentSimplified from '@/components/ProductContentSimplified';
-import ProductContentZigZag from '@/components/ProductContentZigZag';
-import ProductContentBasic from '@/components/ProductContentBasic';
-import ProductContentSale from '@/components/ProductContentSale';
-import ProductContentSaleSimplified from '@/components/ProductContentSaleSimplified';
-import ProductContentSaleZigZag from '@/components/ProductContentSaleZigZag';
-import ProductContentSaleBasic from '@/components/ProductContentSaleBasic';
-import { getProductType } from '@/lib/utils';
 import { SITE_NAME } from '@/lib/constants';
 
 // Add revalidation time (in seconds) - set to a shorter time to get fresher data
@@ -16,14 +9,14 @@ export const revalidate = 0; // Set to 0 for on-demand revalidation instead of c
 // Generate dynamic metadata for the page
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const product = await getProduct(params.slug);
-  
+
   if (!product) {
     return {
       title: 'Product Not Found',
       description: 'The requested product could not be found.'
     };
   }
-  
+
   return {
     title: `${product.name} | ${SITE_NAME}`,
     description: product.description || `${product.name} - Shop now at ${SITE_NAME}`
@@ -33,30 +26,30 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 // Fetch product data from our API endpoint
 async function getProduct(slug: string) {
   console.log('DEBUG: Starting product fetch for slug:', slug);
-  
+
   try {
     // Use our API endpoint to get product data from both WooCommerce and Typesense
     const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/product/${slug}`, {
       next: { revalidate: 0 } // Don't cache the response
     });
-    
+
     if (!response.ok) {
       console.error(`DEBUG: Error fetching product from API: ${response.statusText}`);
       return null;
     }
-    
+
     const data = await response.json();
-    
+
     if (!data.success) {
       console.error('DEBUG: API returned error:', data.message);
       return null;
     }
-    
+
     // Extract the product data
     const mergedProduct = data.product;
     console.log('DEBUG: Found product via API:', mergedProduct.name);
     console.log('DEBUG: Data sources:', data.sources);
-    
+
     // Process the merged product data
     const processedProduct = {
       ...mergedProduct,
@@ -68,11 +61,11 @@ async function getProduct(slug: string) {
         ? mergedProduct.gallery_images.map(url => ({ url, alt: '' }))
         : []
     };
-    
+
     // Parse variations and attributes if needed
     let variations = [];
     let attributes = [];
-    
+
     // Process variations if available
     if (mergedProduct.variations && Array.isArray(mergedProduct.variations)) {
       variations = mergedProduct.variations;
@@ -85,12 +78,12 @@ async function getProduct(slug: string) {
         console.error('DEBUG: Error parsing variations_json:', error);
       }
     }
-    
+
     // Convert variations to expected format if needed
     variations = variations.map(variation => {
       // Ensure attributes is properly formatted
       const processedAttributes = variation.attributes || [];
-      
+
       return {
         ...variation,
         id: variation.id,
@@ -102,7 +95,7 @@ async function getProduct(slug: string) {
         attributes: processedAttributes
       };
     });
-    
+
     // Process attributes if available
     if (mergedProduct.attributes && Array.isArray(mergedProduct.attributes)) {
       attributes = mergedProduct.attributes;
@@ -115,7 +108,7 @@ async function getProduct(slug: string) {
         console.error('DEBUG: Error parsing attributes_json:', error);
       }
     }
-    
+
     // Return the processed product with variations and attributes
     return {
       ...processedProduct,
@@ -149,23 +142,7 @@ export default async function ProductPage({
     notFound();
   }
 
-  // Determine the product type
-  const productType = getProductType(product);
-  console.log(`DEBUG: Product type for ${product.name}: ${productType}`);
-
-  // Special handling for Zig Zag product
-  if (params.slug === 'zig-zag') {
-    console.log('DEBUG: Using ZigZag component for Zig Zag product');
-    return product.sale_price ? <ProductContentSaleZigZag product={product} /> : <ProductContentZigZag product={product} />;
-  }
-
-  // Render the appropriate product component based on the product type
-  switch (productType) {
-    case 'simplified':
-      return product.sale_price ? <ProductContentSaleSimplified product={product} /> : <ProductContentSimplified product={product} />;
-    case 'basic':
-      return product.sale_price ? <ProductContentSaleBasic product={product} /> : <ProductContentBasic product={product} />;
-    default:
-      return product.sale_price ? <ProductContentSale product={product} /> : <ProductContentSimplified product={product} />;
-  }
+  // Use the ProductContentSimplified component for all products
+  console.log(`DEBUG: Rendering product ${product.name} with ProductContentSimplified`);
+  return <ProductContentSimplified product={product} />;
 }
