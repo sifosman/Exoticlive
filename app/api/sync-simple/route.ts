@@ -23,6 +23,77 @@ const getWooCommerceAuthHeader = () => {
   return `Basic ${auth}`;
 };
 
+// Fetch recently deleted products from WooCommerce
+async function fetchRecentlyDeletedProducts() {
+  try {
+    console.log('Fetching recently deleted products from WooCommerce...');
+
+    if (!wcApiUrl || !wcConsumerKey || !wcConsumerSecret) {
+      throw new Error('WooCommerce API credentials not configured');
+    }
+
+    // Get products deleted in the last 5 minutes
+    // Note: WooCommerce doesn't have a direct API for deleted products
+    // We'll use a custom endpoint or webhook for this in a production environment
+    // For now, we'll check for products with 'trash' status
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+    // Build the URL with query parameters for recently trashed products
+    const deletedUrl = `${wcApiUrl}/wp-json/wc/v3/products?status=trash&orderby=modified&order=desc&modified_after=${fiveMinutesAgo}&per_page=20`;
+
+    console.log(`Fetching deleted products from: ${deletedUrl}`);
+
+    const deletedResponse = await fetch(deletedUrl, {
+      headers: {
+        'Authorization': getWooCommerceAuthHeader()
+      }
+    });
+
+    if (!deletedResponse.ok) {
+      throw new Error(`Failed to fetch deleted products: ${deletedResponse.statusText}`);
+    }
+
+    const deletedProducts = await deletedResponse.json();
+    console.log(`Found ${deletedProducts.length} recently deleted products in WooCommerce`);
+
+    return deletedProducts;
+  } catch (error) {
+    console.error('Error fetching deleted products from WooCommerce:', error);
+    return []; // Return empty array on error to continue with other operations
+  }
+}
+
+// Delete product from Typesense
+async function deleteProductFromTypesense(productId: string) {
+  try {
+    console.log(`Deleting product ${productId} from Typesense...`);
+
+    // Check if the product exists in Typesense
+    try {
+      await typesenseClient
+        .collections('products')
+        .documents(productId)
+        .retrieve();
+
+      // Product exists, delete it
+      await typesenseClient
+        .collections('products')
+        .documents(productId)
+        .delete();
+
+      console.log(`Product ${productId} deleted from Typesense`);
+      return true;
+    } catch (error) {
+      // Product doesn't exist in Typesense
+      console.log(`Product ${productId} not found in Typesense, skipping deletion`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`Error deleting product ${productId} from Typesense:`, error);
+    throw error;
+  }
+}
+
 // Fetch recently updated and created products from WooCommerce
 async function fetchRecentlyUpdatedProducts() {
   try {
@@ -260,6 +331,40 @@ export async function GET(request: NextRequest) {
     const syncStartTime = Date.now();
     console.log(`=== SIMPLE SYNC STARTED at ${new Date().toISOString()} ===`);
 
+    // Fetch recently deleted products from WooCommerce
+    const deletedProducts = await fetchRecentlyDeletedProducts();
+
+    // Process deleted products
+    const deletionResults = [];
+    if (deletedProducts.length > 0) {
+      console.log(`Processing ${deletedProducts.length} deleted products...`);
+
+      for (const product of deletedProducts) {
+        try {
+          const deleted = await deleteProductFromTypesense(product.id.toString());
+
+          deletionResults.push({
+            id: product.id,
+            name: product.name,
+            success: deleted
+          });
+        } catch (error) {
+          console.error(`Error deleting product ${product.id} from Typesense:`, error);
+
+          deletionResults.push({
+            id: product.id,
+            name: product.name,
+            error: error instanceof Error ? error.message : String(error),
+            success: false
+          });
+        }
+      }
+
+      console.log(`Deleted ${deletionResults.filter(r => r.success).length} of ${deletedProducts.length} products from Typesense`);
+    } else {
+      console.log('No deleted products to process');
+    }
+
     // Fetch recently updated products from WooCommerce
     const products = await fetchRecentlyUpdatedProducts();
 
@@ -316,10 +421,18 @@ export async function GET(request: NextRequest) {
     console.log('Successful updates:', results.filter(r => r.success).length);
     console.log('Failed updates:', results.filter(r => !r.success).length);
 
+    // Prepare the response message
+    let message = '';
+    if (deletionResults.length > 0) {
+      message += `Deleted ${deletionResults.filter(r => r.success).length} of ${deletedProducts.length} products. `;
+    }
+    message += `Synced ${results.filter(r => r.success).length} of ${results.length} products in ${syncDuration}ms`;
+
     return NextResponse.json({
       success: true,
-      message: `Synced ${results.filter(r => r.success).length} of ${results.length} products in ${syncDuration}ms`,
+      message,
       results,
+      deletionResults,
       timestamp: new Date().toISOString(),
       duration: syncDuration
     });
