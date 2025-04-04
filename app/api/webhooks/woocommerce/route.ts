@@ -259,14 +259,28 @@ export async function POST(request: NextRequest) {
 
     let data;
     try {
+      // Try to parse the body as JSON
       data = JSON.parse(body);
     } catch (error) {
+      console.log('Could not parse body as JSON. This might be a test ping from WooCommerce.');
+      // If this is a test ping from WooCommerce, return a success response
+      if (body.trim() === '' || body.includes('webhook_id')) {
+        console.log('Detected test ping from WooCommerce');
+        return NextResponse.json({ success: true, message: 'Webhook test received successfully' });
+      }
+
       console.error('Error parsing webhook payload:', error);
       return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
     }
 
     const topic = request.headers.get('X-WC-Webhook-Topic') || '';
     console.log(`Received webhook: ${topic}`);
+
+    // If no topic is provided, this might be a test ping
+    if (!topic) {
+      console.log('No topic provided, this might be a test ping');
+      return NextResponse.json({ success: true, message: 'Webhook received successfully' });
+    }
 
     // Handle product creation/update
     if (topic === 'product.created' || topic === 'product.updated') {
