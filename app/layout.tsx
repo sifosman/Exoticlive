@@ -7,6 +7,11 @@ import Footer from '@/components/Footer';
 import dynamic from 'next/dynamic';
 import ClientProviders from './ClientProviders';
 
+// Import the StockListener component
+const StockListener = dynamic(() => import('@/components/StockListener'), {
+  ssr: false,
+});
+
 const inter = Inter({ subsets: ['latin'] });
 const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
@@ -34,6 +39,9 @@ export default function RootLayout({
       <body className={`bg-white`}>
         <ThemeRegistry>
           <ClientProviders>
+              {/* Stock listener for WooCommerce sync */}
+              <StockListener />
+
               <Header />
               <main className="min-h-screen pt-[36px]">
                 {children}
