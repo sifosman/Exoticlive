@@ -6,7 +6,7 @@
   },
   "crons": [
     {
-      "path": "/api/cron/sync-stock?key=${CRON_API_KEY}",
+      "path": "/api/cron/sync-stock",
       "schedule": "*/2 * * * *"
     }
   ]

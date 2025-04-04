@@ -7,19 +7,29 @@ let lastSyncTime: string | null = null;
 export async function GET(request: NextRequest) {
   try {
     const cronStartTime = Date.now();
-    console.log(`Cron job triggered at ${new Date().toISOString()}: Syncing stock...`);
+    // Log detailed information about the request
+    console.log(`=== CRON JOB TRIGGERED at ${new Date().toISOString()} ===`);
+    console.log('Request URL:', request.url);
+    console.log('Request headers:', JSON.stringify(Object.fromEntries(request.headers.entries()), null, 2));
+    console.log('Is Vercel cron:', request.headers.get('x-vercel-cron') === 'true' ? 'Yes' : 'No');
+    console.log('Syncing stock...');
 
     // Logs page has been removed
 
-    // Get the API key from the request
-    const apiKey = request.nextUrl.searchParams.get('key');
+    // Check if this is a Vercel cron job
+    const isVercelCron = request.headers.get('x-vercel-cron') === 'true';
 
-    // Check if the API key is valid
-    if (apiKey !== process.env.CRON_API_KEY) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid API key' },
-        { status: 401 }
-      );
+    // If it's not a Vercel cron job, check for API key
+    if (!isVercelCron) {
+      const apiKey = request.nextUrl.searchParams.get('key');
+
+      // Check if the API key is valid
+      if (apiKey !== process.env.CRON_API_KEY) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid API key' },
+          { status: 401 }
+        );
+      }
     }
 
     // Get the current time
@@ -47,8 +57,12 @@ export async function GET(request: NextRequest) {
     const cronEndTime = Date.now();
     const cronDuration = cronEndTime - cronStartTime;
 
-    console.log(`Stock sync completed in ${cronDuration}ms: ${result.message}`);
+    console.log(`=== CRON JOB COMPLETED in ${cronDuration}ms ===`);
+    console.log('Result message:', result.message);
     console.log('New last sync time:', lastSyncTime);
+    console.log('Products processed:', result.result?.results?.length || 0);
+    console.log('Successful updates:', result.result?.results?.filter(r => r.success).length || 0);
+    console.log('Failed updates:', result.result?.results?.filter(r => !r.success).length || 0);
 
     // Logs page has been removed
 

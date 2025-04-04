@@ -195,7 +195,9 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
 export async function GET(request: NextRequest) {
   try {
     const syncStartTime = Date.now();
-    console.log(`Starting stock sync at ${new Date().toISOString()}...`);
+    console.log(`=== STOCK SYNC STARTED at ${new Date().toISOString()} ===`);
+    console.log('Request URL:', request.url);
+    console.log('Request headers:', JSON.stringify(Object.fromEntries(request.headers.entries()), null, 2));
 
     // Get the API key from the request
     const apiKey = request.nextUrl.searchParams.get('key');
@@ -274,7 +276,10 @@ export async function GET(request: NextRequest) {
     const syncEndTime = Date.now();
     const syncDuration = syncEndTime - syncStartTime;
 
-    console.log(`Stock sync completed in ${syncDuration}ms`);
+    console.log(`=== STOCK SYNC COMPLETED in ${syncDuration}ms ===`);
+    console.log('Products processed:', results.length);
+    console.log('Successful updates:', results.filter(r => r.success).length);
+    console.log('Failed updates:', results.filter(r => !r.success).length);
 
     // Logs page has been removed
 
