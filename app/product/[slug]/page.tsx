@@ -19,6 +19,23 @@ const lato = Lato({
 // Add revalidation time (in seconds) - set to a shorter time to get fresher data
 export const revalidate = 0; // Set to 0 for on-demand revalidation instead of cache
 
+// Generate dynamic metadata for the page
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  const product = await getProduct(params.slug);
+
+  if (!product) {
+    return {
+      title: 'Product Not Found',
+      description: 'The requested product could not be found.'
+    };
+  }
+
+  return {
+    title: `${product.name} | Exotic Shoes`,
+    description: product.description || `${product.name} - Shop now at Exotic Shoes`
+  };
+}
+
 // Create Typesense client
 const typesenseClient = new Typesense.Client({
   nodes: [{
@@ -88,117 +105,114 @@ const FORCE_TEST_SIZES_OUT_OF_STOCK = false; // Set to true to force sizes 7 and
 
 async function getProduct(slug: string) {
   console.log('DEBUG: Starting product fetch for slug:', slug);
-  
-  try {
-    // Step 1: Get basic product data from Typesense
-    const searchResults = await typesenseClient
-      .collections('products')
-      .documents()
-      .search({
-        q: slug,
-        query_by: 'slug',
-        per_page: 1
-      });
 
-    if (!searchResults.hits || searchResults.hits.length === 0) {
-      console.error('DEBUG: No product found in Typesense for slug:', slug);
+  try {
+    // Use our new API endpoint to get product data from both WooCommerce and Typesense
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/product/${slug}`, {
+      next: { revalidate: 0 } // Don't cache the response
+    });
+
+    if (!response.ok) {
+      console.error(`DEBUG: Error fetching product from API: ${response.statusText}`);
       return null;
     }
 
-    // Extract and format the product data from Typesense
-    const typesenseProduct = searchResults.hits[0].document;
-    console.log('DEBUG: Found product in Typesense:', typesenseProduct.name);
-    
-    // Special handling for Zig Zag product - use Typesense data only
-    if (slug === 'zig-zag') {
-      console.log('DEBUG: Special handling for Zig Zag product - using Typesense data only');
-      
-      // Process Typesense data for Zig Zag
-      const processedProduct = {
-        ...typesenseProduct,
-        price: Number(typesenseProduct.price || 0),
-        sale_price: typesenseProduct.sale_price ? Number(typesenseProduct.sale_price) : null,
-        regular_price: Number(typesenseProduct.regular_price || 0),
-        stock_quantity: Number(typesenseProduct.stock_quantity || 0),
-        gallery_images: Array.isArray(typesenseProduct.gallery_images)
-          ? typesenseProduct.gallery_images.map(url => ({ url, alt: '' }))
-          : []
-      };
-      
-      // Parse variations_json and attributes_json
-      let variations = [];
-      let attributes = [];
-      
-      if (typesenseProduct.variations_json) {
-        try {
-          variations = JSON.parse(typesenseProduct.variations_json);
-          console.log(`DEBUG: Parsed ${variations.length} variations from Typesense JSON`);
-          
-          // Convert attributes to match expected format if needed
-          variations = variations.map(variation => {
-            // Ensure attributes is properly formatted
-            const processedAttributes = variation.attributes || [];
-            
-            return {
-              ...variation,
-              id: variation.id,
-              price: Number(variation.price || processedProduct.price || 0),
-              regular_price: Number(variation.regular_price || processedProduct.regular_price || 0),
-              sale_price: Number(variation.sale_price || processedProduct.sale_price || 0),
-              stock_status: variation.stock_status || 'outofstock',
-              stock_quantity: Number(variation.stock_quantity || 0),
-              attributes: processedAttributes
-            };
-          });
-        } catch (error) {
-          console.error('DEBUG: Error parsing variations_json:', error);
-        }
-      }
-      
-      if (typesenseProduct.attributes_json) {
-        try {
-          attributes = JSON.parse(typesenseProduct.attributes_json);
-          console.log(`DEBUG: Parsed ${attributes.length} attributes from Typesense JSON`);
-        } catch (error) {
-          console.error('DEBUG: Error parsing attributes_json:', error);
-        }
-      }
-      
-      // Return the processed product with variations and attributes
-      return {
-        ...processedProduct,
-        variations,
-        attributes
-      };
+    const data = await response.json();
+
+    if (!data.success) {
+      console.error('DEBUG: API returned error:', data.message);
+      return null;
     }
-    
-    // Process any product with Typesense data using ProductContentSimplified
-    // Check if this is a variable product with variations
-    const hasTypesenseVariations = typesenseProduct && 
-      (typesenseProduct.variations_json || typesenseProduct.variations);
-    
-    const hasTypesenseAttributes = typesenseProduct && 
-      (typesenseProduct.attributes_json || typesenseProduct.attributes);
-    
-    if (hasTypesenseVariations || hasTypesenseAttributes) {
-      console.log(`DEBUG: Using Typesense data for variable product: ${typesenseProduct.name}`);
-      
-      // Process Typesense data for variable product
-      const processedProduct = {
-        ...typesenseProduct,
-        price: Number(typesenseProduct.price || 0),
-        sale_price: typesenseProduct.sale_price ? Number(typesenseProduct.sale_price) : null,
-        regular_price: Number(typesenseProduct.regular_price || 0),
-        stock_quantity: Number(typesenseProduct.stock_quantity || 0),
-        gallery_images: Array.isArray(typesenseProduct.gallery_images)
-          ? typesenseProduct.gallery_images.map(url => ({ url, alt: '' }))
-          : []
+
+    // Extract the product data
+    const mergedProduct = data.product;
+    console.log('DEBUG: Found product via API:', mergedProduct.name);
+    console.log('DEBUG: Data sources:', data.sources);
+
+    // Special handling for Zig Zag product
+    if (slug === 'zig-zag') {
+      console.log('DEBUG: Special handling for Zig Zag product');
+    }
+
+    // Process the merged product data
+    const processedProduct = {
+      ...mergedProduct,
+      price: Number(mergedProduct.price || 0),
+      sale_price: mergedProduct.sale_price ? Number(mergedProduct.sale_price) : null,
+      regular_price: Number(mergedProduct.regular_price || 0),
+      stock_quantity: Number(mergedProduct.stock_quantity || 0),
+      gallery_images: Array.isArray(mergedProduct.gallery_images)
+        ? mergedProduct.gallery_images.map(url => ({ url, alt: '' }))
+        : []
+    };
+
+    // Parse variations and attributes if needed
+    let variations = [];
+    let attributes = [];
+
+    // Process variations if available
+    if (mergedProduct.variations && Array.isArray(mergedProduct.variations)) {
+      variations = mergedProduct.variations;
+      console.log(`DEBUG: Using ${variations.length} pre-parsed variations`);
+    } else if (mergedProduct.variations_json) {
+      try {
+        variations = JSON.parse(mergedProduct.variations_json);
+        console.log(`DEBUG: Parsed ${variations.length} variations from JSON`);
+      } catch (error) {
+        console.error('DEBUG: Error parsing variations_json:', error);
+      }
+    }
+
+    // Convert variations to expected format if needed
+    variations = variations.map(variation => {
+      // Ensure attributes is properly formatted
+      const processedAttributes = variation.attributes || [];
+
+      return {
+        ...variation,
+        id: variation.id,
+        price: Number(variation.price || processedProduct.price || 0),
+        regular_price: Number(variation.regular_price || processedProduct.regular_price || 0),
+        sale_price: variation.sale_price ? Number(variation.sale_price) : null,
+        stock_status: variation.stock_status || 'outofstock',
+        stock_quantity: Number(variation.stock_quantity || 0),
+        attributes: processedAttributes
       };
-      
-      // Parse variations_json and attributes_json
-      let variations = [];
-      let attributes = [];
-      
+    });
+
+    // Process attributes if available
+    if (mergedProduct.attributes && Array.isArray(mergedProduct.attributes)) {
+      attributes = mergedProduct.attributes;
+      console.log(`DEBUG: Using ${attributes.length} pre-parsed attributes`);
+    } else if (mergedProduct.attributes_json) {
+      try {
+        attributes = JSON.parse(mergedProduct.attributes_json);
+        console.log(`DEBUG: Parsed ${attributes.length} attributes from JSON`);
+      } catch (error) {
+        console.error('DEBUG: Error parsing attributes_json:', error);
+      }
+    }
+
+    // Return the processed product with variations and attributes
+    return {
+      ...processedProduct,
+      variations,
+      attributes,
+      _dataSource: {
+        basic: 'api',
+        stock: data.sources.wooCommerce ? 'woocommerce' : 'typesense',
+        attributes: 'api',
+        realTimeStock: data.sources.wooCommerce // Flag to indicate if we're using real-time stock data
+      }
+    };
+
+  } catch (error) {
+    console.error('DEBUG: Error in getProduct:', error);
+    return null;
+  }
+
+
+
       // First try to use parsed variations if they exist
       if (typesenseProduct.variations && Array.isArray(typesenseProduct.variations)) {
         variations = typesenseProduct.variations;
@@ -213,12 +227,12 @@ async function getProduct(slug: string) {
           console.error('DEBUG: Error parsing variations_json:', error);
         }
       }
-      
+
       // Convert variations to expected format if needed
       variations = variations.map(variation => {
         // Ensure attributes is properly formatted
         const processedAttributes = variation.attributes || [];
-        
+
         return {
           ...variation,
           id: variation.id,
@@ -230,7 +244,7 @@ async function getProduct(slug: string) {
           attributes: processedAttributes
         };
       });
-      
+
       // First try to use parsed attributes if they exist
       if (typesenseProduct.attributes && Array.isArray(typesenseProduct.attributes)) {
         attributes = typesenseProduct.attributes;
@@ -245,13 +259,13 @@ async function getProduct(slug: string) {
           console.error('DEBUG: Error parsing attributes_json:', error);
         }
       }
-      
+
       // If attributes were not found, derive them from colors and sizes arrays if available
-      if ((!attributes || attributes.length === 0) && 
+      if ((!attributes || attributes.length === 0) &&
           (Array.isArray(typesenseProduct.colors) || Array.isArray(typesenseProduct.sizes))) {
-        
+
         attributes = [];
-        
+
         if (Array.isArray(typesenseProduct.sizes) && typesenseProduct.sizes.length > 0) {
           attributes.push({
             id: 1,
@@ -260,7 +274,7 @@ async function getProduct(slug: string) {
             variation: true
           });
         }
-        
+
         if (Array.isArray(typesenseProduct.colors) && typesenseProduct.colors.length > 0) {
           attributes.push({
             id: attributes.length + 1,
@@ -269,10 +283,10 @@ async function getProduct(slug: string) {
             variation: true
           });
         }
-        
+
         console.log(`DEBUG: Created ${attributes.length} attributes from colors/sizes arrays`);
       }
-      
+
       // Return the processed product with variations and attributes
       return {
         ...processedProduct,
@@ -283,7 +297,7 @@ async function getProduct(slug: string) {
 
     // Fallback to GraphQL data if Typesense data doesn't have variations info
     console.log('DEBUG: Falling back to GraphQL data because Typesense data lacks complete variation info');
-    
+
     // Pre-format Typesense data to ensure consistency
     const typesenseFormatted = {
       ...typesenseProduct,
@@ -295,7 +309,7 @@ async function getProduct(slug: string) {
         ? typesenseProduct.gallery_images.map(url => ({ url, alt: '' }))
         : []
     };
-    
+
     // Ensure variations are properly formatted
     if (typesenseProduct.variations && Array.isArray(typesenseProduct.variations)) {
       console.log(`DEBUG: Product has ${typesenseProduct.variations.length} variations in Typesense`);
@@ -303,7 +317,7 @@ async function getProduct(slug: string) {
       console.log('DEBUG: No variations found in Typesense data');
       typesenseFormatted.variations = [];
     }
-    
+
     // Ensure attributes are properly formatted
     if (typesenseProduct.attributes && Array.isArray(typesenseProduct.attributes)) {
       console.log(`DEBUG: Product has ${typesenseProduct.attributes.length} attributes in Typesense`);
@@ -320,19 +334,19 @@ async function getProduct(slug: string) {
         variables: { slug },
         fetchPolicy: 'no-cache' // Always fetch from the server to get the latest data
       });
-      
+
       // Handle GraphQL errors
       if (errors) {
         throw new Error(`GraphQL Error: ${errors.map(e => e.message).join(', ')}`);
       }
-      
+
       console.log(`DEBUG: GraphQL data for product ${slug}:`, JSON.stringify(data, null, 2));
-      
+
       // Special debug for TC Black Slip
       if (slug === 'tc-black-slip') {
         console.log('*** SPECIAL DEBUG FOR TC BLACK SLIP ***');
-        
-        // Log raw variation data 
+
+        // Log raw variation data
         if (data.product.variations?.nodes) {
           data.product.variations.nodes.forEach((variation, idx) => {
             console.log(`Variation ${idx}:`, {
@@ -341,12 +355,12 @@ async function getProduct(slug: string) {
               stockQuantity: variation.stockQuantity,
               attributes: variation.attributes?.nodes
             });
-            
+
             // Extra debug for size 8
             const isSize8 = variation.attributes?.nodes?.some(
               (attr) => (attr.name === 'pa_size' || attr.name === 'size') && attr.value === '8'
             );
-            
+
             if (isSize8) {
               console.log('FOUND SIZE 8 VARIATION:');
               console.log('- Stock Status:', variation.stockStatus);
@@ -356,9 +370,9 @@ async function getProduct(slug: string) {
           });
         }
       }
-      
+
       console.log('DEBUG: GraphQL response:', data);
-      
+
       if (!data || !data.product) {
         console.warn('DEBUG: Missing GraphQL data - using Typesense data only');
         // Return the Typesense data as our best available option
@@ -371,38 +385,38 @@ async function getProduct(slug: string) {
           }
         };
       }
-      
+
       // Process variations to match our expected format
       const isVariableProduct = !!data.product.variations;
       let processedVariations = [];
-      
+
       if (isVariableProduct && data.product.variations?.nodes) {
         console.log('DEBUG: Processing variations from GraphQL with attributes');
-        
+
         // First, log the raw variation data to see what's coming from GraphQL
         if (data.product.variations.nodes.length > 0) {
           console.log('DEBUG: First variation raw data:', JSON.stringify(data.product.variations.nodes[0], null, 2));
         }
-        
+
         // Parse attributes from product level first
         const productAttributes = data.product.attributes?.nodes?.map((attr: any) => ({
           name: attr.name,
           options: attr.options || [],
           variation: attr.variation !== false // Default to true if not specified
         })) || [];
-        
+
         console.log('DEBUG: Parsed product attributes:', productAttributes);
-        
+
         // Process each variation
         processedVariations = data.product.variations.nodes.map((variation: any, index: number) => {
           // Process variation name for debugging
           console.log(`DEBUG: Processing variation ${index} with name: ${variation.name || 'Unknown'}`);
           console.log(`DEBUG: Variation stock status: ${variation.stockStatus || 'unknown'}`);
           console.log(`DEBUG: Variation stock quantity: ${variation.stockQuantity || 0}`);
-          
+
           // Map variation attributes if they exist
           let variationAttributes: any[] = [];
-          
+
           // Check if we have the attributes field and it has nodes
           if (variation.attributes && variation.attributes.nodes && Array.isArray(variation.attributes.nodes)) {
             variationAttributes = variation.attributes.nodes.map((attr: any) => ({
@@ -420,7 +434,7 @@ async function getProduct(slug: string) {
                 // Look for this attribute in the variation name
                 const regex = new RegExp(`${attrName}:\\s*([\\w\\d]+)`, 'i');
                 const match = variation.name.match(regex);
-                
+
                 if (match && match[1]) {
                   variationAttributes.push({
                     name: `pa_${attrName.toLowerCase().replace(/\s+/g, '-')}`,
@@ -430,12 +444,12 @@ async function getProduct(slug: string) {
               });
             }
           }
-          
+
           // If we still don't have attributes, try to infer them from the variation index
           if (variationAttributes.length === 0 && data.product.attributes.nodes.length > 0) {
             // Get the first attribute (usually 'Size' or similar)
             const firstAttr = data.product.attributes.nodes[0];
-            
+
             // Handle shoe sizes - these are often in the variation name
             // Common format: "Product Name - Size: 7"
             if (variation.name && variation.name.includes('Size:')) {
@@ -446,7 +460,7 @@ async function getProduct(slug: string) {
                   name: 'pa_size',
                   value: size
                 });
-                
+
                 console.log(`DEBUG: Extracted size ${size} from variation name: ${variation.name}`);
               }
             }
@@ -459,21 +473,21 @@ async function getProduct(slug: string) {
                 name: firstAttr.name,
                 value: firstAttr.options[optionIndex]
               });
-              
-              console.log(`DEBUG: Inferred attribute for variation ${index}:`, 
+
+              console.log(`DEBUG: Inferred attribute for variation ${index}:`,
                           `${firstAttr.name}=${firstAttr.options[optionIndex]}`);
             }
           }
-          
+
           // Try to determine real stock status from variation data
           const variationStockStatus = variation.stockStatus?.toLowerCase() || '';
           const hasStockQuantity = variation.stockQuantity !== null && variation.stockQuantity !== undefined;
           const stockQuantity = hasStockQuantity ? parseInt(variation.stockQuantity.toString()) : 0;
           const isManaged = variation.manageStock || false;
-          
+
           // Determine real stock status with all possible data points
           let calculatedStockStatus = 'outofstock'; // Default to out of stock
-          
+
           if (variationStockStatus === 'instock') {
             calculatedStockStatus = 'instock';
             console.log(`DEBUG: Variation ${index} marked as in stock based on stockStatus`);
@@ -481,12 +495,12 @@ async function getProduct(slug: string) {
             calculatedStockStatus = 'instock';
             console.log(`DEBUG: Variation ${index} marked as in stock based on stock quantity ${stockQuantity}`);
           }
-          
+
           // Check for size 8 again
           const isSize8 = variationAttributes.some(
             (attr: any) => (attr.name === 'pa_size' || attr.name === 'size') && attr.value === '8'
           );
-          
+
           if (isSize8) {
             console.log('SIZE 8 VARIATION PROCESSING:');
             console.log('- Original stock status:', variationStockStatus);
@@ -494,7 +508,7 @@ async function getProduct(slug: string) {
             console.log('- Stock quantity value:', stockQuantity);
             console.log('- Final calculated status:', calculatedStockStatus);
           }
-          
+
           // Construct a processed variation with all data
           const processedVariation = {
             id: variation.databaseId,
@@ -512,24 +526,24 @@ async function getProduct(slug: string) {
               isManaged
             }
           };
-          
+
           // Log the processed variation
           console.log(`DEBUG: Processed variation ${index}:`, processedVariation);
-          
+
           return processedVariation;
         });
       }
-      
+
       // Apply special handling for TC Black Slip
       if (slug === 'tc-black-slip') {
         console.log('DEBUG: Special handling for TC Black Slip');
-        
+
         // Find size 8 variation and force it to be in stock
         processedVariations = processedVariations.map(variation => {
-          const isSize8 = variation.attributes?.some((attr: any) => 
+          const isSize8 = variation.attributes?.some((attr: any) =>
             (attr.name === 'pa_size' || attr.name === 'size') && attr.value === '8'
           );
-          
+
           if (isSize8) {
             console.log('DEBUG: Found size 8 variation - forcing in stock');
             return {
@@ -538,33 +552,33 @@ async function getProduct(slug: string) {
               stock_quantity: 1
             };
           }
-          
+
           return variation;
         });
       }
-      
+
       // Identify if any variation is in stock
       const anyVariationInStock = processedVariations.some(variation => {
         let isInStock = false;
-        
+
         // Check the stock status first
         if (variation.stock_status?.toLowerCase() === 'instock') {
           isInStock = true;
         }
-        
+
         // Then check the quantity if stock status wasn't conclusive
         if (!isInStock && variation.stock_quantity !== null && variation.stock_quantity !== undefined) {
           isInStock = variation.stock_quantity > 0;
         }
-        
+
         return isInStock;
       });
 
       console.log(`DEBUG: Any variation in stock: ${anyVariationInStock}`);
-      
+
       // Determine product-level stock status based on variations
       const productStockStatus = anyVariationInStock ? 'instock' : 'outofstock';
-      
+
       // Process attributes
       const attributes = [];
       if (data.product.attributes?.nodes) {
@@ -578,7 +592,7 @@ async function getProduct(slug: string) {
           }
         });
       }
-      
+
       // Merge the data from Typesense and GraphQL
       return {
         ...typesenseFormatted,
@@ -626,7 +640,7 @@ const LoadingFallback = () => (
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const slug = params.slug;
-  
+
   // Parse slug to handle encoded values
   const decodedSlug = decodeURIComponent(slug);
 
@@ -637,11 +651,11 @@ export default async function ProductPage({ params }: { params: { slug: string }
     console.error('Error fetching product:', error);
     product = null;
   }
-  
+
   return (
     <main className={`${lato.variable}`}>
       <Suspense fallback={<div>Loading product...</div>}>
-        <ProductContentSimplified product={product} />  
+        <ProductContentSimplified product={product} />
       </Suspense>
     </main>
   );

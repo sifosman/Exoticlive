@@ -334,10 +334,15 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
       let freshData = null;
 
       try {
-        freshData = await fetchFreshVariationData(matchingVariation.id);
-        if (freshData) {
-          variationToUse = freshData;
-          console.log('Using fresh variation data:', freshData);
+        // Only fetch fresh data if the product has real-time stock data available
+        if (product._dataSource?.realTimeStock) {
+          freshData = await fetchFreshVariationData(matchingVariation.id);
+          if (freshData) {
+            variationToUse = freshData;
+            console.log('Using fresh variation data:', freshData);
+          }
+        } else {
+          console.log('Skipping fresh data fetch - real-time stock data not available');
         }
       } catch (error) {
         console.error('Error fetching fresh variation data:', error);
