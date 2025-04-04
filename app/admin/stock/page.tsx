@@ -151,7 +151,10 @@ export default function StockUpdatePage() {
 
   // Update stock quantity
   const updateStock = async (variationId: string, stockQuantity: number) => {
+    console.log('updateStock called with:', { variationId, stockQuantity, selectedProduct });
+
     if (!selectedProduct || !variationId) {
+      console.error('Missing product or variation ID');
       setResult({
         success: false,
         message: 'Please select a product and variation'
@@ -163,19 +166,25 @@ export default function StockUpdatePage() {
     setResult(null);
 
     try {
+      console.log('Sending API request to update stock');
+      const requestBody = {
+        parentProductId: parseInt(selectedProduct),
+        variationId: parseInt(variationId),
+        stockQuantity
+      };
+      console.log('Request body:', requestBody);
+
       const response = await fetch('/api/stock/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          parentProductId: parseInt(selectedProduct),
-          variationId: parseInt(variationId),
-          stockQuantity
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('API response status:', response.status);
       const data = await response.json();
+      console.log('API response data:', data);
 
       setResult({
         success: data.success,
@@ -183,8 +192,10 @@ export default function StockUpdatePage() {
       });
 
       // Refresh the products after update
+      console.log('Refreshing products after update');
       fetchProducts();
     } catch (error) {
+      console.error('Error updating stock:', error);
       setResult({
         success: false,
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -196,9 +207,13 @@ export default function StockUpdatePage() {
 
   // Handle stock quantity change
   const handleStockChange = (variationId: string, newValue: string) => {
+    console.log('handleStockChange called with:', { variationId, newValue });
     const stockQuantity = parseInt(newValue);
     if (!isNaN(stockQuantity)) {
+      console.log('Updating stock to:', stockQuantity);
       updateStock(variationId, stockQuantity);
+    } else {
+      console.error('Invalid stock quantity:', newValue);
     }
   };
 
@@ -326,7 +341,9 @@ export default function StockUpdatePage() {
                           variant="contained"
                           size="small"
                           onClick={(e) => {
+                            console.log('Update button clicked for variation:', variation.databaseId);
                             const input = e.currentTarget.previousSibling as HTMLInputElement;
+                            console.log('Input value:', input.value);
                             handleStockChange(variation.databaseId.toString(), input.value);
                           }}
                         >

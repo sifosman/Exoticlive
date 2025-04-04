@@ -17,19 +17,19 @@ const typesenseClient = new Typesense.Client({
 async function updateWooCommerceStock(parentProductId: number, variationId: number, stockQuantity: number) {
   try {
     console.log(`Updating variation ${variationId} stock in WooCommerce...`);
-    
+
     // WooCommerce API credentials
     const wcKey = process.env.WC_CONSUMER_KEY || '';
     const wcSecret = process.env.WC_CONSUMER_SECRET || '';
     const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || '';
-    
+
     if (!wcKey || !wcSecret || !wpUrl) {
       throw new Error('WooCommerce API credentials not configured');
     }
-    
+
     // Create authentication header
     const authString = Buffer.from(`${wcKey}:${wcSecret}`).toString('base64');
-    
+
     // Update variation in WooCommerce
     const response = await fetch(`${wpUrl}/wp-json/wc/v3/products/${parentProductId}/variations/${variationId}`, {
       method: 'PUT',
@@ -42,16 +42,16 @@ async function updateWooCommerceStock(parentProductId: number, variationId: numb
         stock_status: stockQuantity > 0 ? 'instock' : 'outofstock'
       })
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to update variation in WooCommerce: ${response.statusText}`);
     }
-    
+
     const updatedVariation = await response.json();
     console.log(`✅ Successfully updated variation in WooCommerce`);
     console.log(`Stock quantity: ${updatedVariation.stock_quantity}`);
     console.log(`Stock status: ${updatedVariation.stock_status}`);
-    
+
     return updatedVariation;
   } catch (error) {
     console.error(`❌ Error updating variation in WooCommerce:`, error);
@@ -63,12 +63,12 @@ async function updateWooCommerceStock(parentProductId: number, variationId: numb
 async function fetchProductFromTypesense(productId: number) {
   try {
     console.log(`Fetching product ${productId} from Typesense...`);
-    
+
     const product = await typesenseClient
       .collections('products')
       .documents(productId.toString())
       .retrieve();
-    
+
     console.log(`✅ Successfully fetched product from Typesense`);
     return product;
   } catch (error) {
@@ -81,15 +81,15 @@ async function fetchProductFromTypesense(productId: number) {
 async function updateTypesenseStock(parentProductId: number, variationId: number, stockQuantity: number) {
   try {
     console.log(`Updating variation ${variationId} stock in Typesense...`);
-    
+
     // Fetch the product from Typesense
     const product = await fetchProductFromTypesense(parentProductId);
-    
+
     // Check if the product has variations
     if (!product.variations && !product.variations_json) {
       throw new Error('Product does not have variations in Typesense');
     }
-    
+
     // Parse variations if they're stored as JSON
     let variations = product.variations;
     if (!variations && product.variations_json) {
@@ -100,28 +100,28 @@ async function updateTypesenseStock(parentProductId: number, variationId: number
         variations = [];
       }
     }
-    
+
     if (!Array.isArray(variations)) {
       throw new Error('Variations is not an array');
     }
-    
+
     console.log(`Found ${variations.length} variations in Typesense`);
-    
+
     // Find the variation to update
     const variationIndex = variations.findIndex(v => v.id === variationId.toString());
-    
+
     if (variationIndex === -1) {
       throw new Error(`Variation ${variationId} not found in product ${parentProductId}`);
     }
-    
+
     console.log(`Found variation at index ${variationIndex}`);
     console.log(`Current stock status: ${variations[variationIndex].stock_status}`);
     console.log(`Current stock quantity: ${variations[variationIndex].stock_quantity}`);
-    
+
     // Update the variation
     variations[variationIndex].stock_quantity = stockQuantity;
     variations[variationIndex].stock_status = stockQuantity > 0 ? 'instock' : 'outofstock';
-    
+
     // Update the product in Typesense
     const updateResult = await typesenseClient
       .collections('products')
@@ -130,7 +130,7 @@ async function updateTypesenseStock(parentProductId: number, variationId: number
         variations: variations,
         variations_json: JSON.stringify(variations)
       });
-    
+
     console.log(`✅ Successfully updated variation in Typesense`);
     return updateResult;
   } catch (error) {
@@ -142,39 +142,49 @@ async function updateTypesenseStock(parentProductId: number, variationId: number
 // Handle POST requests to update stock
 export async function POST(request: NextRequest) {
   try {
+    console.log('Received stock update request');
+
     // Parse the request body
     const body = await request.json();
+    console.log('Request body:', body);
+
     const { parentProductId, variationId, stockQuantity } = body;
-    
+
     // Validate required parameters
     if (!parentProductId || !variationId || stockQuantity === undefined) {
+      console.error('Missing required parameters:', { parentProductId, variationId, stockQuantity });
       return NextResponse.json(
         { success: false, message: 'Missing required parameters' },
         { status: 400 }
       );
     }
-    
+
     console.log(`Updating stock for variation ${variationId} of product ${parentProductId} to ${stockQuantity}...`);
-    
+
     // Update stock in WooCommerce
     await updateWooCommerceStock(parentProductId, variationId, stockQuantity);
-    
+
     // Update stock in Typesense
     await updateTypesenseStock(parentProductId, variationId, stockQuantity);
-    
+
     // Return success response
-    return NextResponse.json({
+    const response = {
       success: true,
       message: `Stock updated successfully for variation ${variationId} of product ${parentProductId}`,
       stockQuantity,
       stockStatus: stockQuantity > 0 ? 'instock' : 'outofstock'
-    });
+    };
+
+    console.log('Sending success response:', response);
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error updating stock:', error);
-    return NextResponse.json(
-      { success: false, message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    const errorResponse = {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    };
+    console.log('Sending error response:', errorResponse);
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }
 
