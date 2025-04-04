@@ -16,18 +16,17 @@ export async function GET(request: NextRequest) {
 
     // Logs page has been removed
 
-    // Check if this is a Vercel cron job or a manual trigger
+    // Get the API key from the request
+    const apiKey = request.nextUrl.searchParams.get('key');
     const isVercelCron = request.headers.get('x-vercel-cron') === 'true';
-    const isManualTrigger = request.headers.get('x-manual-trigger') === 'true';
-    const isLocalRequest = request.headers.get('host')?.includes('localhost') || false;
 
-    // Allow the request if it's a Vercel cron job, a manual trigger, or a local request
-    if (!isVercelCron && !isManualTrigger && !isLocalRequest) {
-      const apiKey = request.nextUrl.searchParams.get('key');
-
-      // Check if the API key is valid
+    // Check if this is a Vercel cron job (which doesn't need an API key)
+    if (!isVercelCron) {
+      // For all other requests, require a valid API key
       if (apiKey !== process.env.CRON_API_KEY) {
         console.log('Invalid API key provided');
+        console.log('Expected:', process.env.CRON_API_KEY);
+        console.log('Received:', apiKey);
         return NextResponse.json(
           { success: false, message: 'Invalid API key' },
           { status: 401 }
