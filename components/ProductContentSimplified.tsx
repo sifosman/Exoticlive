@@ -287,8 +287,33 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
     return matchingVariations.length > 0 ? matchingVariations[0] : null;
   };
 
+  // Fetch fresh variation data from the server
+  const fetchFreshVariationData = async (variationId: string) => {
+    if (!variationId) return null;
+
+    try {
+      console.log(`Fetching fresh data for variation ${variationId}...`);
+
+      // Fetch the variation data from our API
+      const response = await fetch(`/api/variation/${variationId}`);
+
+      if (!response.ok) {
+        console.error(`Error fetching variation data: ${response.statusText}`);
+        return null;
+      }
+
+      const data = await response.json();
+      console.log('Fresh variation data:', data);
+
+      return data.variation;
+    } catch (error) {
+      console.error('Error fetching fresh variation data:', error);
+      return null;
+    }
+  };
+
   // Handle attribute selection
-  const handleAttributeChange = (attrName: string, attrValue: string) => {
+  const handleAttributeChange = async (attrName: string, attrValue: string) => {
     if (DEBUG_MODE) {
       console.log(`SIMPLIFIED: Selected ${attrName} = ${attrValue}`);
     }
@@ -304,29 +329,44 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
     const matchingVariation = findMatchingVariation(product?.variations, newSelectedAttrs);
 
     if (matchingVariation) {
-      const inStock = isVariationInStock(matchingVariation);
+      // Fetch fresh variation data to get the latest stock information
+      let variationToUse = matchingVariation;
+      let freshData = null;
+
+      try {
+        freshData = await fetchFreshVariationData(matchingVariation.id);
+        if (freshData) {
+          variationToUse = freshData;
+          console.log('Using fresh variation data:', freshData);
+        }
+      } catch (error) {
+        console.error('Error fetching fresh variation data:', error);
+      }
+
+      const inStock = isVariationInStock(variationToUse);
 
       if (DEBUG_MODE) {
         console.log('SIMPLIFIED: Matching variation found:', {
-          id: matchingVariation.id,
-          stockStatus: matchingVariation.stock_status,
-          stockQuantity: matchingVariation.stock_quantity,
-          inStock: inStock
+          id: variationToUse.id,
+          stockStatus: variationToUse.stock_status,
+          stockQuantity: variationToUse.stock_quantity,
+          inStock: inStock,
+          freshData: !!freshData
         });
       }
 
       // Update current stock status and quantity
       setCurrentStockStatus(inStock ? STOCK_STATUS_IN_STOCK : STOCK_STATUS_OUT_OF_STOCK);
-      setCurrentStockQuantity(typeof matchingVariation.stock_quantity === 'number'
-        ? matchingVariation.stock_quantity
+      setCurrentStockQuantity(typeof variationToUse.stock_quantity === 'number'
+        ? variationToUse.stock_quantity
         : null);
 
       // Update max quantity based on stock
-      if (typeof matchingVariation.stock_quantity === 'number' && matchingVariation.stock_quantity > 0) {
-        setMaxQuantity(matchingVariation.stock_quantity);
+      if (typeof variationToUse.stock_quantity === 'number' && variationToUse.stock_quantity > 0) {
+        setMaxQuantity(variationToUse.stock_quantity);
         // Ensure quantity doesn't exceed stock
-        if (quantity > matchingVariation.stock_quantity) {
-          setQuantity(matchingVariation.stock_quantity);
+        if (quantity > variationToUse.stock_quantity) {
+          setQuantity(variationToUse.stock_quantity);
         }
       } else {
         setMaxQuantity(inStock ? 99 : 0);
@@ -630,7 +670,11 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                                     : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                                 }
                               `}
-                              onClick={() => isAvailable && handleAttributeChange(attribute.name, option)}
+                              onClick={async () => {
+                                if (isAvailable) {
+                                  await handleAttributeChange(attribute.name, option);
+                                }
+                              }}
                               disabled={!isAvailable}
                             >
                               {option}
