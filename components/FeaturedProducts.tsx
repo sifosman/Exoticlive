@@ -26,12 +26,12 @@ const FeaturedProducts = () => {
         const randomSeed = Math.floor(Math.random() * 1000000).toString();
 
         // Use different random sorting strategies for more variety
+        // Only use fields that are definitely sortable in Typesense
         const sortingStrategies = [
           '_rand', // Random sort using Typesense's built-in random sort
           'price:asc',
-          'price:desc',
-          'name:asc',
-          'name:desc'
+          'price:desc'
+          // Removed name:asc and name:desc as they're causing errors
         ];
 
         // Randomly select a sorting strategy
@@ -40,15 +40,29 @@ const FeaturedProducts = () => {
 
         console.log(`Using sorting strategy: ${selectedSort} with random seed: ${randomSeed}`);
 
-        const results = await searchProducts({
-          q: '*',
-          query_by: 'name,description,brand',
-          sort_by: selectedSort,
-          per_page: 200, // Fetch a large pool of products to randomly select from
-          filter_by: 'stock_status:=instock',
-          // Add the random seed as a parameter to ensure different results each time
-          ...(selectedSort === '_rand' && { random_seed: randomSeed })
-        });
+        let results;
+        try {
+          // Try with the selected sorting strategy
+          results = await searchProducts({
+            q: '*',
+            query_by: 'name,description,brand',
+            sort_by: selectedSort,
+            per_page: 200, // Fetch a large pool of products to randomly select from
+            filter_by: 'stock_status:=instock',
+            // Add the random seed as a parameter to ensure different results each time
+            ...(selectedSort === '_rand' && { random_seed: randomSeed })
+          });
+        } catch (sortError) {
+          console.error('Error with selected sort strategy, falling back to default:', sortError);
+
+          // Fallback to a simple search without sorting
+          results = await searchProducts({
+            q: '*',
+            query_by: 'name,description,brand',
+            per_page: 200,
+            filter_by: 'stock_status:=instock'
+          });
+        }
 
         // Filter out products without valid images
         const productsWithValidImages = results.products.filter((product: Product) =>
