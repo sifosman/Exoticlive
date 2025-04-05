@@ -113,20 +113,20 @@ export default function AccountPage() {
       setOrdersLoading(true);
       console.log('Fetching orders for user:', user.id);
 
-      // Try the direct user ID endpoint first
+      // Try the customer orders endpoint first
       try {
-        const directResponse = await fetch(`/api/orders/${user.id}`);
+        const directResponse = await fetch(`/api/orders/customer/${user.id}`);
 
         if (directResponse.ok) {
           const ordersData = await directResponse.json();
           setOrders(ordersData);
-          console.log('Fetched orders using direct endpoint:', ordersData);
+          console.log('Fetched orders using customer endpoint:', ordersData);
           return; // Exit if successful
         } else {
-          console.warn('Direct endpoint failed, falling back to user endpoint');
+          console.warn('Customer endpoint failed, falling back to user endpoint');
         }
       } catch (directError) {
-        console.warn('Error with direct endpoint, falling back to user endpoint:', directError);
+        console.warn('Error with customer endpoint, falling back to user endpoint:', directError);
       }
 
       // Fallback to the user endpoint

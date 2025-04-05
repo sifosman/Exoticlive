@@ -11,29 +11,29 @@ const api = new WooCommerceRestApi({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const userId = params.userId;
+    const customerId = params.id;
     
-    if (!userId) {
+    if (!customerId) {
       return NextResponse.json(
-        { message: 'User ID is required' },
+        { message: 'Customer ID is required' },
         { status: 400 }
       );
     }
 
-    console.log(`Fetching orders for customer ID: ${userId}`);
+    console.log(`Fetching orders for customer ID: ${customerId}`);
 
     // Fetch orders from WooCommerce
     const { data: orders } = await api.get('orders', {
-      customer: parseInt(userId, 10),
+      customer: parseInt(customerId, 10),
       per_page: 100, // Adjust as needed
       orderby: 'date',
       order: 'desc'
     });
 
-    console.log(`Found ${orders.length} orders for customer ${userId}`);
+    console.log(`Found ${orders.length} orders for customer ${customerId}`);
 
     return NextResponse.json(orders, {
       status: 200,
@@ -44,9 +44,9 @@ export async function GET(
       }
     });
   } catch (error) {
-    console.error('Error fetching user orders:', error);
+    console.error('Error fetching customer orders:', error);
     return NextResponse.json(
-      { message: 'Error fetching user orders', error: String(error) },
+      { message: 'Error fetching customer orders', error: String(error) },
       { status: 500 }
     );
   }
