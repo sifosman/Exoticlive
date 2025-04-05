@@ -23,54 +23,112 @@ export default function NewArrivals() {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        
-        // Fetch products
+
+        // Fetch products using the original query from FastSellingProducts
         const results = await searchProducts({
           q: '*',
-          query_by: 'name,description',
-          sort_by: 'price:asc',
-          per_page: 20,
-          filter_by: 'stock_status:=instock'
+          query_by: 'name,description,brand',
+          sort_by: 'price:asc', // Sort by price as it's definitely available for sorting
+          per_page: 200, // Increase to get more potential products
+          filter_by: 'stock_status:=instock && categories:=[FastSellingProducts, fastsellingproducts, "Fast Selling Products", "fast selling products"]', // Try multiple variations of the category name
+          include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
         });
-        
+
         // Filter products with valid images
-        const validProducts = results.products.filter((product: Product) => 
-          product.image_url && 
+        const validProducts = results.products.filter((product: Product) =>
+          product.image_url &&
           !product.image_url.includes('placeholder') &&
           !product.image_url.includes('woocommerce-placeholder')
         );
-        
+
         // Process products to ensure consistent price format
         const processedProducts = validProducts.map((product: Product) => {
-          const regular_price = typeof product.regular_price === 'string' 
-            ? parseFloat(product.regular_price) 
+          const regular_price = typeof product.regular_price === 'string'
+            ? parseFloat(product.regular_price)
             : product.regular_price || 0;
-          
-          const sale_price = product.sale_price 
-            ? (typeof product.sale_price === 'string' 
-                ? parseFloat(product.sale_price) 
-                : product.sale_price) 
+
+          const sale_price = product.sale_price
+            ? (typeof product.sale_price === 'string'
+                ? parseFloat(product.sale_price)
+                : product.sale_price)
             : null;
-          
-          const finalRegularPrice = regular_price || 
+
+          const finalRegularPrice = regular_price ||
             (product.price ? (typeof product.price === 'string' ? parseFloat(product.price) : product.price) : 0);
-          
+
           return {
             ...product,
             regular_price: finalRegularPrice,
             sale_price: sale_price
           };
         });
-        
+
         // Shuffle products for randomness
         const shuffled = [...processedProducts];
         for (let i = shuffled.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-        
-        setProducts(shuffled.slice(0, 12));
-        setError(null);
+
+        // Check if we found any products in the FastSellingProducts category
+        if (shuffled.length === 0) {
+          console.log('No products found in FastSellingProducts category. Fetching recent products instead...');
+
+          // Fallback: Fetch recent products instead
+          try {
+            const recentResults = await searchProducts({
+              q: '*',
+              query_by: 'name,description,brand',
+              sort_by: 'price:desc', // Sort by price descending
+              per_page: 24, // Get more products to ensure we have enough
+              filter_by: 'stock_status:=instock',
+              include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
+            });
+
+            // Process the recent products
+            const recentProcessedProducts = recentResults.products.filter((product: Product) =>
+              product.image_url &&
+              !product.image_url.includes('placeholder') &&
+              !product.image_url.includes('woocommerce-placeholder')
+            ).map(product => {
+              const regular_price = typeof product.regular_price === 'string'
+                ? parseFloat(product.regular_price)
+                : product.regular_price || 0;
+
+              const sale_price = product.sale_price
+                ? (typeof product.sale_price === 'string'
+                    ? parseFloat(product.sale_price)
+                    : product.sale_price)
+                : null;
+
+              const finalRegularPrice = regular_price || (product.price ? (typeof product.price === 'string' ? parseFloat(product.price) : product.price) : 0);
+
+              return {
+                ...product,
+                regular_price: finalRegularPrice,
+                sale_price: sale_price
+              };
+            });
+
+            console.log('Found recent products instead:', recentProcessedProducts.length);
+
+            // Shuffle the products for more randomness
+            const shuffledRecent = [...recentProcessedProducts];
+            for (let i = shuffledRecent.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [shuffledRecent[i], shuffledRecent[j]] = [shuffledRecent[j], shuffledRecent[i]];
+            }
+
+            setProducts(shuffledRecent.slice(0, 12));
+          } catch (err) {
+            console.error('Error fetching recent products:', err);
+            setError('No products found in FastSellingProducts category');
+          }
+        } else {
+          // Use the products from the FastSellingProducts category
+          setProducts(shuffled.slice(0, 12));
+          setError(null);
+        }
       } catch (err) {
         console.error('Error fetching products:', err);
         setError(err instanceof Error ? err.message : 'Error loading products');
@@ -118,7 +176,7 @@ export default function NewArrivals() {
     <div className="bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <h2 className="text-2xl font-bold mb-6">New Arrivals</h2>
-        
+
         <div className="relative">
           {/* Custom navigation arrow styles */}
           <style jsx global>{`
@@ -127,13 +185,13 @@ export default function NewArrivals() {
               color: #000 !important;
               transform: scale(1.2) !important;
             }
-            
+
             .swiper-button-next:after,
             .swiper-button-prev:after {
               font-size: 2rem !important;
               font-weight: bold !important;
             }
-            
+
             @media (max-width: 640px) {
               .swiper-button-next,
               .swiper-button-prev {
@@ -141,7 +199,7 @@ export default function NewArrivals() {
               }
             }
           `}</style>
-          
+
           <Swiper
             modules={[Navigation, Autoplay]}
             spaceBetween={20}
