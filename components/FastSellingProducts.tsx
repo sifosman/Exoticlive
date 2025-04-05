@@ -22,6 +22,9 @@ const FastSellingProducts = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        console.log('Fetching products for New Arrivals carousel...');
+
+        // First try to get products from the FastSellingProducts category
         const results = await searchProducts({
           q: '*',
           query_by: 'name,description,brand',
@@ -85,7 +88,7 @@ const FastSellingProducts = () => {
               q: '*',
               query_by: 'name,description,brand',
               sort_by: 'price:desc', // Sort by price descending
-              per_page: 12,
+              per_page: 24, // Get more products to ensure we have enough
               filter_by: 'stock_status:=instock',
               include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
             });
@@ -116,15 +119,48 @@ const FastSellingProducts = () => {
             });
 
             console.log('Found recent products instead:', recentProcessedProducts.length);
-            setProducts(recentProcessedProducts.slice(0, 12));
+
+            // Shuffle the products for more randomness
+            const shuffledProducts = [...recentProcessedProducts];
+            for (let i = shuffledProducts.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [shuffledProducts[i], shuffledProducts[j]] = [shuffledProducts[j], shuffledProducts[i]];
+            }
+
+            setProducts(shuffledProducts.slice(0, 12));
             setIsFallbackMode(true);
           } catch (err) {
             console.error('Error fetching recent products:', err);
-            setError('No products found in FastSellingProducts category');
+            // Try one more time with a simpler query
+            try {
+              const simpleResults = await searchProducts({
+                q: '*',
+                query_by: 'name',
+                per_page: 12,
+                filter_by: 'stock_status:=instock'
+              });
+
+              if (simpleResults.products && simpleResults.products.length > 0) {
+                console.log('Found products with simple query:', simpleResults.products.length);
+                setProducts(simpleResults.products.slice(0, 12));
+                setIsFallbackMode(true);
+              } else {
+                setError('No products found');
+              }
+            } catch (finalErr) {
+              setError('No products found in FastSellingProducts category');
+            }
           }
         } else {
           // Use the products from the FastSellingProducts category
-          setProducts(processedProducts.slice(0, 12));
+          // Shuffle the products for more randomness
+          const shuffledProducts = [...processedProducts];
+          for (let i = shuffledProducts.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledProducts[i], shuffledProducts[j]] = [shuffledProducts[j], shuffledProducts[i]];
+          }
+
+          setProducts(shuffledProducts.slice(0, 12));
           setError(null);
         }
       } catch (err) {

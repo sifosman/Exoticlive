@@ -107,14 +107,6 @@ const TypesenseProductGrid = ({
 
   // Update internal filters when props change
   useEffect(() => {
-    // Check if filters were cleared by comparing with previous filters
-    const newFilters = filters || { priceRange, sizes, colors, categories };
-    const filtersCleared =
-      (internalFilters.categories.length > 0 && newFilters.categories.length === 0) ||
-      (internalFilters.colors.length > 0 && newFilters.colors.length === 0) ||
-      (internalFilters.sizes.length > 0 && newFilters.sizes.length === 0);
-
-    // Update filters
     if (filters) {
       setFilters(prev => ({
         ...prev,
@@ -132,13 +124,7 @@ const TypesenseProductGrid = ({
         categories
       }));
     }
-
-    // Reset to page 1 if filters were cleared
-    if (filtersCleared && currentPage > 1) {
-      console.log('Filters cleared, resetting to page 1');
-      setCurrentPage(1);
-    }
-  }, [filters, priceRange, sizes, colors, categories, currentPage, internalFilters]);
+  }, [filters, priceRange, sizes, colors, categories]);
 
   // Calculate total pages
   const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
@@ -148,6 +134,11 @@ const TypesenseProductGrid = ({
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
   };
+
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Handle page change
   const handlePageChange = (page: number): void => {
@@ -191,14 +182,6 @@ const TypesenseProductGrid = ({
 
     return result;
   };
-
-  // Reset to page 1 when search query changes
-  useEffect(() => {
-    if (currentPage > 1) {
-      console.log('Search query changed, resetting to page 1');
-      setCurrentPage(1);
-    }
-  }, [searchQuery]);
 
   // Fetch products
   useEffect(() => {

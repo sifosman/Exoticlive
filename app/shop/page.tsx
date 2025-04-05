@@ -80,9 +80,6 @@ function ShopPageContent() {
     setPriceRange([0, 5000]);
     setSearchQuery('');
     scrollToTop();
-
-    // Force the product grid to reset to page 1
-    // This is handled in TypesenseProductGrid component
   };
 
   const hasActiveFilters = selectedCategories.length > 0 ||
