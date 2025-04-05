@@ -264,7 +264,7 @@ export default function CheckoutPage() {
         // Generate a reference for the order
         const orderRef = `bank-${order.id}-${Date.now()}`;
 
-        // Save minimal order data to localStorage
+        // Save order data to localStorage
         const orderDataKey = `order_${orderRef}`;
         const orderData = {
           id: order.id,
@@ -283,7 +283,19 @@ export default function CheckoutPage() {
             state: province,
             postcode: postalCode,
             country: 'ZA'
-          }
+          },
+          shipping: {
+            first_name: firstName,
+            last_name: lastName,
+            address_1: address,
+            city: city,
+            state: province,
+            postcode: postalCode,
+            country: 'ZA'
+          },
+          line_items: order.line_items || [],
+          status: order.status || 'processing',
+          date_created: order.date_created || new Date().toISOString()
         };
         localStorage.setItem(orderDataKey, JSON.stringify(orderData));
 
@@ -341,7 +353,19 @@ export default function CheckoutPage() {
             state: province,
             postcode: postalCode,
             country: 'ZA'
-          }
+          },
+          shipping: {
+            first_name: firstName,
+            last_name: lastName,
+            address_1: address,
+            city: city,
+            state: province,
+            postcode: postalCode,
+            country: 'ZA'
+          },
+          line_items: order.line_items || [],
+          status: order.status || 'processing',
+          date_created: order.date_created || new Date().toISOString()
         };
         localStorage.setItem(orderDataKey, JSON.stringify(orderData));
 

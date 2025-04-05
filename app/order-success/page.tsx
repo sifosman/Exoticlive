@@ -386,7 +386,7 @@ function OrderSuccessContent() {
                 <div className="mb-6">
                   <h3 className="font-lato font-semibold text-gray-900 mb-4">Order Items</h3>
                   <div className="space-y-4">
-                    {order.line_items.map((item, index) => (
+                    {order.line_items && order.line_items.length > 0 ? order.line_items.map((item, index) => (
                       <motion.div
                         key={index}
                         initial={{ opacity: 0, x: -20 }}
@@ -402,7 +402,9 @@ function OrderSuccessContent() {
                           {formatPrice(item.subtotal ? parseFloat(item.subtotal) : 0)}
                         </span>
                       </motion.div>
-                    ))}
+                    )) : (
+                      <p className="text-gray-500 italic">Order items will be displayed once payment is confirmed.</p>
+                    )}
                   </div>
                 </div>
 
