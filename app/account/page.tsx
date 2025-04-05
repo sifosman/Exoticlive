@@ -111,14 +111,40 @@ export default function AccountPage() {
 
     try {
       setOrdersLoading(true);
-      const response = await fetch('/api/orders/user');
+      console.log('Fetching orders for user:', user.id);
 
-      if (response.ok) {
-        const ordersData = await response.json();
-        setOrders(ordersData);
-        console.log('Fetched orders:', ordersData);
-      } else {
-        console.error('Failed to fetch orders:', await response.text());
+      // Try the direct user ID endpoint first
+      try {
+        const directResponse = await fetch(`/api/orders/${user.id}`);
+
+        if (directResponse.ok) {
+          const ordersData = await directResponse.json();
+          setOrders(ordersData);
+          console.log('Fetched orders using direct endpoint:', ordersData);
+          return; // Exit if successful
+        } else {
+          console.warn('Direct endpoint failed, falling back to user endpoint');
+        }
+      } catch (directError) {
+        console.warn('Error with direct endpoint, falling back to user endpoint:', directError);
+      }
+
+      // Fallback to the user endpoint
+      const response = await fetch('/api/orders/user');
+      const responseText = await response.text();
+
+      try {
+        // Try to parse the response as JSON
+        const ordersData = JSON.parse(responseText);
+
+        if (response.ok) {
+          setOrders(ordersData);
+          console.log('Fetched orders using fallback endpoint:', ordersData);
+        } else {
+          console.error('Failed to fetch orders:', ordersData);
+        }
+      } catch (parseError) {
+        console.error('Failed to parse orders response:', responseText);
       }
     } catch (error) {
       console.error('Error fetching orders:', error);

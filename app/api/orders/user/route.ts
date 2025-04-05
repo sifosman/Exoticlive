@@ -25,8 +25,55 @@ export async function GET(request: Request) {
 
     // Parse the token to get the user ID
     try {
-      const tokenData = JSON.parse(Buffer.from(token.value, 'base64').toString());
-      const customerId = tokenData.id;
+      // Log the token for debugging
+      console.log('Auth token:', token.value);
+
+      // Try different parsing approaches
+      let tokenData;
+      let customerId;
+
+      try {
+        // First attempt: direct JSON parse
+        tokenData = JSON.parse(token.value);
+        customerId = tokenData.id;
+      } catch (parseError) {
+        try {
+          // Second attempt: base64 decode then JSON parse
+          const decoded = Buffer.from(token.value, 'base64').toString();
+          console.log('Decoded token:', decoded);
+          tokenData = JSON.parse(decoded);
+          customerId = tokenData.id;
+        } catch (decodeError) {
+          // Third attempt: try to extract ID using regex if JSON parsing fails
+          console.log('Trying to extract ID using regex');
+          const idMatch = token.value.match(/["']id["']\s*:\s*([0-9]+)/);
+          if (idMatch && idMatch[1]) {
+            customerId = parseInt(idMatch[1], 10);
+            console.log('Extracted customer ID using regex:', customerId);
+          } else {
+            // Fourth attempt: try to get the user ID from the user API
+            console.log('Trying to get user ID from user API');
+            try {
+              const userResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || request.headers.get('origin') || ''}/api/user`, {
+                headers: {
+                  cookie: `auth_token=${token.value}`
+                }
+              });
+
+              if (userResponse.ok) {
+                const userData = await userResponse.json();
+                customerId = userData.id;
+                console.log('Got customer ID from user API:', customerId);
+              } else {
+                throw new Error('Failed to get user data from API');
+              }
+            } catch (userApiError) {
+              console.error('Error getting user from API:', userApiError);
+              throw new Error('Could not extract customer ID from token or user API');
+            }
+          }
+        }
+      }
 
       if (!customerId) {
         return NextResponse.json(

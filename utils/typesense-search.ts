@@ -57,12 +57,13 @@ export interface SearchParams {
   facet_by?: string;
   max_facet_values?: number;
   include_fields?: string;
+  random_seed?: string; // Added for random sorting
 }
 
 // Search function
 export async function searchProducts(params: SearchParams) {
   // Default parameters
-  const searchParameters = {
+  const searchParameters: any = {
     q: params.q || '*',
     query_by: params.query_by || 'name,description',
     // Use an empty string as default filter to show all products
@@ -74,7 +75,12 @@ export async function searchProducts(params: SearchParams) {
     max_facet_values: params.max_facet_values || 10,
     include_fields: params.include_fields || 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes,has_in_stock_variations'
   };
-  
+
+  // Add random_seed parameter if provided
+  if (params.random_seed) {
+    searchParameters.random_seed = params.random_seed;
+  }
+
   console.log('Search parameters:', searchParameters);
 
   try {
@@ -86,7 +92,7 @@ export async function searchProducts(params: SearchParams) {
     // Process the search results to ensure prices are properly formatted as numbers
     const processedProducts = searchResults.hits?.map(hit => {
       const doc = hit.document as any;
-      
+
       // Convert price strings to numbers if they're strings
       const processedDoc = {
         ...doc,
@@ -94,7 +100,7 @@ export async function searchProducts(params: SearchParams) {
         sale_price: doc.sale_price ? (typeof doc.sale_price === 'string' ? parseFloat(doc.sale_price) : doc.sale_price) : null,
         regular_price: typeof doc.regular_price === 'string' ? parseFloat(doc.regular_price) : (doc.regular_price || 0),
       };
-      
+
       return processedDoc as Product;
     }) || [];
 
@@ -125,8 +131,8 @@ export async function getProductById(id: string): Promise<Product | null> {
 }
 
 // Get multiple products
-export async function getProducts(params: { 
-  page?: number; 
+export async function getProducts(params: {
+  page?: number;
   per_page?: number;
   sort_by?: string;
   filter_by?: string;
