@@ -278,9 +278,9 @@ export default function CheckoutPage() {
             email: email,
             phone: phone,
             address_1: address,
-            address_2: address2 || '',
+            address_2: '',
             city: city,
-            state: state,
+            state: province,
             postcode: postalCode,
             country: 'ZA'
           }
@@ -336,9 +336,9 @@ export default function CheckoutPage() {
             email: email,
             phone: phone,
             address_1: address,
-            address_2: address2 || '',
+            address_2: '',
             city: city,
-            state: state,
+            state: province,
             postcode: postalCode,
             country: 'ZA'
           }
