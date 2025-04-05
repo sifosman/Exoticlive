@@ -22,11 +22,10 @@ const FastSellingProducts = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        // First try to get products from the FastSellingProducts category
         const results = await searchProducts({
           q: '*',
           query_by: 'name,description,brand',
-          sort_by: 'id:desc', // Sort by ID descending as a proxy for recency (newer products have higher IDs)
+          sort_by: 'price:asc', // Sort by price as it's definitely available for sorting
           per_page: 200, // Increase to get more potential products
           filter_by: 'stock_status:=instock && categories:=[FastSellingProducts, fastsellingproducts, "Fast Selling Products", "fast selling products"]', // Try multiple variations of the category name
           include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
@@ -85,7 +84,7 @@ const FastSellingProducts = () => {
             const recentResults = await searchProducts({
               q: '*',
               query_by: 'name,description,brand',
-              sort_by: 'id:desc', // Sort by ID descending as a proxy for recency
+              sort_by: 'price:desc', // Sort by price descending
               per_page: 12,
               filter_by: 'stock_status:=instock',
               include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
