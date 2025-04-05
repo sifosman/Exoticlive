@@ -108,8 +108,13 @@ function OrderSuccessContent() {
         // Clear the data from localStorage to prevent duplicate orders
         localStorage.removeItem(orderDataKey);
 
-        // Prepare line items for WooCommerce
-        const lineItems = orderData.cartItems.map((item: any) => {
+        // For bank_transfer and yoco payments, we already have the order data
+        // For Ozow payments, we need to prepare line items
+        let lineItems = [];
+
+        if (method === 'ozow' && orderData.cartItems) {
+          // Prepare line items for WooCommerce
+          lineItems = orderData.cartItems.map((item: any) => {
           // Safely handle product ID (could be base64 encoded from GraphQL)
           let productId = item.id;
           try {
@@ -140,6 +145,7 @@ function OrderSuccessContent() {
             meta_data: metaData
           };
         });
+        }
 
         // Prepare order payload
         const orderPayload = {
@@ -213,14 +219,8 @@ function OrderSuccessContent() {
           createdOrder = await response.json();
         } else {
           // For bank_transfer and yoco, use the order data from localStorage
-          createdOrder = {
-            id: orderData.id,
-            number: orderData.number,
-            total: orderData.total,
-            payment_method: orderData.payment_method,
-            payment_method_title: orderData.payment_method_title,
-            billing: orderData.billing
-          };
+          createdOrder = orderData;
+          console.log('Using order data from localStorage:', createdOrder);
         }
 
         // Set the order data
