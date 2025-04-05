@@ -1,7 +1,7 @@
 "use client";
 
 import FeaturedProducts from '@/components/FeaturedProducts';
-import FastSellingProducts from '@/components/FastSellingProducts';
+import NewArrivals from '@/components/NewArrivals';
 import SlidingBanner from '@/components/SlidingBanner';
 import CategorySection from '@/components/CategorySection';
 import BodyBanner from '@/components/BodyBanner';
@@ -15,7 +15,7 @@ export default function Home() {
       <CategorySection />
       <FeaturedProducts />
       <BodyBanner />
-      <FastSellingProducts />
+      <NewArrivals />
       <NewsletterSignup />
       <ResellBanner />
     </main>

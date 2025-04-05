@@ -143,12 +143,12 @@ const FeaturedProducts = () => {
           .featured-products-carousel :global(.swiper-button-next),
           .featured-products-carousel :global(.swiper-button-prev) {
             color: #000;
-            transform: scale(0.7);
+            transform: scale(1.2);
           }
 
           .featured-products-carousel :global(.swiper-button-next):after,
           .featured-products-carousel :global(.swiper-button-prev):after {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: bold;
           }
 
