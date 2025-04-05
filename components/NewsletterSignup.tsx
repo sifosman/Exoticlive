@@ -136,7 +136,7 @@ const NewsletterSignup = () => {
               
               <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '600px' }}>
                 Stay updated with our latest products, releases, and exclusive offers. 
-                Be the first to know when we drop new stock.
+                
               </Typography>
               
               <Box 

@@ -258,8 +258,37 @@ export default function CheckoutPage() {
         });
       } else if (paymentMethod === 'bank_transfer') {
         // Create order directly for bank transfer
-        await createWooCommerceOrder('Bank Transfer');
+        const order = await createWooCommerceOrder('Bank Transfer');
         setIsLoading(false);
+
+        // Generate a reference for the order
+        const orderRef = `bank-${order.id}-${Date.now()}`;
+
+        // Save minimal order data to localStorage
+        const orderDataKey = `order_${orderRef}`;
+        const orderData = {
+          id: order.id,
+          number: order.number,
+          total: order.total,
+          payment_method: 'bank_transfer',
+          payment_method_title: 'Bank Transfer',
+          billing: {
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            phone: phone,
+            address_1: address,
+            address_2: address2 || '',
+            city: city,
+            state: state,
+            postcode: postalCode,
+            country: 'ZA'
+          }
+        };
+        localStorage.setItem(orderDataKey, JSON.stringify(orderData));
+
+        // Redirect to order success page
+        window.location.href = `/order-success?ref=${orderRef}&method=bank_transfer`;
       } else if (paymentMethod === 'ozow') {
         // Handle Ozow payment flow
         await handleOzowPayment();
@@ -286,12 +315,45 @@ export default function CheckoutPage() {
       const data = await response.json();
 
       if (data.success) {
-        await createWooCommerceOrder('Yoco Payment Gateway');
+        // Create WooCommerce order after successful payment
+        const order = await createWooCommerceOrder('Yoco Payment Gateway', data.charge?.id);
+
+        // Generate a reference for the order
+        const orderRef = `yoco-${order.id}-${Date.now()}`;
+
+        // Save order data to localStorage
+        const orderDataKey = `order_${orderRef}`;
+        const orderData = {
+          id: order.id,
+          number: order.number,
+          total: order.total,
+          payment_method: 'yoco',
+          payment_method_title: 'Yoco Payment Gateway',
+          transaction_id: data.charge?.id || '',
+          billing: {
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            phone: phone,
+            address_1: address,
+            address_2: address2 || '',
+            city: city,
+            state: state,
+            postcode: postalCode,
+            country: 'ZA'
+          }
+        };
+        localStorage.setItem(orderDataKey, JSON.stringify(orderData));
+
+        // Redirect to order success page
+        window.location.href = `/order-success?ref=${orderRef}&method=yoco`;
       } else {
         setPaymentError('Payment failed. Please try again.');
+        setIsLoading(false);
       }
     } catch (error) {
       setPaymentError('An error occurred processing payment. Please try again.');
+      setIsLoading(false);
     }
   };
 

@@ -22,10 +22,11 @@ const FastSellingProducts = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        // First try to get products from the FastSellingProducts category
         const results = await searchProducts({
           q: '*',
           query_by: 'name,description,brand',
-          sort_by: 'price:asc', // Sort by price as it's definitely available for sorting
+          sort_by: 'id:desc', // Sort by ID descending as a proxy for recency (newer products have higher IDs)
           per_page: 200, // Increase to get more potential products
           filter_by: 'stock_status:=instock && categories:=[FastSellingProducts, fastsellingproducts, "Fast Selling Products", "fast selling products"]', // Try multiple variations of the category name
           include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
@@ -144,14 +145,14 @@ const FastSellingProducts = () => {
     return (
       <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
         <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
-          Fast Selling Products
+          New Arrivals
         </h2>
         <div className="text-gray-500 text-center py-8">
           <p className="mb-4">
-            No products found in the FastSellingProducts category.
+            No new arrivals found to display.
           </p>
           <p className="mb-4">
-            To display products here, please add products to the "FastSellingProducts" category in WooCommerce.
+            To display products here, please add products to the "FastSellingProducts" category in WooCommerce or add new products.
           </p>
           <p>
             After adding products to the category, run the sync script: <code>node scripts/complete-woocommerce-sync.mjs</code>
@@ -164,7 +165,7 @@ const FastSellingProducts = () => {
   return (
     <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
       <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
-        {isFallbackMode ? 'Newest Arrivals' : 'Fast Selling Products'}
+        New Arrivals
       </h2>
 
       <div className="relative fast-selling-carousel">
@@ -196,9 +197,14 @@ const FastSellingProducts = () => {
           slidesPerView={2}
           navigation
           autoplay={{
-            delay: 5000,
-            disableOnInteraction: false,
+            delay: 3000, // Faster rotation (3 seconds)
+            disableOnInteraction: false, // Continue autoplay after user interaction
+            pauseOnMouseEnter: false, // Don't pause on mouse enter
+            stopOnLastSlide: false, // Don't stop on last slide
+            waitForTransition: true // Wait for transition to complete before continuing
           }}
+          loop={true} // Enable infinite loop
+          speed={800} // Slightly faster transition speed
           breakpoints={{
             320: {
               slidesPerView: 2,

@@ -48,12 +48,12 @@ const safeDecodeId = (encodedId: string): string => {
   try {
     // Check if the string is actually base64 encoded
     const isBase64 = /^[A-Za-z0-9+/=]+$/.test(encodedId);
-    
+
     if (!isBase64) {
       console.log('ID is not base64 encoded, using as-is:', encodedId);
       return encodedId;
     }
-    
+
     // Try to decode the base64 string
     const decoded = atob(encodedId);
     console.log('Converting ID:', encodedId, 'to:', decoded);
@@ -68,6 +68,7 @@ const safeDecodeId = (encodedId: string): string => {
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const ref = searchParams?.get('ref') || null;
+  const method = searchParams?.get('method') || 'ozow';
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,23 +82,32 @@ function OrderSuccessContent() {
       }
 
       try {
-        // Retrieve order data from localStorage using the reference
-        const orderDataKey = `ozow_order_${ref}`;
+        // Determine the correct localStorage key based on payment method
+        let orderDataKey;
+        if (method === 'ozow') {
+          orderDataKey = `ozow_order_${ref}`;
+        } else {
+          // For bank_transfer and yoco payments
+          orderDataKey = `order_${ref}`;
+        }
+
+        console.log('Looking for order data with key:', orderDataKey);
         const storedOrderData = localStorage.getItem(orderDataKey);
-        
+
         if (!storedOrderData) {
+          console.error('Order data not found in localStorage with key:', orderDataKey);
           setError("Order data not found. Please contact customer support.");
           setLoading(false);
           return;
         }
-        
+
         // Parse the stored order data
         const orderData = JSON.parse(storedOrderData);
         console.log('Order data retrieved from localStorage:', orderData);
-        
+
         // Clear the data from localStorage to prevent duplicate orders
         localStorage.removeItem(orderDataKey);
-        
+
         // Prepare line items for WooCommerce
         const lineItems = orderData.cartItems.map((item: any) => {
           // Safely handle product ID (could be base64 encoded from GraphQL)
@@ -109,7 +119,7 @@ function OrderSuccessContent() {
           } catch (e) {
             console.error('Error processing product ID:', e);
           }
-          
+
           // Extract attribute values for meta data
           const metaData = [];
           if (item.attributes && item.attributes.length > 0) {
@@ -120,7 +130,7 @@ function OrderSuccessContent() {
               });
             });
           }
-          
+
           return {
             product_id: productId,
             name: item.name,
@@ -130,7 +140,7 @@ function OrderSuccessContent() {
             meta_data: metaData
           };
         });
-        
+
         // Prepare order payload
         const orderPayload = {
           payment_method: "ozow",
@@ -176,42 +186,59 @@ function OrderSuccessContent() {
             }
           ]
         };
-        
+
         console.log('Creating WooCommerce order with payload:', orderPayload);
-        
-        // Create the order in WooCommerce
-        const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || 'https://wp.exoticshoes.co.za';
-        const response = await fetch(`${wpUrl}/wp-json/wc/v3/orders`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
-          },
-          body: JSON.stringify(orderPayload)
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Error creating order:', errorText);
-          throw new Error(`Failed to create order: ${response.status}`);
+
+        // For Ozow payments, we need to create the order in WooCommerce
+        // For bank_transfer and yoco, the order has already been created
+        let createdOrder;
+
+        if (method === 'ozow') {
+          // Create the order in WooCommerce
+          const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || 'https://wp.exoticshoes.co.za';
+          const response = await fetch(`${wpUrl}/wp-json/wc/v3/orders`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
+            },
+            body: JSON.stringify(orderPayload)
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to create order: ${response.status} ${response.statusText} - ${errorText}`);
+          }
+
+          createdOrder = await response.json();
+        } else {
+          // For bank_transfer and yoco, use the order data from localStorage
+          createdOrder = {
+            id: orderData.id,
+            number: orderData.number,
+            total: orderData.total,
+            payment_method: orderData.payment_method,
+            payment_method_title: orderData.payment_method_title,
+            billing: orderData.billing
+          };
         }
-        
-        const orderResponse = await response.json();
-        console.log('Order created successfully:', orderResponse);
-        
+
+        // Set the order data
+        console.log('Order processed successfully:', createdOrder);
+
         // Set the order data from the response
         setOrder({
-          id: orderResponse.id,
-          total: orderResponse.total,
-          billing: orderResponse.billing,
-          shipping: orderResponse.shipping,
-          line_items: orderResponse.line_items,
-          payment_method_title: orderResponse.payment_method_title,
-          payment_method: orderResponse.payment_method,
-          status: orderResponse.status,
-          date_created: orderResponse.date_created
+          id: createdOrder.id,
+          total: createdOrder.total,
+          billing: createdOrder.billing,
+          shipping: createdOrder.shipping || {},
+          line_items: createdOrder.line_items || [],
+          payment_method_title: createdOrder.payment_method_title || (method === 'bank_transfer' ? 'Bank Transfer' : method === 'yoco' ? 'Yoco Payment Gateway' : 'Ozow'),
+          payment_method: createdOrder.payment_method || method,
+          status: createdOrder.status || 'processing',
+          date_created: createdOrder.date_created || new Date().toISOString()
         });
-        
+
         setLoading(false);
       } catch (error) {
         console.error('Error creating order:', error);
@@ -219,7 +246,7 @@ function OrderSuccessContent() {
         setLoading(false);
       }
     }
-    
+
     createOrder();
   }, [ref]);
 
@@ -240,7 +267,7 @@ function OrderSuccessContent() {
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-16 pt-[100px]">
@@ -265,7 +292,7 @@ function OrderSuccessContent() {
   return (
     <div className={`min-h-screen bg-white ${lato.className}`}>
       <div className="container mx-auto px-4 py-16 pt-[100px]">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-3xl mx-auto"
@@ -308,7 +335,7 @@ function OrderSuccessContent() {
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <h3 className="font-semibold text-gray-900 mb-2">Payment Method</h3>
                   <p className="text-gray-600">{order.payment_method_title}</p>
-                  
+
                   {/* Banking Details for Bank Transfer */}
                   {order.payment_method === 'bank_transfer' && (
                     <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
