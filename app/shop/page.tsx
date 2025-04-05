@@ -26,35 +26,35 @@ const CATEGORY_MAP: Record<string, string> = {
 function ShopPageContent() {
   const searchParams = useSearchParams();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  
+
   // Initialize with categories from URL if available
   const initialCategorySlug = searchParams.get('category');
-  const initialCategory = initialCategorySlug && CATEGORY_MAP[initialCategorySlug] 
-    ? CATEGORY_MAP[initialCategorySlug] 
+  const initialCategory = initialCategorySlug && CATEGORY_MAP[initialCategorySlug]
+    ? CATEGORY_MAP[initialCategorySlug]
     : '';
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     initialCategory ? [initialCategory] : []
   );
-  
+
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
   const [searchQuery, setSearchQuery] = useState<string>(searchParams.get('q') || '');
-  
+
   // Function to scroll to top of the page with smooth behavior
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  
+
   // Update filters when URL parameters change
   useEffect(() => {
     const category = searchParams.get('category');
     const query = searchParams.get('q');
-    
+
     // Always update search query when URL changes
     setSearchQuery(query || '');
-    
+
     // Handle category parameter changes
     if (category) {
       // If there's a category in the URL and it's valid
@@ -80,12 +80,15 @@ function ShopPageContent() {
     setPriceRange([0, 5000]);
     setSearchQuery('');
     scrollToTop();
+
+    // Force the product grid to reset to page 1
+    // This is handled in TypesenseProductGrid component
   };
 
-  const hasActiveFilters = selectedCategories.length > 0 || 
-                          selectedColors.length > 0 || 
-                          selectedSizes.length > 0 || 
-                          priceRange[0] > 0 || 
+  const hasActiveFilters = selectedCategories.length > 0 ||
+                          selectedColors.length > 0 ||
+                          selectedSizes.length > 0 ||
+                          priceRange[0] > 0 ||
                           priceRange[1] < 5000 ||
                           searchQuery.length > 0;
 
@@ -102,12 +105,12 @@ function ShopPageContent() {
   return (
     <>
       <ShopBanner heading={getHeadingText()} />
-      
+
       <div className="container mx-auto px-4 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
           {/* Mobile filter toggle */}
           <div className="w-full flex justify-between items-center md:hidden mb-4">
-            <Button 
+            <Button
               onClick={toggleFilterMobile}
               variant="outline"
               className="flex items-center gap-2"
@@ -115,22 +118,22 @@ function ShopPageContent() {
               <SlidersHorizontal size={18} />
               Filters
             </Button>
-            
-            <ProductSearch 
-              searchQuery={searchQuery} 
+
+            <ProductSearch
+              searchQuery={searchQuery}
               setSearchQuery={(query) => {
                 setSearchQuery(query);
                 scrollToTop();
-              }} 
+              }}
               className="flex-1 mx-2"
             />
           </div>
-          
+
           {/* Filters sidebar - desktop always visible, mobile conditional */}
           <div className={`
             ${isFilterOpen ? 'block' : 'hidden'} md:block
             w-full md:w-64 lg:w-72 bg-white md:sticky md:top-24 overflow-auto
-            ${isFilterOpen ? 'h-auto fixed top-0 left-0 right-0 bottom-0 z-50 p-4 overflow-y-auto' : ''} 
+            ${isFilterOpen ? 'h-auto fixed top-0 left-0 right-0 bottom-0 z-50 p-4 overflow-y-auto' : ''}
           `}>
             {isFilterOpen && (
               <div className="flex justify-between items-center mb-4">
@@ -140,8 +143,8 @@ function ShopPageContent() {
                 </Button>
               </div>
             )}
-            
-            <ProductFilters 
+
+            <ProductFilters
               selectedCategories={selectedCategories}
               setSelectedCategories={(categories) => {
                 setSelectedCategories(categories);
@@ -162,33 +165,33 @@ function ShopPageContent() {
                 setPriceRange(range);
               }}
             />
-            
+
             {hasActiveFilters && (
-              <Button 
+              <Button
                 onClick={clearAllFilters}
-                variant="outline" 
+                variant="outline"
                 className="mt-4 w-full"
               >
                 Clear All Filters
               </Button>
             )}
           </div>
-          
+
           {/* Product grid area */}
           <div className="flex-1">
             {/* Search bar - desktop only */}
             <div className="hidden md:flex justify-between items-center mb-6">
-              <ProductSearch 
-                searchQuery={searchQuery} 
+              <ProductSearch
+                searchQuery={searchQuery}
                 setSearchQuery={(query) => {
                   setSearchQuery(query);
                   scrollToTop();
-                }} 
+                }}
               />
             </div>
-            
+
             {/* Product grid */}
-            <TypesenseProductGrid 
+            <TypesenseProductGrid
               categories={selectedCategories}
               colors={selectedColors}
               sizes={selectedSizes}
