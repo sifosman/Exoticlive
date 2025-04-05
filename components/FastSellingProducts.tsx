@@ -11,6 +11,7 @@ import { Navigation, Autoplay } from 'swiper/modules';
 // Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
+import 'swiper/css/autoplay';
 
 const FastSellingProducts = () => {
   const [loading, setLoading] = useState(true);
@@ -174,8 +175,22 @@ const FastSellingProducts = () => {
     fetchProducts();
   }, []);
 
-  if (loading) return <ProductCardSkeleton count={4} />;
-  if (error) return <p>Error loading products: {error}</p>;
+  if (loading) return (
+    <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
+      <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
+        New Arrivals
+      </h2>
+      <ProductCardSkeleton count={4} />
+    </div>
+  );
+  if (error) return (
+    <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
+      <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
+        New Arrivals
+      </h2>
+      <p className="text-red-500">Error loading products: {error}</p>
+    </div>
+  );
   if (!products || products.length === 0) {
     return (
       <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
@@ -230,13 +245,10 @@ const FastSellingProducts = () => {
           modules={[Navigation, Autoplay]}
           spaceBetween={20}
           slidesPerView={2}
-          navigation
+          navigation={true}
           autoplay={{
             delay: 3000, // Faster rotation (3 seconds)
             disableOnInteraction: false, // Continue autoplay after user interaction
-            pauseOnMouseEnter: false, // Don't pause on mouse enter
-            stopOnLastSlide: false, // Don't stop on last slide
-            waitForTransition: true // Wait for transition to complete before continuing
           }}
           loop={true} // Enable infinite loop
           speed={800} // Slightly faster transition speed
