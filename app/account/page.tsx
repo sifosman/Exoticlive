@@ -393,30 +393,28 @@ export default function AccountPage() {
                     <CardDescription style={{fontFamily: 'var(--font-lato)'}}>Here's an overview of your account.</CardDescription>
                   </CardHeader>
                   <CardContent style={{fontFamily: 'var(--font-lato)'}}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h3 className="text-lg font-medium mb-2">Recent Orders</h3>
-                        <p className="text-gray-500">You have no recent orders.</p>
-                        <Button
-                          variant="outline"
-                          className="mt-4 border-[#829D46] text-[#829D46] hover:bg-[#829D46] hover:text-white"
-                          onClick={() => document.querySelector('[value="orders"]')?.dispatchEvent(new Event('click'))}
-                          style={{fontFamily: 'var(--font-lato)'}}
-                        >
-                          View Orders
-                        </Button>
-                      </div>
+                    <div className="mt-4">
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <h3 className="text-lg font-medium mb-2">Account Details</h3>
                         <p className="text-gray-500">Manage your account information.</p>
-                        <Button
-                          variant="outline"
-                          className="mt-4 border-[#829D46] text-[#829D46] hover:bg-[#829D46] hover:text-white"
-                          onClick={() => document.querySelector('[value="account-details"]')?.dispatchEvent(new Event('click'))}
-                          style={{fontFamily: 'var(--font-lato)'}}
-                        >
-                          Edit Details
-                        </Button>
+                        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                          <Button
+                            variant="outline"
+                            className="border-[#829D46] text-[#829D46] hover:bg-[#829D46] hover:text-white"
+                            onClick={() => document.querySelector('[value="account-details"]')?.dispatchEvent(new Event('click'))}
+                            style={{fontFamily: 'var(--font-lato)'}}
+                          >
+                            Edit Details
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="border-[#829D46] text-[#829D46] hover:bg-[#829D46] hover:text-white"
+                            onClick={() => document.querySelector('[value="orders"]')?.dispatchEvent(new Event('click'))}
+                            style={{fontFamily: 'var(--font-lato)'}}
+                          >
+                            View Orders
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

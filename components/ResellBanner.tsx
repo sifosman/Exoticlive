@@ -205,7 +205,7 @@ const ResellBanner = () => {
                 lineHeight: { xs: 1.5, md: 1.6 },
               }}
             >
-              Start your own business reselling our premium products! Enjoy wholesale prices and dedicated support to help your business grow.
+              Start your own business reselling our products! Enjoy wholesale prices and dedicated support to help your business grow.
             </Typography>
             
             <Button
