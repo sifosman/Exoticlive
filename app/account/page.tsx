@@ -406,14 +406,7 @@ export default function AccountPage() {
                           >
                             Edit Details
                           </Button>
-                          <Button
-                            variant="outline"
-                            className="border-[#829D46] text-[#829D46] hover:bg-[#829D46] hover:text-white"
-                            onClick={() => document.querySelector('[value="orders"]')?.dispatchEvent(new Event('click'))}
-                            style={{fontFamily: 'var(--font-lato)'}}
-                          >
-                            View Orders
-                          </Button>
+                         
                         </div>
                       </div>
                     </div>
