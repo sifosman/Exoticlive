@@ -103,7 +103,7 @@ function ShopPageContent() {
     <>
       <ShopBanner heading={getHeadingText()} />
 
-      <div className="container mx-auto px-4 lg:px-8 py-6">
+      <div className="container mx-auto px-4 lg:px-8 py-6 overflow-hidden">
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
           {/* Mobile filter toggle */}
           <div className="w-full flex justify-between items-center md:hidden mb-4">
@@ -126,12 +126,24 @@ function ShopPageContent() {
             />
           </div>
 
+          {/* Overlay to close filter when clicking outside - mobile only */}
+          {isFilterOpen && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+              onClick={toggleFilterMobile}
+              aria-hidden="true"
+            />
+          )}
+
           {/* Filters sidebar - desktop always visible, mobile conditional */}
-          <div className={`
-            ${isFilterOpen ? 'block' : 'hidden'} md:block
-            w-full md:w-64 lg:w-72 bg-white md:sticky md:top-24 overflow-auto
-            ${isFilterOpen ? 'h-auto fixed top-0 left-0 right-0 bottom-0 z-50 p-4 overflow-y-auto' : ''}
-          `}>
+          <div
+            className={`
+              ${isFilterOpen ? 'block' : 'hidden'} md:block
+              w-full md:w-64 lg:w-72 bg-white md:sticky md:top-24 overflow-auto
+              ${isFilterOpen ? 'h-auto fixed top-0 left-0 right-0 bottom-0 z-50 p-4 overflow-y-auto' : ''}
+            `}
+            onClick={(e) => e.stopPropagation()}
+          >
             {isFilterOpen && (
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Filters</h2>
