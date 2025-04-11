@@ -114,28 +114,24 @@ export async function POST(request: Request) {
     // Construct the Ozow redirect URL with all required parameters
     const params = new URLSearchParams();
 
-    // IMPORTANT: Parameters must be added in the EXACT order as specified in the Ozow documentation
-    // This order must match the order used for hash calculation
+    // Required parameters in the exact order Ozow expects for hash calculation
+    // This order MUST match the C# example in the documentation
     params.append('SiteCode', siteCodeToUse);
     params.append('CountryCode', 'ZA');
     params.append('CurrencyCode', 'ZAR');
     params.append('Amount', amountFormatted);
     params.append('TransactionReference', reference);
     params.append('BankReference', bankReference);
-
-    // URLs - all required - must be in this exact order
     params.append('CancelUrl', cancelUrl);
     params.append('ErrorUrl', errorUrl);
     params.append('SuccessUrl', successUrl);
     params.append('NotifyUrl', notifyUrl);
-
-    // IsTest must come after the URLs
     params.append('IsTest', isTestValue);
 
     // Optional parameters - these come AFTER the required parameters
     // and are NOT included in the hash calculation
     if (customerName) {
-      params.append('Customer', customerName); // Note: Changed from CustomerInformation to Customer as per docs
+      params.append('customer', customerName); // IMPORTANT: Must be lowercase 'customer' as per docs
     }
 
     if (optional1) {
@@ -158,9 +154,9 @@ export async function POST(request: Request) {
     // Following the exact example from their documentation
     console.log('\n===== IMPLEMENTING EXACT OZOW EXAMPLE =====');
 
-    // Step 1: Create the input string exactly as in their example
-    // Example from docs: TSTSTE0001ZAZAR25.00123ABC123http://demo.ozow.com/cancel.aspxhttp://demo.ozow.com/error.aspxhttp://demo.ozow.com/success.aspxhttp://demo.ozow.com/notify.aspxfalse[YOUR PRIVATE KEY]
-    // IMPORTANT: The order of parameters must match EXACTLY what's in the Ozow documentation
+    // Step 1: Create the input string exactly as in their C# example
+    // Example from docs: string inputString = string.Concat(siteCode, countryCode, currencyCode, amount, transactionReference, bankReference, cancelUrl, errorUrl, successUrl, notifyUrl, isTest, privateKey);
+    // IMPORTANT: The order of parameters must match EXACTLY what's in the Ozow documentation C# example
     // The parameters must be in this exact order: SiteCode, CountryCode, CurrencyCode, Amount, TransactionReference, BankReference, CancelUrl, ErrorUrl, SuccessUrl, NotifyUrl, IsTest, PrivateKey
     const hashInput =
       siteCodeToUse +          // SiteCode
@@ -298,13 +294,15 @@ export async function POST(request: Request) {
     let paymentUrlParams = '';
 
     // Add parameters in the exact order required by Ozow
+    // IMPORTANT: Parameter names must match EXACTLY what Ozow expects (case-sensitive)
+    // These parameter names are from the Ozow documentation
     const orderedKeys = [
       'SiteCode', 'CountryCode', 'CurrencyCode', 'Amount', 'TransactionReference', 'BankReference',
       'CancelUrl', 'ErrorUrl', 'SuccessUrl', 'NotifyUrl', 'IsTest', 'HashCheck'
     ];
 
     // Add optional parameters after the required ones
-    const optionalKeys = ['Customer', 'optional1', 'optional2', 'optional3', 'optional4', 'optional5'];
+    const optionalKeys = ['customer', 'optional1', 'optional2', 'optional3', 'optional4', 'optional5'];
 
     // Build URL with parameters in the correct order
     [...orderedKeys, ...optionalKeys].forEach(key => {
