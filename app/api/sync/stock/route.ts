@@ -164,19 +164,31 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
     console.log(`Fetched latest product data for ${productId} (${productData.name})`);
 
     // Check if price or images have changed
+    const newPrice = parseFloat(productData.price || '0');
+    const newRegularPrice = parseFloat(productData.regular_price || '0');
+    const newSalePrice = productData.sale_price ? parseFloat(productData.sale_price) : null;
+
+    // Check if the product is on sale in WooCommerce
+    const isOnSale = productData.on_sale || false;
+
+    // Check if any price fields have changed
     const priceChanged =
-      typesenseProduct.price !== parseFloat(productData.price || '0') ||
-      typesenseProduct.regular_price !== parseFloat(productData.regular_price || '0') ||
-      (typesenseProduct.sale_price !== parseFloat(productData.sale_price || '0') && productData.sale_price);
+      typesenseProduct.price !== newPrice ||
+      typesenseProduct.regular_price !== newRegularPrice ||
+      // Handle the case where one value is null and the other isn't
+      (typesenseProduct.sale_price !== newSalePrice) ||
+      // Also check if the on_sale status has changed
+      typesenseProduct.on_sale !== isOnSale;
 
     const imageUrl = productData.images && productData.images.length > 0 ? productData.images[0].src : null;
     const imageChanged = typesenseProduct.image_url !== imageUrl;
 
     if (priceChanged) {
       console.log(`Price changed for product ${productId}:`);
-      console.log(`- Old price: ${typesenseProduct.price}, New price: ${productData.price}`);
-      console.log(`- Old regular price: ${typesenseProduct.regular_price}, New regular price: ${productData.regular_price}`);
-      console.log(`- Old sale price: ${typesenseProduct.sale_price}, New sale price: ${productData.sale_price}`);
+      console.log(`- Old price: ${typesenseProduct.price}, New price: ${newPrice}`);
+      console.log(`- Old regular price: ${typesenseProduct.regular_price}, New regular price: ${newRegularPrice}`);
+      console.log(`- Old sale price: ${typesenseProduct.sale_price === null ? 'None' : typesenseProduct.sale_price}, New sale price: ${newSalePrice === null ? 'None' : newSalePrice}`);
+      console.log(`- Old on_sale status: ${typesenseProduct.on_sale ? 'Yes' : 'No'}, New on_sale status: ${isOnSale ? 'Yes' : 'No'}`);
     }
 
     if (imageChanged) {
@@ -195,10 +207,10 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
       stock_status: processedVariations.some(v => v.stock_status === 'instock') ? 'instock' : 'outofstock',
 
       // Price fields
-      price: parseFloat(productData.price || '0'),
-      regular_price: parseFloat(productData.regular_price || '0'),
-      sale_price: productData.sale_price ? parseFloat(productData.sale_price) : null,
-      on_sale: productData.on_sale || false,
+      price: newPrice,
+      regular_price: newRegularPrice,
+      sale_price: newSalePrice,
+      on_sale: isOnSale,
 
       // Image field
       image_url: imageUrl
