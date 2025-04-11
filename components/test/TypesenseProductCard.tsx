@@ -86,7 +86,7 @@ const TypesenseProductCard = ({ product, index }: TypesenseProductCardProps) => 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.1 }}
-      className="group relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 w-full max-w-full"
+      className="group relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 w-full max-w-full box-border"
     >
       <Link href={`/product/${product.slug}`} className="block w-full">
         <div className="relative aspect-square overflow-hidden bg-gray-100 w-full">
@@ -103,8 +103,8 @@ const TypesenseProductCard = ({ product, index }: TypesenseProductCardProps) => 
           />
         </div>
 
-        <div className="p-4">
-          <h3 className="text-sm font-medium text-gray-900 truncate">
+        <div className="p-2 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-900 truncate">
             {product.name}
           </h3>
 
@@ -112,11 +112,11 @@ const TypesenseProductCard = ({ product, index }: TypesenseProductCardProps) => 
             <div>
               {isOnSale ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-red-600">{formatPrice(displayPrice)}</span>
-                  <span className="text-xs text-gray-500 line-through">{formatPrice(regularPrice)}</span>
+                  <span className="text-xs sm:text-sm font-bold text-red-600">{formatPrice(displayPrice)}</span>
+                  <span className="text-[10px] sm:text-xs text-gray-500 line-through">{formatPrice(regularPrice)}</span>
                 </div>
               ) : (
-                <span className="text-sm font-medium text-gray-900">{formatPrice(displayPrice)}</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-900">{formatPrice(displayPrice)}</span>
               )}
             </div>
 

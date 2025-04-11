@@ -103,7 +103,7 @@ function ShopPageContent() {
     <>
       <ShopBanner heading={getHeadingText()} />
 
-      <div className="container mx-auto px-4 lg:px-8 py-6 overflow-hidden">
+      <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-6 overflow-hidden">
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
           {/* Mobile filter toggle and search */}
           <div className="w-full md:hidden mb-4">
@@ -132,7 +132,10 @@ function ShopPageContent() {
           {isFilterOpen && (
             <div
               className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-              onClick={toggleFilterMobile}
+              onClick={(e) => {
+                e.preventDefault();
+                toggleFilterMobile();
+              }}
               aria-hidden="true"
             />
           )}
@@ -142,20 +145,36 @@ function ShopPageContent() {
             className={`
               ${isFilterOpen ? 'block' : 'hidden'} md:block
               w-full md:w-64 lg:w-72 bg-white md:sticky md:top-24 overflow-auto
-              ${isFilterOpen ? 'h-auto fixed top-0 left-0 right-0 bottom-0 z-50 p-4 overflow-y-auto' : ''}
+              ${isFilterOpen ? 'h-auto fixed top-0 left-0 w-3/4 max-w-xs bottom-0 z-50 p-4 overflow-y-auto shadow-xl' : ''}
             `}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              // Prevent the click from reaching the overlay
+              e.stopPropagation();
+            }}
           >
             {isFilterOpen && (
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Filters</h2>
-                <Button onClick={toggleFilterMobile} variant="ghost" size="icon">
-                  <X size={24} />
-                </Button>
-              </div>
+              <>
+                {/* Header with title */}
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold">Filters</h2>
+                </div>
+
+                {/* Sticky close button at the bottom */}
+                <div className="fixed bottom-6 left-0 right-0 md:hidden z-50 px-4">
+                  <Button
+                    onClick={toggleFilterMobile}
+                    variant="default"
+                    size="lg"
+                    className="w-full bg-black hover:bg-gray-800 shadow-lg py-3 text-white font-medium"
+                  >
+                    Done
+                  </Button>
+                </div>
+              </>
             )}
 
-            <ProductFilters
+            <div className="pb-20 md:pb-0">
+              <ProductFilters
               selectedCategories={selectedCategories}
               setSelectedCategories={(categories) => {
                 setSelectedCategories(categories);
@@ -176,6 +195,7 @@ function ShopPageContent() {
                 setPriceRange(range);
               }}
             />
+            </div>
 
             {hasActiveFilters && (
               <Button

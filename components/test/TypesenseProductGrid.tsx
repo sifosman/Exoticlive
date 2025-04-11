@@ -335,7 +335,7 @@ const TypesenseProductGrid = ({
       {/* Product grid */}
       {!isLoading && products.length > 0 && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 w-full overflow-hidden">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 w-full overflow-hidden max-w-full">
             {products.map((product, index) => (
               <TypesenseProductCard key={product.id} product={product} index={index} />
             ))}
