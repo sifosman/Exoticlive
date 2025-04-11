@@ -105,25 +105,27 @@ function ShopPageContent() {
 
       <div className="container mx-auto px-4 lg:px-8 py-6 overflow-hidden">
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-          {/* Mobile filter toggle */}
-          <div className="w-full flex justify-between items-center md:hidden mb-4">
-            <Button
-              onClick={toggleFilterMobile}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <SlidersHorizontal size={18} />
-              Filters
-            </Button>
+          {/* Mobile filter toggle and search */}
+          <div className="w-full md:hidden mb-4">
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={toggleFilterMobile}
+                variant="outline"
+                className="flex items-center gap-2 shrink-0"
+              >
+                <SlidersHorizontal size={18} />
+                Filters
+              </Button>
 
-            <ProductSearch
-              searchQuery={searchQuery}
-              setSearchQuery={(query) => {
-                setSearchQuery(query);
-                scrollToTop();
-              }}
-              className="flex-1 mx-2"
-            />
+              <ProductSearch
+                searchQuery={searchQuery}
+                setSearchQuery={(query) => {
+                  setSearchQuery(query);
+                  scrollToTop();
+                }}
+                className="flex-1 min-w-0"
+              />
+            </div>
           </div>
 
           {/* Overlay to close filter when clicking outside - mobile only */}

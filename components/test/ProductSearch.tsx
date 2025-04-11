@@ -10,22 +10,22 @@ interface ProductSearchProps {
   className?: string;
 }
 
-export default function ProductSearch({ 
-  onSearch, 
-  searchQuery: externalSearchQuery, 
+export default function ProductSearch({
+  onSearch,
+  searchQuery: externalSearchQuery,
   setSearchQuery: externalSetSearchQuery,
   className = ""
 }: ProductSearchProps) {
   // Internal state for the old API
   const [internalSearchQuery, setInternalSearchQuery] = React.useState('');
-  
+
   // Determine if we're using the new controlled pattern or old callback pattern
   const isControlled = externalSearchQuery !== undefined && externalSetSearchQuery !== undefined;
-  
+
   // Use either external state or internal state
   const searchQuery = isControlled ? externalSearchQuery : internalSearchQuery;
-  const setSearchQuery = isControlled 
-    ? externalSetSearchQuery 
+  const setSearchQuery = isControlled
+    ? externalSetSearchQuery
     : setInternalSearchQuery;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -43,7 +43,7 @@ export default function ProductSearch({
       }
     }
   };
-  
+
   const handleClear = () => {
     setSearchQuery('');
     if (onSearch) {
@@ -52,7 +52,7 @@ export default function ProductSearch({
   };
 
   return (
-    <div className={`w-full max-w-2xl mx-auto mb-8 ${className}`}>
+    <div className={`w-full ${className}`}>
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative flex items-center">
           <Input
