@@ -149,13 +149,59 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
       };
     });
 
-    // Only update the stock-related fields to minimize the update size
+    // Fetch the original product from WooCommerce to get the latest price and image data
+    const productResponse = await fetch(`${wcApiUrl}/wp-json/wc/v3/products/${productId}`, {
+      headers: {
+        'Authorization': getWooCommerceAuthHeader()
+      }
+    });
+
+    if (!productResponse.ok) {
+      throw new Error(`Failed to fetch product details: ${productResponse.statusText}`);
+    }
+
+    const productData = await productResponse.json();
+    console.log(`Fetched latest product data for ${productId} (${productData.name})`);
+
+    // Check if price or images have changed
+    const priceChanged =
+      typesenseProduct.price !== parseFloat(productData.price || '0') ||
+      typesenseProduct.regular_price !== parseFloat(productData.regular_price || '0') ||
+      (typesenseProduct.sale_price !== parseFloat(productData.sale_price || '0') && productData.sale_price);
+
+    const imageUrl = productData.images && productData.images.length > 0 ? productData.images[0].src : null;
+    const imageChanged = typesenseProduct.image_url !== imageUrl;
+
+    if (priceChanged) {
+      console.log(`Price changed for product ${productId}:`);
+      console.log(`- Old price: ${typesenseProduct.price}, New price: ${productData.price}`);
+      console.log(`- Old regular price: ${typesenseProduct.regular_price}, New regular price: ${productData.regular_price}`);
+      console.log(`- Old sale price: ${typesenseProduct.sale_price}, New sale price: ${productData.sale_price}`);
+    }
+
+    if (imageChanged) {
+      console.log(`Image changed for product ${productId}:`);
+      console.log(`- Old image: ${typesenseProduct.image_url}`);
+      console.log(`- New image: ${imageUrl}`);
+    }
+
+    // Update stock, price, and image data
     const updateData = {
+      // Stock-related fields
       variations: processedVariations,
       variations_json: JSON.stringify(processedVariations),
       variations_count: processedVariations.length,
       in_stock_variations_count: processedVariations.filter(v => v.stock_status === 'instock').length,
-      stock_status: processedVariations.some(v => v.stock_status === 'instock') ? 'instock' : 'outofstock'
+      stock_status: processedVariations.some(v => v.stock_status === 'instock') ? 'instock' : 'outofstock',
+
+      // Price fields
+      price: parseFloat(productData.price || '0'),
+      regular_price: parseFloat(productData.regular_price || '0'),
+      sale_price: productData.sale_price ? parseFloat(productData.sale_price) : null,
+      on_sale: productData.on_sale || false,
+
+      // Image field
+      image_url: imageUrl
     };
 
     // Send PATCH request to update the document
@@ -184,7 +230,13 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
     const updateResult = await patchResponse.json();
     console.log(`Product ${productId} updated in Typesense with ${processedVariations.length} variations in ${duration}ms`);
 
-    return updateResult;
+    // Return result with additional information about what was updated
+    return {
+      ...updateResult,
+      price_updated: priceChanged,
+      image_updated: imageChanged,
+      variations_updated: true
+    };
   } catch (error) {
     console.error(`Error updating product ${productId} in Typesense:`, error);
     throw error;
@@ -256,6 +308,9 @@ export async function GET(request: NextRequest) {
             id: product.id,
             name: product.name,
             variations_count: variations.length,
+            price_updated: updateResult.price_updated || false,
+            image_updated: updateResult.image_updated || false,
+            stock_updated: true,
             success: true
           });
         } else {
@@ -280,15 +335,32 @@ export async function GET(request: NextRequest) {
     console.log('Products processed:', results.length);
     console.log('Successful updates:', results.filter(r => r.success).length);
     console.log('Failed updates:', results.filter(r => !r.success).length);
+    console.log('Price updates:', results.filter(r => r.price_updated).length);
+    console.log('Image updates:', results.filter(r => r.image_updated).length);
+    console.log('Stock updates:', results.filter(r => r.stock_updated).length);
 
     // Logs page has been removed
 
+    // Calculate update counts
+    const successCount = results.filter(r => r.success).length;
+    const priceUpdateCount = results.filter(r => r.price_updated).length;
+    const imageUpdateCount = results.filter(r => r.image_updated).length;
+    const stockUpdateCount = results.filter(r => r.stock_updated).length;
+
     return NextResponse.json({
       success: true,
-      message: `Synced ${results.filter(r => r.success).length} of ${results.length} products in ${syncDuration}ms`,
+      message: `Synced ${successCount} of ${results.length} products in ${syncDuration}ms (${priceUpdateCount} price updates, ${imageUpdateCount} image updates, ${stockUpdateCount} stock updates)`,
       results,
       timestamp: new Date().toISOString(),
-      duration: syncDuration
+      duration: syncDuration,
+      stats: {
+        total: results.length,
+        success: successCount,
+        failed: results.filter(r => !r.success).length,
+        price_updates: priceUpdateCount,
+        image_updates: imageUpdateCount,
+        stock_updates: stockUpdateCount
+      }
     });
   } catch (error) {
     console.error('Error syncing stock:', error);

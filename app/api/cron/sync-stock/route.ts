@@ -83,6 +83,9 @@ export async function GET(request: NextRequest) {
     console.log('Products processed:', result.result?.results?.length || 0);
     console.log('Successful updates:', result.result?.results?.filter((r: any) => r.success).length || 0);
     console.log('Failed updates:', result.result?.results?.filter((r: any) => !r.success).length || 0);
+    console.log('Price updates:', result.result?.results?.filter((r: any) => r.price_updated).length || 0);
+    console.log('Image updates:', result.result?.results?.filter((r: any) => r.image_updated).length || 0);
+    console.log('Stock updates:', result.result?.results?.filter((r: any) => r.stock_updated).length || 0);
 
     // Logs page has been removed
 
