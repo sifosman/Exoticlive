@@ -1,0 +1,40 @@
+# Ozow Sample Payload
+
+## Raw Parameters (Before Hash Calculation)
+SiteCode: [YOUR_SITE_CODE]
+CountryCode: ZA
+CurrencyCode: ZAR
+Amount: 1500.00
+TransactionReference: ozow-1234567890
+BankReference: ozow-1234567890
+CancelUrl: https://exoticshoes.co.za/checkout?status=cancelled&ref=ozow-1234567890
+ErrorUrl: https://exoticshoes.co.za/checkout?status=error&ref=ozow-1234567890
+SuccessUrl: https://exoticshoes.co.za/order-success?ref=ozow-1234567890&method=ozow
+NotifyUrl: https://exoticshoes.co.za/api/ozow-notification?ref=ozow-1234567890
+IsTest: false
+PrivateKey: [YOUR_PRIVATE_KEY]
+
+## Hash Calculation Steps
+
+1. Concatenated string (raw):
+[YOUR_SITE_CODE]ZAZAR1500.00ozow-1234567890ozow-1234567890https://exoticshoes.co.za/checkout?status=cancelled&ref=ozow-1234567890https://exoticshoes.co.za/checkout?status=error&ref=ozow-1234567890https://exoticshoes.co.za/order-success?ref=ozow-1234567890&method=ozowhttps://exoticshoes.co.za/api/ozow-notification?ref=ozow-1234567890false[YOUR_PRIVATE_KEY]
+
+2. Lowercase version:
+[lowercase_version_of_above]
+
+3. SHA512 hash (lowercase):
+[calculated_hash]
+
+## Final URL
+https://pay.ozow.com/?SiteCode=[YOUR_SITE_CODE]&CountryCode=ZA&CurrencyCode=ZAR&Amount=1500.00&TransactionReference=ozow-1234567890&BankReference=ozow-1234567890&CancelUrl=https%3A%2F%2Fexoticshoes.co.za%2Fcheckout%3Fstatus%3Dcancelled%26ref%3Dozow-1234567890&ErrorUrl=https%3A%2F%2Fexoticshoes.co.za%2Fcheckout%3Fstatus%3Derror%26ref%3Dozow-1234567890&SuccessUrl=https%3A%2F%2Fexoticshoes.co.za%2Forder-success%3Fref%3Dozow-1234567890%26method%3Dozow&NotifyUrl=https%3A%2F%2Fexoticshoes.co.za%2Fapi%2Fozow-notification%3Fref%3Dozow-1234567890&IsTest=false&HashCheck=[calculated_hash]&optional1=John%20Doe&optional2=john.doe%40example.com
+
+## Error Received
+"The HashCheck value has failed"
+
+## Notes for Ozow Support
+- We've tried both lowercase and uppercase hash values
+- We've verified the site code and private key multiple times
+- We're following the exact order of parameters as specified in the documentation
+- We're not including optional parameters in the hash calculation
+
+Please help us identify what might be causing the hash check to fail. We've followed the documentation carefully but are still encountering this issue.

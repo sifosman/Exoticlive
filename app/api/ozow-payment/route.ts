@@ -48,6 +48,8 @@ export async function POST(request: Request) {
       amount,
       transactionReference,
       customer,
+      optional1,
+      optional2,
       cancelUrl,
       errorUrl,
       successUrl,
@@ -132,11 +134,11 @@ export async function POST(request: Request) {
     // Optional parameters - these come AFTER the required parameters
     // and are NOT included in the hash calculation
     if (customerName) {
-      params.append('customer', customerName); // IMPORTANT: Must be lowercase 'customer' as per docs
+      params.append('optional1', customerName); // Using optional1 for customer name
     }
 
     if (optional1) {
-      params.append('optional1', optional1);
+      params.append('optional2', optional1); // Using optional2 for customer email
     }
 
     console.log('===== HASH CALCULATION =====');
@@ -292,7 +294,7 @@ export async function POST(request: Request) {
     ];
 
     // Add optional parameters after the required ones
-    const optionalKeys = ['customer', 'optional1', 'optional2', 'optional3', 'optional4', 'optional5'];
+    const optionalKeys = ['optional1', 'optional2', 'optional3', 'optional4', 'optional5'];
 
     // Build URL with parameters in the correct order
     [...orderedKeys, ...optionalKeys].forEach(key => {
