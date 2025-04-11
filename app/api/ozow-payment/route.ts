@@ -114,29 +114,33 @@ export async function POST(request: Request) {
     // Construct the Ozow redirect URL with all required parameters
     const params = new URLSearchParams();
 
-    // Required parameters in the exact order Ozow expects
+    // IMPORTANT: Parameters must be added in the EXACT order as specified in the Ozow documentation
+    // This order must match the order used for hash calculation
     params.append('SiteCode', siteCodeToUse);
     params.append('CountryCode', 'ZA');
     params.append('CurrencyCode', 'ZAR');
     params.append('Amount', amountFormatted);
     params.append('TransactionReference', reference);
     params.append('BankReference', bankReference);
+
+    // URLs - all required - must be in this exact order
+    params.append('CancelUrl', cancelUrl);
+    params.append('ErrorUrl', errorUrl);
+    params.append('SuccessUrl', successUrl);
+    params.append('NotifyUrl', notifyUrl);
+
+    // IsTest must come after the URLs
     params.append('IsTest', isTestValue);
 
-    // Customer information
+    // Optional parameters - these come AFTER the required parameters
+    // and are NOT included in the hash calculation
     if (customerName) {
-      params.append('CustomerInformation', customerName);
+      params.append('Customer', customerName); // Note: Changed from CustomerInformation to Customer as per docs
     }
 
     if (optional1) {
       params.append('optional1', optional1);
     }
-
-    // URLs - all required
-    params.append('CancelUrl', cancelUrl);
-    params.append('ErrorUrl', errorUrl);
-    params.append('SuccessUrl', successUrl);
-    params.append('NotifyUrl', notifyUrl);
 
     console.log('===== HASH CALCULATION =====');
 
@@ -146,14 +150,9 @@ export async function POST(request: Request) {
       paramsObj[key] = value;
     });
 
-    // Sort parameters alphabetically as per Ozow requirements
-    const sortedKeys = Object.keys(paramsObj).sort();
-    const paramsForHash: string[] = [];
-
-    // Build the hash input with all parameters in correct format
-    for (const key of sortedKeys) {
-      paramsForHash.push(`${key}=${paramsObj[key]}`);
-    }
+    // NOTE: We should NOT sort parameters alphabetically for Ozow
+    // The hash must be calculated with parameters in the exact order specified in the documentation
+    // This was causing the hashcheck error
 
     // Build hash input according to Ozow documentation example
     // Following the exact example from their documentation
@@ -161,6 +160,8 @@ export async function POST(request: Request) {
 
     // Step 1: Create the input string exactly as in their example
     // Example from docs: TSTSTE0001ZAZAR25.00123ABC123http://demo.ozow.com/cancel.aspxhttp://demo.ozow.com/error.aspxhttp://demo.ozow.com/success.aspxhttp://demo.ozow.com/notify.aspxfalse[YOUR PRIVATE KEY]
+    // IMPORTANT: The order of parameters must match EXACTLY what's in the Ozow documentation
+    // The parameters must be in this exact order: SiteCode, CountryCode, CurrencyCode, Amount, TransactionReference, BankReference, CancelUrl, ErrorUrl, SuccessUrl, NotifyUrl, IsTest, PrivateKey
     const hashInput =
       siteCodeToUse +          // SiteCode
       'ZA' +                   // CountryCode
@@ -174,6 +175,9 @@ export async function POST(request: Request) {
       notifyUrl +              // NotifyUrl
       isTestValue +           // IsTest
       privateKey;              // PrivateKey
+
+    // IMPORTANT: Do NOT include optional1 (customer email) in the hash calculation
+    // This is a common mistake that causes hash check errors
 
     console.log('Raw hash input (with redacted private key):', hashInput.replace(privateKey, '[REDACTED]'));
 
@@ -289,12 +293,26 @@ export async function POST(request: Request) {
     });
     console.log('Parameters being sent to Ozow:', JSON.stringify(finalParams, null, 2));
 
-    // Try a different approach to constructing the URL
-    // Build the URL manually to ensure proper encoding
+    // Build the URL manually to ensure proper encoding and parameter order
+    // IMPORTANT: The order of parameters in the URL must match the order used for hash calculation
     let paymentUrlParams = '';
-    params.forEach((value, key) => {
-      if (paymentUrlParams) paymentUrlParams += '&';
-      paymentUrlParams += `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+
+    // Add parameters in the exact order required by Ozow
+    const orderedKeys = [
+      'SiteCode', 'CountryCode', 'CurrencyCode', 'Amount', 'TransactionReference', 'BankReference',
+      'CancelUrl', 'ErrorUrl', 'SuccessUrl', 'NotifyUrl', 'IsTest', 'HashCheck'
+    ];
+
+    // Add optional parameters after the required ones
+    const optionalKeys = ['Customer', 'optional1', 'optional2', 'optional3', 'optional4', 'optional5'];
+
+    // Build URL with parameters in the correct order
+    [...orderedKeys, ...optionalKeys].forEach(key => {
+      const value = params.get(key);
+      if (value) {
+        if (paymentUrlParams) paymentUrlParams += '&';
+        paymentUrlParams += `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+      }
     });
 
     const paymentUrl = `${baseUrl}?${paymentUrlParams}`;

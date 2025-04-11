@@ -451,14 +451,17 @@ export default function CheckoutPage() {
         siteCode: process.env.NEXT_PUBLIC_OZOW_SITE_CODE,
         amount: total.toFixed(2),
         transactionReference,
+        // Pass customer information as optional1 field as per Ozow documentation
         customer: {
           firstName,
           lastName,
           email
         },
+        // Store customer email in optional1 field
+        optional1: email,
         cancelUrl: `${baseUrl}/checkout?status=cancelled&ref=${transactionReference}`,
         errorUrl: `${baseUrl}/checkout?status=error&ref=${transactionReference}`,
-        successUrl: `${baseUrl}/order-success?ref=${transactionReference}`,
+        successUrl: `${baseUrl}/order-success?ref=${transactionReference}&method=ozow`,
         notifyUrl: `${baseUrl}/api/ozow-notification?ref=${transactionReference}`
       };
 
