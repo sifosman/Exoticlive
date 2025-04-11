@@ -116,6 +116,7 @@ export async function POST(request: Request) {
 
     // Required parameters in the exact order Ozow expects for hash calculation
     // This order MUST match the C# example in the documentation
+    // IMPORTANT: Do not URL encode these values for the hash calculation
     params.append('SiteCode', siteCodeToUse);
     params.append('CountryCode', 'ZA');
     params.append('CurrencyCode', 'ZAR');
@@ -252,29 +253,18 @@ export async function POST(request: Request) {
     console.log('Hash input ends with private key:', hashInput.endsWith(privateKey));
 
     // Generate SHA512 hash as required by Ozow
-    // Try both lowercase and uppercase versions
-    const hashLowercase = crypto
+    // IMPORTANT: The hash must be lowercase according to the documentation
+    const hash = crypto
       .createHash('sha512')
       .update(lowercaseHashInput, 'utf8')
       .digest('hex').toLowerCase();
 
-    const hashUppercase = crypto
-      .createHash('sha512')
-      .update(lowercaseHashInput, 'utf8')
-      .digest('hex').toUpperCase();
-
-    // Use uppercase hash as some payment gateways require this
-    const hash = hashUppercase;
-
     // Verify the hash is 128 characters long (512 bits = 128 hex characters)
     console.log('Hash length is correct (128 chars):', hash.length === 128);
-    console.log('Lowercase hash:', hashLowercase);
-    console.log('Uppercase hash:', hashUppercase);
+    console.log('Hash:', hash);
 
-    console.log('Generated hash:', hash);
-
-    // Add hash to parameters - Try uppercase for the HashCheck parameter
-    // The Ozow documentation example shows lowercase hash but doesn't explicitly specify
+    // Add hash to parameters
+    // IMPORTANT: The hash must be lowercase according to the documentation
     params.append('HashCheck', hash);
 
     // Log the final parameters
@@ -293,7 +283,7 @@ export async function POST(request: Request) {
     // IMPORTANT: The order of parameters in the URL must match the order used for hash calculation
     let paymentUrlParams = '';
 
-    // Add parameters in the exact order required by Ozow
+    // Build the URL with parameters in the exact order required by Ozow
     // IMPORTANT: Parameter names must match EXACTLY what Ozow expects (case-sensitive)
     // These parameter names are from the Ozow documentation
     const orderedKeys = [
@@ -309,7 +299,7 @@ export async function POST(request: Request) {
       const value = params.get(key);
       if (value) {
         if (paymentUrlParams) paymentUrlParams += '&';
-        paymentUrlParams += `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+        paymentUrlParams += `${key}=${encodeURIComponent(value)}`;
       }
     });
 
