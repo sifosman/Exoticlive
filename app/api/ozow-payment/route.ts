@@ -99,14 +99,14 @@ export async function POST(request: Request) {
     const bankReference = reference;
     const customerName = customer.firstName && customer.lastName ?
       `${customer.firstName.trim()} ${customer.lastName.trim()}` : '';
-    // Store customer email as optional1 as per Ozow's requirements
-    const optional1 = customer.email || '';
+    // Store customer email as customerEmail for later use
+    const customerEmail = customer.email || '';
 
     console.log('===== PAYMENT DETAILS =====');
     console.log('Amount:', amountFormatted);
     console.log('Reference:', reference);
     console.log('Customer:', customerName);
-    console.log('Customer Email (optional1):', optional1);
+    console.log('Customer Email:', customerEmail);
     console.log('Success URL:', successUrl);
     console.log('Notify URL:', notifyUrl);
 
@@ -137,8 +137,8 @@ export async function POST(request: Request) {
       params.append('optional1', customerName); // Using optional1 for customer name
     }
 
-    if (optional1) {
-      params.append('optional2', optional1); // Using optional2 for customer email
+    if (customerEmail) {
+      params.append('optional2', customerEmail); // Using optional2 for customer email
     }
 
     console.log('===== HASH CALCULATION =====');
