@@ -37,7 +37,8 @@ async function fetchRecentlyUpdatedProducts(updatedSince?: string) {
     const effectiveUpdatedSince = updatedSince || fiveMinutesAgo;
 
     // Build the URL with query parameters - get all product types, not just variable
-    let url = `${wcApiUrl}/wp-json/wc/v3/products?per_page=20&orderby=modified&order=desc`;
+    // Increased per_page to 50 to process more products per run
+    let url = `${wcApiUrl}/wp-json/wc/v3/products?per_page=50&orderby=modified&order=desc`;
 
     // Add the modified_after parameter
     url += `&modified_after=${effectiveUpdatedSince}`;
@@ -180,8 +181,28 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
       // Also check if the on_sale status has changed
       typesenseProduct.on_sale !== isOnSale;
 
+    // Get the image URL from the product data
     const imageUrl = productData.images && productData.images.length > 0 ? productData.images[0].src : null;
-    const imageChanged = typesenseProduct.image_url !== imageUrl;
+
+    // Normalize URLs for comparison (remove protocol, query params, etc.)
+    const normalizeUrl = (url: string | null): string => {
+      if (!url) return '';
+      try {
+        // Remove protocol (http/https)
+        let normalized = url.replace(/^https?:\/\//i, '');
+        // Remove query parameters
+        normalized = normalized.split('?')[0];
+        // Remove trailing slashes
+        normalized = normalized.replace(/\/$/, '');
+        return normalized.toLowerCase();
+      } catch (e) {
+        return url || '';
+      }
+    };
+
+    const normalizedOldUrl = normalizeUrl(typesenseProduct.image_url);
+    const normalizedNewUrl = normalizeUrl(imageUrl);
+    const imageChanged = normalizedOldUrl !== normalizedNewUrl;
 
     if (priceChanged) {
       console.log(`Price changed for product ${productId}:`);
@@ -192,9 +213,42 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
     }
 
     if (imageChanged) {
-      console.log(`Image changed for product ${productId}:`);
+      console.log(`🖼️ IMAGE CHANGED for product ${productId} (${productData.name}):`);
       console.log(`- Old image: ${typesenseProduct.image_url}`);
       console.log(`- New image: ${imageUrl}`);
+      console.log(`- Normalized old URL: ${normalizedOldUrl}`);
+      console.log(`- Normalized new URL: ${normalizedNewUrl}`);
+
+      // Log additional information about the image
+      if (!imageUrl) {
+        console.warn(`⚠️ New image URL is empty or null for product ${productId}`);
+      } else if (imageUrl.includes('placeholder')) {
+        console.warn(`⚠️ New image URL contains 'placeholder' for product ${productId}: ${imageUrl}`);
+      }
+
+      // Check if the product has multiple images
+      if (productData.images && productData.images.length > 1) {
+        console.log(`Product ${productId} has ${productData.images.length} images:`);
+        productData.images.forEach((img, index) => {
+          console.log(`  ${index + 1}. ${img.src}`);
+        });
+      }
+    } else {
+      // Check if the image URLs are different but normalized versions are the same
+      if (typesenseProduct.image_url !== imageUrl && normalizedOldUrl === normalizedNewUrl) {
+        console.log(`ℹ️ Image URLs differ but are equivalent after normalization for product ${productId}:`);
+        console.log(`- Old image: ${typesenseProduct.image_url}`);
+        console.log(`- New image: ${imageUrl}`);
+        console.log(`- Normalized: ${normalizedOldUrl}`);
+      }
+    }
+
+    // Check if we should force an image update even if normalized URLs are the same
+    // This handles cases where the image URL has changed in format but points to the same image
+    const forceImageUpdate = typesenseProduct.image_url !== imageUrl && normalizedOldUrl === normalizedNewUrl;
+
+    if (forceImageUpdate) {
+      console.log(`🔄 FORCING IMAGE UPDATE for product ${productId} despite normalized URLs being the same`);
     }
 
     // Update stock, price, and image data
@@ -212,8 +266,11 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
       sale_price: newSalePrice,
       on_sale: isOnSale,
 
-      // Image field
-      image_url: imageUrl
+      // Image field - always update the image URL even if only the format changed
+      image_url: imageUrl,
+
+      // Add a timestamp to force Typesense to recognize the update
+      image_updated_at: new Date().toISOString()
     };
 
     // Send PATCH request to update the document
@@ -242,12 +299,26 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
     const updateResult = await patchResponse.json();
     console.log(`Product ${productId} updated in Typesense with ${processedVariations.length} variations in ${duration}ms`);
 
+    // Check if this is a featured product
+    const isFeatured = productData.featured || false;
+
+    // Log additional information for featured products
+    if (isFeatured) {
+      console.log(`⭐ FEATURED PRODUCT ${productId} (${productData.name}) updated:`);
+      console.log(`- Image URL: ${imageUrl}`);
+      console.log(`- Image changed: ${imageChanged ? 'Yes' : 'No'}`);
+      console.log(`- Price changed: ${priceChanged ? 'Yes' : 'No'}`);
+      console.log(`- Stock status: ${processedVariations.some(v => v.stock_status === 'instock') ? 'In Stock' : 'Out of Stock'}`);
+    }
+
     // Return result with additional information about what was updated
     return {
       ...updateResult,
       price_updated: priceChanged,
-      image_updated: imageChanged,
-      variations_updated: true
+      image_updated: imageChanged || forceImageUpdate, // Consider forced updates as image updates
+      force_image_updated: forceImageUpdate,
+      variations_updated: true,
+      is_featured: isFeatured
     };
   } catch (error) {
     console.error(`Error updating product ${productId} in Typesense:`, error);
@@ -295,7 +366,7 @@ export async function GET(request: NextRequest) {
 
     // Process each product with a timeout
     const results = [];
-    const MAX_SYNC_TIME = 5000; // Maximum sync time in milliseconds (5 seconds)
+    const MAX_SYNC_TIME = 25000; // Maximum sync time in milliseconds (25 seconds) - increased to handle more products
 
     for (const product of products) {
       // Check if we've exceeded the maximum sync time
@@ -322,7 +393,9 @@ export async function GET(request: NextRequest) {
             variations_count: variations.length,
             price_updated: updateResult.price_updated || false,
             image_updated: updateResult.image_updated || false,
+            force_image_updated: updateResult.force_image_updated || false,
             stock_updated: true,
+            is_featured: updateResult.is_featured || false,
             success: true
           });
         } else {
@@ -349,7 +422,18 @@ export async function GET(request: NextRequest) {
     console.log('Failed updates:', results.filter(r => !r.success).length);
     console.log('Price updates:', results.filter(r => r.price_updated).length);
     console.log('Image updates:', results.filter(r => r.image_updated).length);
+    console.log('Forced image updates:', results.filter(r => r.force_image_updated).length);
     console.log('Stock updates:', results.filter(r => r.stock_updated).length);
+    console.log('Featured products updated:', results.filter(r => r.is_featured).length);
+
+    // Log detailed information about featured products with image updates
+    const featuredWithImageUpdates = results.filter(r => r.is_featured && r.image_updated);
+    if (featuredWithImageUpdates.length > 0) {
+      console.log(`⭐🖼️ ${featuredWithImageUpdates.length} FEATURED PRODUCTS WITH IMAGE UPDATES:`);
+      featuredWithImageUpdates.forEach(product => {
+        console.log(`- ${product.name} (ID: ${product.id})`);
+      });
+    }
 
     // Logs page has been removed
 
@@ -357,11 +441,14 @@ export async function GET(request: NextRequest) {
     const successCount = results.filter(r => r.success).length;
     const priceUpdateCount = results.filter(r => r.price_updated).length;
     const imageUpdateCount = results.filter(r => r.image_updated).length;
+    const forceImageUpdateCount = results.filter(r => r.force_image_updated).length;
     const stockUpdateCount = results.filter(r => r.stock_updated).length;
+    const featuredUpdateCount = results.filter(r => r.is_featured).length;
+    const featuredImageUpdateCount = results.filter(r => r.is_featured && r.image_updated).length;
 
     return NextResponse.json({
       success: true,
-      message: `Synced ${successCount} of ${results.length} products in ${syncDuration}ms (${priceUpdateCount} price updates, ${imageUpdateCount} image updates, ${stockUpdateCount} stock updates)`,
+      message: `Synced ${successCount} of ${results.length} products in ${syncDuration}ms (${priceUpdateCount} price updates, ${imageUpdateCount} image updates, ${forceImageUpdateCount} forced image updates, ${stockUpdateCount} stock updates, ${featuredUpdateCount} featured products, ${featuredImageUpdateCount} featured image updates)`,
       results,
       timestamp: new Date().toISOString(),
       duration: syncDuration,
@@ -371,7 +458,10 @@ export async function GET(request: NextRequest) {
         failed: results.filter(r => !r.success).length,
         price_updates: priceUpdateCount,
         image_updates: imageUpdateCount,
-        stock_updates: stockUpdateCount
+        force_image_updates: forceImageUpdateCount,
+        stock_updates: stockUpdateCount,
+        featured_updates: featuredUpdateCount,
+        featured_image_updates: featuredImageUpdateCount
       }
     });
   } catch (error) {
