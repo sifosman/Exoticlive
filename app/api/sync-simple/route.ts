@@ -220,13 +220,66 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
 
       console.log(`Found product in Typesense: ${product.name}`);
 
-      // Update the product in Typesense
+      // Fetch the original product from WooCommerce to get the latest price and image data
+      const productResponse = await fetch(`${wcApiUrl}/wp-json/wc/v3/products/${productId}`, {
+        headers: {
+          'Authorization': getWooCommerceAuthHeader()
+        }
+      });
+
+      if (!productResponse.ok) {
+        throw new Error(`Failed to fetch product details: ${productResponse.statusText}`);
+      }
+
+      const productData = await productResponse.json();
+      console.log(`Fetched latest product data for ${productId} (${productData.name})`);
+
+      // Get price data
+      const newPrice = parseFloat(productData.price || '0');
+      const newRegularPrice = parseFloat(productData.regular_price || '0');
+      const newSalePrice = productData.sale_price ? parseFloat(productData.sale_price) : null;
+      const isOnSale = productData.on_sale || false;
+
+      // Get image data
+      const imageUrl = productData.images && productData.images.length > 0 ? productData.images[0].src : null;
+
+      // Check if the product is featured
+      const isFeatured = productData.featured || false;
+
+      // Log information about the product
+      if (isFeatured) {
+        console.log(`⭐ FEATURED PRODUCT ${productId} (${productData.name}) updated:`);
+        console.log(`- Image URL: ${imageUrl}`);
+        console.log(`- Price: ${newPrice}`);
+        console.log(`- Regular price: ${newRegularPrice}`);
+        console.log(`- Sale price: ${newSalePrice}`);
+        console.log(`- On sale: ${isOnSale ? 'Yes' : 'No'}`);
+      }
+
+      // Update the product in Typesense with all data
       const updateData = {
+        // Stock-related fields
         variations: processedVariations,
         variations_json: JSON.stringify(processedVariations),
         variations_count: processedVariations.length,
         in_stock_variations_count: processedVariations.filter(v => v.stock_status === 'instock').length,
-        stock_status: processedVariations.some(v => v.stock_status === 'instock') ? 'instock' : 'outofstock'
+        stock_status: processedVariations.some(v => v.stock_status === 'instock') ? 'instock' : 'outofstock',
+
+        // Price fields
+        price: newPrice,
+        regular_price: newRegularPrice,
+        sale_price: newSalePrice,
+        on_sale: isOnSale,
+
+        // Image field
+        image_url: imageUrl,
+
+        // Add a timestamp to force Typesense to recognize the update
+        image_updated_at: new Date().toISOString(),
+
+        // Featured status
+        featured: isFeatured,
+        is_featured: isFeatured
       };
 
       const updateResult = await typesenseClient
@@ -395,10 +448,23 @@ export async function GET(request: NextRequest) {
         // Update the product in Typesense
         await updateProductInTypesense(product.id.toString(), variations);
 
+        // Get the product data from WooCommerce to check if it's featured
+        const productResponse = await fetch(`${wcApiUrl}/wp-json/wc/v3/products/${product.id}`, {
+          headers: {
+            'Authorization': getWooCommerceAuthHeader()
+          }
+        });
+
+        const productData = await productResponse.json();
+        const isFeatured = productData.featured || false;
+
         results.push({
           id: product.id,
           name: product.name,
           variations_count: variations.length,
+          is_featured: isFeatured,
+          image_updated: true, // We're always updating the image now
+          price_updated: true, // We're always updating the price now
           success: true
         });
       } catch (error) {
@@ -420,6 +486,18 @@ export async function GET(request: NextRequest) {
     console.log('Products processed:', results.length);
     console.log('Successful updates:', results.filter(r => r.success).length);
     console.log('Failed updates:', results.filter(r => !r.success).length);
+    console.log('Image updates:', results.filter(r => r.image_updated).length);
+    console.log('Price updates:', results.filter(r => r.price_updated).length);
+    console.log('Featured products updated:', results.filter(r => r.is_featured).length);
+
+    // Log detailed information about featured products
+    const featuredProducts = results.filter(r => r.is_featured && r.success);
+    if (featuredProducts.length > 0) {
+      console.log(`⭐ ${featuredProducts.length} FEATURED PRODUCTS UPDATED:`);
+      featuredProducts.forEach(product => {
+        console.log(`- ${product.name} (ID: ${product.id})`);
+      });
+    }
 
     // Prepare the response message
     let message = '';
