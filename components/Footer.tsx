@@ -45,6 +45,33 @@ const Footer = () => {
     setSubmitStatus({ loading: true, error: null, success: false });
 
     try {
+      // Create an HTML template with a reply button
+      const emailTemplate = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">New Contact Form Submission</h2>
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>From:</strong> ${formData.name}</p>
+            <p><strong>Email:</strong> ${formData.email}</p>
+            <p><strong>Message:</strong></p>
+            <p style="white-space: pre-wrap;">${formData.message}</p>
+          </div>
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="mailto:${formData.email}?subject=Re: Your message to Exotic Shoes" 
+               style="background-color: #829D46; 
+                      color: white; 
+                      padding: 12px 25px; 
+                      text-decoration: none; 
+                      border-radius: 5px; 
+                      display: inline-block;">
+              Reply to ${formData.name}
+            </a>
+          </div>
+          <p style="color: #666; font-size: 12px; margin-top: 20px;">
+            This message was sent from the Exotic Shoes contact form.
+          </p>
+        </div>
+      `;
+
       await emailjs.send(
         process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
         process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
@@ -52,6 +79,9 @@ const Footer = () => {
           from_name: formData.name,
           from_email: formData.email,
           message: formData.message,
+          html_message: emailTemplate,
+          subject: `New Contact Form Message from ${formData.name}`,
+          reply_to: formData.email
         },
         process.env.NEXT_PUBLIC_EMAILJS_USER_ID
       );
@@ -433,3 +463,4 @@ const Footer = () => {
 };
 
 export default Footer;
+
