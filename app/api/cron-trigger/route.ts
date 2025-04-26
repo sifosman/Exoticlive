@@ -17,15 +17,36 @@ export async function GET(request: NextRequest) {
   try {
     console.log('External cron service triggered stock sync');
 
-    // Call the simplified sync API
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin}/api/sync-simple`);
+    // First call the simplified sync API for updated products
+    console.log('Calling sync-simple API for updated products...');
+    const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin}/api/sync-simple`);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to sync stock: ${response.status} ${response.statusText} - ${errorText}`);
+    if (!syncResponse.ok) {
+      const errorText = await syncResponse.text();
+      throw new Error(`Failed to sync updated products: ${syncResponse.status} ${syncResponse.statusText} - ${errorText}`);
     }
 
-    const result = await response.json();
+    const syncResult = await syncResponse.json();
+    console.log('Updated products sync result:', syncResult.message);
+
+    // Then call the new products sync API
+    console.log('Calling sync-new-products API for new products...');
+    const newProductsResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin}/api/sync-new-products`);
+
+    if (!newProductsResponse.ok) {
+      const errorText = await newProductsResponse.text();
+      console.error(`Failed to sync new products: ${newProductsResponse.status} ${newProductsResponse.statusText} - ${errorText}`);
+      // Continue with the result from the first sync even if the second one fails
+    } else {
+      const newProductsResult = await newProductsResponse.json();
+      console.log('New products sync result:', newProductsResult.message);
+    }
+
+    // Combine the results
+    const result = {
+      ...syncResult,
+      message: `${syncResult.message}. Also checked for new products.`
+    };
 
     return NextResponse.json({
       success: true,
