@@ -11,14 +11,14 @@ export default function SyncNewProductsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch('/api/sync-new-products');
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to sync new products: ${response.status} ${response.statusText} - ${errorText}`);
       }
-      
+
       const data = await response.json();
       setResult(data);
     } catch (err) {
@@ -31,7 +31,7 @@ export default function SyncNewProductsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Sync New Products</h1>
-      
+
       <div className="mb-6">
         <button
           onClick={handleTriggerClick}
@@ -41,21 +41,21 @@ export default function SyncNewProductsPage() {
           {loading ? 'Syncing...' : 'Sync New Products'}
         </button>
       </div>
-      
+
       {error && (
         <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
           <h2 className="text-lg font-semibold mb-2">Error</h2>
           <pre className="whitespace-pre-wrap">{error}</pre>
         </div>
       )}
-      
+
       {loading && (
         <div className="mb-6 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
           <h2 className="text-lg font-semibold mb-2">Syncing...</h2>
           <p>This may take a few moments. Please do not close this page.</p>
         </div>
       )}
-      
+
       {result && (
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-2">Result</h2>
@@ -63,8 +63,8 @@ export default function SyncNewProductsPage() {
             <p className="font-semibold">{result.message}</p>
             <p>Duration: {result.duration / 1000} seconds</p>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
             <div className="p-4 bg-gray-100 rounded">
               <p className="text-lg font-semibold">{result.stats?.total_checked || 0}</p>
               <p className="text-sm">Products Checked</p>
@@ -72,6 +72,14 @@ export default function SyncNewProductsPage() {
             <div className="p-4 bg-blue-100 rounded">
               <p className="text-lg font-semibold">{result.stats?.new_products || 0}</p>
               <p className="text-sm">New Products</p>
+            </div>
+            <div className="p-4 bg-indigo-100 rounded">
+              <p className="text-lg font-semibold">{result.stats?.simple_products || 0}</p>
+              <p className="text-sm">Simple Products</p>
+            </div>
+            <div className="p-4 bg-purple-100 rounded">
+              <p className="text-lg font-semibold">{result.stats?.variable_products || 0}</p>
+              <p className="text-sm">Variable Products</p>
             </div>
             <div className="p-4 bg-green-100 rounded">
               <p className="text-lg font-semibold">{result.stats?.success || 0}</p>
@@ -82,7 +90,7 @@ export default function SyncNewProductsPage() {
               <p className="text-sm">Failed</p>
             </div>
           </div>
-          
+
           {result.results && result.results.length > 0 && (
             <>
               <h3 className="text-lg font-semibold mb-2">New Products</h3>
@@ -92,6 +100,7 @@ export default function SyncNewProductsPage() {
                     <tr>
                       <th className="py-2 px-4 border-b">ID</th>
                       <th className="py-2 px-4 border-b">Name</th>
+                      <th className="py-2 px-4 border-b">Type</th>
                       <th className="py-2 px-4 border-b">Status</th>
                     </tr>
                   </thead>
@@ -100,6 +109,13 @@ export default function SyncNewProductsPage() {
                       <tr key={item.id} className={item.success ? 'bg-green-50' : 'bg-red-50'}>
                         <td className="py-2 px-4 border-b">{item.id}</td>
                         <td className="py-2 px-4 border-b">{item.name}</td>
+                        <td className="py-2 px-4 border-b">
+                          {item.type === 'variable' ? (
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">Variable</span>
+                          ) : (
+                            <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold">Simple</span>
+                          )}
+                        </td>
                         <td className="py-2 px-4 border-b">
                           {item.success ? (
                             <span className="text-green-600">Created</span>
@@ -116,7 +132,7 @@ export default function SyncNewProductsPage() {
           )}
         </div>
       )}
-      
+
       <div className="mt-8">
         <h2 className="text-lg font-semibold mb-2">Instructions</h2>
         <p className="mb-4">

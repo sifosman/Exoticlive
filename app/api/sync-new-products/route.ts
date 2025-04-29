@@ -34,11 +34,11 @@ async function fetchNewProducts() {
 
     // Get products created in the last 24 hours
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    
+
     // Build the URL with query parameters for recently created products
     // We're using orderby=date to get the most recently created products first
     const url = `${wcApiUrl}/wp-json/wc/v3/products?per_page=50&orderby=date&order=desc&after=${oneDayAgo}&status=publish`;
-    
+
     console.log(`Fetching newly created products from: ${url}`);
 
     const response = await fetch(url, {
@@ -68,7 +68,7 @@ async function checkProductExistsInTypesense(productId: string) {
       .collections('products')
       .documents(productId)
       .retrieve();
-    
+
     return true;
   } catch (error) {
     if (error.toString().includes('Not Found') || error.toString().includes('404')) {
@@ -79,9 +79,15 @@ async function checkProductExistsInTypesense(productId: string) {
 }
 
 // Fetch variations for a product from WooCommerce
-async function fetchVariationsFromWooCommerce(productId: number) {
+async function fetchVariationsFromWooCommerce(productId: number, productType: string) {
   try {
-    console.log(`Fetching variations for product ${productId} from WooCommerce...`);
+    // Only fetch variations for variable products
+    if (productType !== 'variable') {
+      console.log(`Product ${productId} is not a variable product (type: ${productType}), skipping variations fetch`);
+      return [];
+    }
+
+    console.log(`Fetching variations for variable product ${productId} from WooCommerce...`);
 
     if (!wcApiUrl || !wcConsumerKey || !wcConsumerSecret) {
       throw new Error('WooCommerce API credentials not configured');
@@ -94,6 +100,11 @@ async function fetchVariationsFromWooCommerce(productId: number) {
     });
 
     if (!response.ok) {
+      // If we get a 404, it might mean the product doesn't have variations
+      if (response.status === 404) {
+        console.log(`No variations found for product ${productId}, it might not be a variable product`);
+        return [];
+      }
       throw new Error(`Failed to fetch variations: ${response.statusText}`);
     }
 
@@ -103,14 +114,16 @@ async function fetchVariationsFromWooCommerce(productId: number) {
     return variations;
   } catch (error) {
     console.error(`Error fetching variations for product ${productId}:`, error);
-    throw error;
+    // Return empty array instead of throwing to allow the process to continue
+    return [];
   }
 }
 
 // Create product in Typesense
-async function createProductInTypesense(productId: string, variations: any[]) {
+async function createProductInTypesense(productId: string, productData: any, variations: any[]) {
   try {
-    console.log(`Creating product ${productId} in Typesense...`);
+    console.log(`Creating product ${productId} (${productData.name}) in Typesense...`);
+    console.log(`Product type: ${productData.type}, Variations: ${variations.length}`);
 
     // Process variations
     const processedVariations = variations.map(variation => {
@@ -128,20 +141,6 @@ async function createProductInTypesense(productId: string, variations: any[]) {
       };
     });
 
-    // Fetch the full product data from WooCommerce
-    const productResponse = await fetch(`${wcApiUrl}/wp-json/wc/v3/products/${productId}`, {
-      headers: {
-        'Authorization': getWooCommerceAuthHeader()
-      }
-    });
-
-    if (!productResponse.ok) {
-      throw new Error(`Failed to fetch product details: ${productResponse.statusText}`);
-    }
-
-    const productData = await productResponse.json();
-    console.log(`Fetched product details for ${productId}: ${productData.name}`);
-
     // Get price data
     const price = parseFloat(productData.price || '0');
     const regularPrice = parseFloat(productData.regular_price || '0');
@@ -153,6 +152,12 @@ async function createProductInTypesense(productId: string, variations: any[]) {
 
     // Check if the product is featured
     const isFeatured = productData.featured || false;
+
+    // For variable products, calculate stock status based on variations
+    let stockStatus = productData.stock_status || 'outofstock';
+    if (productData.type === 'variable' && processedVariations.length > 0) {
+      stockStatus = processedVariations.some(v => v.stock_status === 'instock') ? 'instock' : 'outofstock';
+    }
 
     // Create a new product document for Typesense
     const newProduct = {
@@ -170,7 +175,7 @@ async function createProductInTypesense(productId: string, variations: any[]) {
       image_url: imageUrl,
       gallery_images: productData.images?.map((img: any) => img.src) || [],
       slug: productData.slug || '',
-      stock_status: productData.stock_status || 'outofstock',
+      stock_status: stockStatus,
       stock_quantity: productData.stock_quantity || 0,
       variations_count: processedVariations.length,
       in_stock_variations_count: processedVariations.filter(v => v.stock_status === 'instock').length,
@@ -248,6 +253,8 @@ export async function GET(request: NextRequest) {
     // Process each product
     const results = [];
     let newProductsCount = 0;
+    let simpleProductsCount = 0;
+    let variableProductsCount = 0;
 
     for (const product of products) {
       try {
@@ -261,17 +268,27 @@ export async function GET(request: NextRequest) {
 
         // Product doesn't exist in Typesense, create it
         newProductsCount++;
-        console.log(`Product ${product.id} (${product.name}) is new, creating in Typesense...`);
 
-        // Fetch variations for this product
-        const variations = await fetchVariationsFromWooCommerce(product.id);
+        // Track product type
+        if (product.type === 'variable') {
+          variableProductsCount++;
+        } else {
+          simpleProductsCount++;
+        }
+
+        console.log(`Product ${product.id} (${product.name}) is new, creating in Typesense...`);
+        console.log(`Product type: ${product.type}`);
+
+        // Fetch variations for this product if it's a variable product
+        const variations = await fetchVariationsFromWooCommerce(product.id, product.type);
 
         // Create the product in Typesense
-        await createProductInTypesense(product.id.toString(), variations);
+        await createProductInTypesense(product.id.toString(), product, variations);
 
         results.push({
           id: product.id,
           name: product.name,
+          type: product.type,
           variations_count: variations.length,
           is_featured: product.featured || false,
           action: 'created',
@@ -283,6 +300,7 @@ export async function GET(request: NextRequest) {
         results.push({
           id: product.id,
           name: product.name,
+          type: product.type || 'unknown',
           error: error instanceof Error ? error.message : String(error),
           success: false
         });
@@ -295,18 +313,22 @@ export async function GET(request: NextRequest) {
     console.log(`=== NEW PRODUCTS SYNC COMPLETED in ${syncDuration}ms ===`);
     console.log('Products checked:', products.length);
     console.log('New products created:', newProductsCount);
+    console.log('Simple products created:', simpleProductsCount);
+    console.log('Variable products created:', variableProductsCount);
     console.log('Successful creations:', results.filter(r => r.success).length);
     console.log('Failed creations:', results.filter(r => !r.success).length);
 
     return NextResponse.json({
       success: true,
-      message: `Created ${results.filter(r => r.success).length} new products in ${syncDuration}ms`,
+      message: `Created ${results.filter(r => r.success).length} new products in ${syncDuration}ms (${simpleProductsCount} simple, ${variableProductsCount} variable)`,
       results,
       timestamp: new Date().toISOString(),
       duration: syncDuration,
       stats: {
         total_checked: products.length,
         new_products: newProductsCount,
+        simple_products: simpleProductsCount,
+        variable_products: variableProductsCount,
         success: results.filter(r => r.success).length,
         failed: results.filter(r => !r.success).length
       }
