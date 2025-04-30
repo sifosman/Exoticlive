@@ -126,7 +126,7 @@ async function createProductInTypesense(productId: string, productData: any, var
     console.log(`Product type: ${productData.type}, Variations: ${variations.length}`);
 
     // Process variations
-    const processedVariations = variations.map(variation => {
+    const processedVariations = variations.length > 0 ? variations.map(variation => {
       return {
         id: variation.id.toString(),
         price: parseFloat(variation.price || '0'),
@@ -134,12 +134,12 @@ async function createProductInTypesense(productId: string, productData: any, var
         sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
         stock_status: variation.stock_status || 'outofstock',
         stock_quantity: variation.stock_quantity || 0,
-        attributes: variation.attributes.map((attr: any) => ({
+        attributes: variation.attributes && Array.isArray(variation.attributes) ? variation.attributes.map((attr: any) => ({
           name: attr.name,
           option: attr.option
-        }))
+        })) : []
       };
-    });
+    }) : [];
 
     // Get price data
     const price = parseFloat(productData.price || '0');
@@ -226,8 +226,9 @@ export async function GET(request: NextRequest) {
     // Get the API key from the request
     const apiKey = request.nextUrl.searchParams.get('key');
 
-    // Check if the API key is valid
-    if (apiKey !== process.env.SYNC_API_KEY) {
+    // Only check API key if it's provided and not called from cron-trigger
+    // This allows the cron-trigger endpoint to call this endpoint without an API key
+    if (apiKey && apiKey !== process.env.SYNC_API_KEY) {
       return NextResponse.json(
         { success: false, message: 'Invalid API key' },
         { status: 401 }
@@ -280,7 +281,14 @@ export async function GET(request: NextRequest) {
         console.log(`Product type: ${product.type}`);
 
         // Fetch variations for this product if it's a variable product
-        const variations = await fetchVariationsFromWooCommerce(product.id, product.type);
+        let variations = [];
+        try {
+          variations = await fetchVariationsFromWooCommerce(product.id, product.type);
+          console.log(`Successfully fetched ${variations.length} variations for product ${product.id} (${product.name})`);
+        } catch (variationError) {
+          console.error(`Error fetching variations for product ${product.id}, continuing with empty variations:`, variationError);
+          // Continue with empty variations rather than failing the whole product
+        }
 
         // Create the product in Typesense
         await createProductInTypesense(product.id.toString(), product, variations);

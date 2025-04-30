@@ -31,7 +31,9 @@ export async function GET(request: NextRequest) {
 
     // Then call the new products sync API
     console.log('Calling sync-new-products API for new products...');
-    const newProductsResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin}/api/sync-new-products`);
+    // Add a timestamp to avoid caching issues
+    const timestamp = new Date().getTime();
+    const newProductsResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin}/api/sync-new-products?t=${timestamp}`);
 
     if (!newProductsResponse.ok) {
       const errorText = await newProductsResponse.text();
