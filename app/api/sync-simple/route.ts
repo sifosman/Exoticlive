@@ -162,8 +162,14 @@ async function fetchRecentlyUpdatedProducts() {
 }
 
 // Fetch variations for a product from WooCommerce
-async function fetchVariationsFromWooCommerce(productId: number) {
+async function fetchVariationsFromWooCommerce(productId: number, productType?: string) {
   try {
+    // If product type is provided and it's not a variable product, return empty array
+    if (productType && productType !== 'variable') {
+      console.log(`Product ${productId} is not a variable product (type: ${productType}), skipping variations fetch`);
+      return [];
+    }
+
     console.log(`Fetching variations for product ${productId} from WooCommerce...`);
 
     if (!wcApiUrl || !wcConsumerKey || !wcConsumerSecret) {
@@ -177,6 +183,11 @@ async function fetchVariationsFromWooCommerce(productId: number) {
     });
 
     if (!response.ok) {
+      // If we get a 404, it might mean the product doesn't have variations
+      if (response.status === 404) {
+        console.log(`No variations found for product ${productId}, it might not be a variable product`);
+        return [];
+      }
       throw new Error(`Failed to fetch variations: ${response.statusText}`);
     }
 
@@ -186,7 +197,8 @@ async function fetchVariationsFromWooCommerce(productId: number) {
     return variations;
   } catch (error) {
     console.error(`Error fetching variations for product ${productId}:`, error);
-    throw error;
+    // Return empty array instead of throwing to allow the process to continue
+    return [];
   }
 }
 
@@ -196,7 +208,7 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
     console.log(`Updating product ${productId} in Typesense...`);
 
     // Process variations
-    const processedVariations = variations.map(variation => {
+    const processedVariations = variations && variations.length > 0 ? variations.map(variation => {
       return {
         id: variation.id.toString(),
         price: parseFloat(variation.price || '0'),
@@ -204,12 +216,12 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
         sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
         stock_status: variation.stock_status || 'outofstock',
         stock_quantity: variation.stock_quantity || 0,
-        attributes: variation.attributes.map((attr: any) => ({
+        attributes: variation.attributes && Array.isArray(variation.attributes) ? variation.attributes.map((attr: any) => ({
           name: attr.name,
           option: attr.option
-        }))
+        })) : []
       };
-    });
+    }) : [];
 
     // Check if the product exists in Typesense
     try {
@@ -443,7 +455,8 @@ export async function GET(request: NextRequest) {
     for (const product of products) {
       try {
         // Fetch variations for this product
-        const variations = await fetchVariationsFromWooCommerce(product.id);
+        console.log(`Processing product ${product.id} (${product.name}) of type ${product.type}`);
+        const variations = await fetchVariationsFromWooCommerce(product.id, product.type);
 
         // Update the product in Typesense
         await updateProductInTypesense(product.id.toString(), variations);
