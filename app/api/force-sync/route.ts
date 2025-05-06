@@ -60,7 +60,7 @@ async function fetchVariationsFromWooCommerce(productId: number, productType: st
       console.log(`Product ${productId} is not a variable product (type: ${productType}), skipping variations fetch`);
       return [];
     }
-    
+
     console.log(`Fetching variations for variable product ${productId} from WooCommerce...`);
 
     if (!wcApiUrl || !wcConsumerKey || !wcConsumerSecret) {
@@ -101,20 +101,31 @@ async function updateOrCreateProductInTypesense(productData: any, variations: an
     console.log(`Product type: ${productData.type}, Variations: ${variations.length}`);
 
     // Process variations
-    const processedVariations = variations.length > 0 ? variations.map(variation => {
-      return {
-        id: variation.id.toString(),
-        price: parseFloat(variation.price || '0'),
-        regular_price: parseFloat(variation.regular_price || '0'),
-        sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
-        stock_status: variation.stock_status || 'outofstock',
-        stock_quantity: variation.stock_quantity || 0,
-        attributes: variation.attributes && Array.isArray(variation.attributes) ? variation.attributes.map((attr: any) => ({
-          name: attr.name,
-          option: attr.option
-        })) : []
-      };
-    }) : [];
+    const processedVariations = variations && variations.length > 0 ? variations.map(variation => {
+      if (!variation) return null;
+
+      try {
+        return {
+          id: variation.id ? variation.id.toString() : '',
+          price: parseFloat(variation.price || '0'),
+          regular_price: parseFloat(variation.regular_price || '0'),
+          sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
+          stock_status: variation.stock_status || 'outofstock',
+          stock_quantity: variation.stock_quantity || 0,
+          attributes: variation.attributes && Array.isArray(variation.attributes)
+            ? variation.attributes
+                .filter(attr => attr && typeof attr === 'object')
+                .map((attr: any) => ({
+                  name: attr.name || '',
+                  option: attr.option || ''
+                }))
+            : []
+        };
+      } catch (err) {
+        console.error('Error processing variation:', err, variation);
+        return null;
+      }
+    }).filter(Boolean) : [];
 
     // Get price data
     const price = parseFloat(productData.price || '0');
@@ -142,13 +153,25 @@ async function updateOrCreateProductInTypesense(productData: any, variations: an
       price: price,
       sale_price: salePrice,
       regular_price: regularPrice,
-      categories: productData.categories?.map((cat: any) => cat.name) || [],
-      tags: productData.tags?.map((tag: any) => tag.name) || [],
-      attributes: productData.attributes?.map((attr: any) => attr.name) || [],
-      colors: productData.attributes?.find((attr: any) => attr.name === 'Color')?.options || [],
-      sizes: productData.attributes?.find((attr: any) => attr.name === 'Size')?.options || [],
+      categories: productData.categories && Array.isArray(productData.categories)
+        ? productData.categories.filter(cat => cat && typeof cat === 'object').map((cat: any) => cat.name || '').filter(Boolean)
+        : [],
+      tags: productData.tags && Array.isArray(productData.tags)
+        ? productData.tags.filter(tag => tag && typeof tag === 'object').map((tag: any) => tag.name || '').filter(Boolean)
+        : [],
+      attributes: productData.attributes && Array.isArray(productData.attributes)
+        ? productData.attributes.map((attr: any) => attr.name).filter(Boolean)
+        : [],
+      colors: productData.attributes && Array.isArray(productData.attributes)
+        ? (productData.attributes.find((attr: any) => attr.name === 'Color')?.options || [])
+        : [],
+      sizes: productData.attributes && Array.isArray(productData.attributes)
+        ? (productData.attributes.find((attr: any) => attr.name === 'Size')?.options || [])
+        : [],
       image_url: imageUrl,
-      gallery_images: productData.images?.map((img: any) => img.src) || [],
+      gallery_images: productData.images && Array.isArray(productData.images)
+        ? productData.images.filter(img => img && typeof img === 'object').map((img: any) => img.src || '').filter(Boolean)
+        : [],
       slug: productData.slug || '',
       stock_status: stockStatus,
       stock_quantity: productData.stock_quantity || 0,
@@ -224,33 +247,33 @@ async function updateOrCreateProductInTypesense(productData: any, variations: an
 export async function GET(request: NextRequest) {
   try {
     const syncStartTime = Date.now();
-    
+
     // Get the product ID from the query parameters
     const productId = request.nextUrl.searchParams.get('id');
-    
+
     if (!productId) {
       return NextResponse.json(
         { success: false, message: 'Product ID is required' },
         { status: 400 }
       );
     }
-    
+
     console.log(`=== FORCE SYNC STARTED for product ${productId} at ${new Date().toISOString()} ===`);
 
     // Fetch the product from WooCommerce
     const product = await fetchProductFromWooCommerce(productId);
-    
+
     // Fetch variations if it's a variable product
     const variations = await fetchVariationsFromWooCommerce(product.id, product.type);
-    
+
     // Update or create the product in Typesense
     const result = await updateOrCreateProductInTypesense(product, variations);
-    
+
     const syncEndTime = Date.now();
     const syncDuration = syncEndTime - syncStartTime;
-    
+
     console.log(`=== FORCE SYNC COMPLETED in ${syncDuration}ms ===`);
-    
+
     return NextResponse.json({
       success: true,
       message: `Product ${product.name} (ID: ${productId}) ${result.action} in Typesense`,
@@ -266,7 +289,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error forcing sync:', error);
-    
+
     return NextResponse.json(
       {
         success: false,
