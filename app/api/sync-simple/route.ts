@@ -207,11 +207,22 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
   try {
     console.log(`Updating product ${productId} in Typesense...`);
 
-    // Process variations
+    // Process variations - SIMPLIFIED to avoid attribute issues
     const processedVariations = variations && variations.length > 0 ? variations.map(variation => {
       if (!variation) return null;
 
       try {
+        // Extract attribute options as simple strings
+        const attributeOptions = {};
+
+        if (variation.attributes && Array.isArray(variation.attributes)) {
+          variation.attributes.forEach((attr: any) => {
+            if (attr && attr.name && attr.option) {
+              attributeOptions[attr.name] = attr.option;
+            }
+          });
+        }
+
         return {
           id: variation.id ? variation.id.toString() : '',
           price: parseFloat(variation.price || '0'),
@@ -219,14 +230,8 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
           sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
           stock_status: variation.stock_status || 'outofstock',
           stock_quantity: variation.stock_quantity || 0,
-          attributes: variation.attributes && Array.isArray(variation.attributes)
-            ? variation.attributes
-                .filter(attr => attr && typeof attr === 'object')
-                .map((attr: any) => ({
-                  name: attr.name || '',
-                  option: attr.option || ''
-                }))
-            : []
+          // Replace complex attributes with simple key-value object
+          attribute_options: attributeOptions
         };
       } catch (err) {
         console.error('Error processing variation:', err, variation);
@@ -342,15 +347,18 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
             price: parseFloat(productData.price || '0'),
             sale_price: productData.sale_price ? parseFloat(productData.sale_price) : null,
             regular_price: productData.regular_price ? parseFloat(productData.regular_price) : null,
+            // Using string arrays for categories and tags
             categories: productData.categories && Array.isArray(productData.categories)
-              ? productData.categories.filter(cat => cat && typeof cat === 'object').map((cat: any) => cat.name || '').filter(Boolean)
+              ? productData.categories
+                  .filter(cat => cat && typeof cat === 'object' && cat.name)
+                  .map((cat: any) => cat.name)
               : [],
             tags: productData.tags && Array.isArray(productData.tags)
-              ? productData.tags.filter(tag => tag && typeof tag === 'object').map((tag: any) => tag.name || '').filter(Boolean)
+              ? productData.tags
+                  .filter(tag => tag && typeof tag === 'object' && tag.name)
+                  .map((tag: any) => tag.name)
               : [],
-            attributes: productData.attributes && Array.isArray(productData.attributes)
-              ? productData.attributes.map((attr: any) => attr.name).filter(Boolean)
-              : [],
+            // REMOVED attributes field completely
             colors: productData.attributes && Array.isArray(productData.attributes)
               ? (productData.attributes.find((attr: any) => attr.name === 'Color')?.options || [])
               : [],

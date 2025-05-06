@@ -100,11 +100,22 @@ async function updateOrCreateProductInTypesense(productData: any, variations: an
     console.log(`Updating or creating product ${productId} (${productData.name}) in Typesense...`);
     console.log(`Product type: ${productData.type}, Variations: ${variations.length}`);
 
-    // Process variations
+    // Process variations - SIMPLIFIED to avoid attribute issues
     const processedVariations = variations && variations.length > 0 ? variations.map(variation => {
       if (!variation) return null;
 
       try {
+        // Extract attribute options as simple strings
+        const attributeOptions = {};
+
+        if (variation.attributes && Array.isArray(variation.attributes)) {
+          variation.attributes.forEach((attr: any) => {
+            if (attr && attr.name && attr.option) {
+              attributeOptions[attr.name] = attr.option;
+            }
+          });
+        }
+
         return {
           id: variation.id ? variation.id.toString() : '',
           price: parseFloat(variation.price || '0'),
@@ -112,14 +123,8 @@ async function updateOrCreateProductInTypesense(productData: any, variations: an
           sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
           stock_status: variation.stock_status || 'outofstock',
           stock_quantity: variation.stock_quantity || 0,
-          attributes: variation.attributes && Array.isArray(variation.attributes)
-            ? variation.attributes
-                .filter(attr => attr && typeof attr === 'object')
-                .map((attr: any) => ({
-                  name: attr.name || '',
-                  option: attr.option || ''
-                }))
-            : []
+          // Replace complex attributes with simple key-value object
+          attribute_options: attributeOptions
         };
       } catch (err) {
         console.error('Error processing variation:', err, variation);
@@ -145,7 +150,24 @@ async function updateOrCreateProductInTypesense(productData: any, variations: an
       stockStatus = processedVariations.some(v => v.stock_status === 'instock') ? 'instock' : 'outofstock';
     }
 
-    // Create the product document for Typesense
+    // Extract color and size options from attributes
+    let colorOptions = [];
+    let sizeOptions = [];
+
+    if (productData.attributes && Array.isArray(productData.attributes)) {
+      const colorAttr = productData.attributes.find((attr: any) => attr && attr.name === 'Color');
+      const sizeAttr = productData.attributes.find((attr: any) => attr && attr.name === 'Size');
+
+      if (colorAttr && colorAttr.options && Array.isArray(colorAttr.options)) {
+        colorOptions = colorAttr.options.filter(Boolean);
+      }
+
+      if (sizeAttr && sizeAttr.options && Array.isArray(sizeAttr.options)) {
+        sizeOptions = sizeAttr.options.filter(Boolean);
+      }
+    }
+
+    // Create the product document for Typesense - REMOVING problematic fields
     const productDocument = {
       id: productId,
       name: productData.name || '',
@@ -153,24 +175,25 @@ async function updateOrCreateProductInTypesense(productData: any, variations: an
       price: price,
       sale_price: salePrice,
       regular_price: regularPrice,
+      // Using string arrays for categories and tags
       categories: productData.categories && Array.isArray(productData.categories)
-        ? productData.categories.filter(cat => cat && typeof cat === 'object').map((cat: any) => cat.name || '').filter(Boolean)
+        ? productData.categories
+            .filter(cat => cat && typeof cat === 'object' && cat.name)
+            .map((cat: any) => cat.name)
         : [],
       tags: productData.tags && Array.isArray(productData.tags)
-        ? productData.tags.filter(tag => tag && typeof tag === 'object').map((tag: any) => tag.name || '').filter(Boolean)
+        ? productData.tags
+            .filter(tag => tag && typeof tag === 'object' && tag.name)
+            .map((tag: any) => tag.name)
         : [],
-      attributes: productData.attributes && Array.isArray(productData.attributes)
-        ? productData.attributes.map((attr: any) => attr.name).filter(Boolean)
-        : [],
-      colors: productData.attributes && Array.isArray(productData.attributes)
-        ? (productData.attributes.find((attr: any) => attr.name === 'Color')?.options || [])
-        : [],
-      sizes: productData.attributes && Array.isArray(productData.attributes)
-        ? (productData.attributes.find((attr: any) => attr.name === 'Size')?.options || [])
-        : [],
-      image_url: imageUrl,
+      // REMOVED attributes field completely
+      colors: colorOptions,
+      sizes: sizeOptions,
+      image_url: imageUrl || '',
       gallery_images: productData.images && Array.isArray(productData.images)
-        ? productData.images.filter(img => img && typeof img === 'object').map((img: any) => img.src || '').filter(Boolean)
+        ? productData.images
+            .filter(img => img && typeof img === 'object' && img.src)
+            .map((img: any) => img.src)
         : [],
       slug: productData.slug || '',
       stock_status: stockStatus,
@@ -190,12 +213,17 @@ async function updateOrCreateProductInTypesense(productData: any, variations: an
       sku: productData.sku || '',
       status: productData.status || 'publish',
       weight: productData.weight || '',
-      dimensions: productData.dimensions || { length: '', width: '', height: '' },
+      // Simplified dimensions
+      dimensions: {
+        length: productData.dimensions?.length || '',
+        width: productData.dimensions?.width || '',
+        height: productData.dimensions?.height || ''
+      },
       shipping_class: productData.shipping_class || '',
       shipping_class_id: productData.shipping_class_id || 0,
       type: productData.type || 'simple',
-      virtual: productData.virtual !== undefined ? productData.virtual : false,
-      downloadable: productData.downloadable !== undefined ? productData.downloadable : false,
+      virtual: productData.virtual === true,
+      downloadable: productData.downloadable === true,
       tax_status: productData.tax_status || 'taxable',
       tax_class: productData.tax_class || '',
       image_updated_at: new Date().toISOString()
