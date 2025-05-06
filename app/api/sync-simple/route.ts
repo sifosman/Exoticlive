@@ -209,19 +209,30 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
 
     // Process variations
     const processedVariations = variations && variations.length > 0 ? variations.map(variation => {
-      return {
-        id: variation.id.toString(),
-        price: parseFloat(variation.price || '0'),
-        regular_price: parseFloat(variation.regular_price || '0'),
-        sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
-        stock_status: variation.stock_status || 'outofstock',
-        stock_quantity: variation.stock_quantity || 0,
-        attributes: variation.attributes && Array.isArray(variation.attributes) ? variation.attributes.map((attr: any) => ({
-          name: attr.name,
-          option: attr.option
-        })) : []
-      };
-    }) : [];
+      if (!variation) return null;
+
+      try {
+        return {
+          id: variation.id ? variation.id.toString() : '',
+          price: parseFloat(variation.price || '0'),
+          regular_price: parseFloat(variation.regular_price || '0'),
+          sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
+          stock_status: variation.stock_status || 'outofstock',
+          stock_quantity: variation.stock_quantity || 0,
+          attributes: variation.attributes && Array.isArray(variation.attributes)
+            ? variation.attributes
+                .filter(attr => attr && typeof attr === 'object')
+                .map((attr: any) => ({
+                  name: attr.name || '',
+                  option: attr.option || ''
+                }))
+            : []
+        };
+      } catch (err) {
+        console.error('Error processing variation:', err, variation);
+        return null;
+      }
+    }).filter(Boolean) : [];
 
     // Check if the product exists in Typesense
     try {
@@ -331,13 +342,25 @@ async function updateProductInTypesense(productId: string, variations: any[]) {
             price: parseFloat(productData.price || '0'),
             sale_price: productData.sale_price ? parseFloat(productData.sale_price) : null,
             regular_price: productData.regular_price ? parseFloat(productData.regular_price) : null,
-            categories: productData.categories?.map((cat: any) => cat.name) || [],
-            tags: productData.tags?.map((tag: any) => tag.name) || [],
-            attributes: productData.attributes?.map((attr: any) => attr.name) || [],
-            colors: productData.attributes?.find((attr: any) => attr.name === 'Color')?.options || [],
-            sizes: productData.attributes?.find((attr: any) => attr.name === 'Size')?.options || [],
+            categories: productData.categories && Array.isArray(productData.categories)
+              ? productData.categories.filter(cat => cat && typeof cat === 'object').map((cat: any) => cat.name || '').filter(Boolean)
+              : [],
+            tags: productData.tags && Array.isArray(productData.tags)
+              ? productData.tags.filter(tag => tag && typeof tag === 'object').map((tag: any) => tag.name || '').filter(Boolean)
+              : [],
+            attributes: productData.attributes && Array.isArray(productData.attributes)
+              ? productData.attributes.map((attr: any) => attr.name).filter(Boolean)
+              : [],
+            colors: productData.attributes && Array.isArray(productData.attributes)
+              ? (productData.attributes.find((attr: any) => attr.name === 'Color')?.options || [])
+              : [],
+            sizes: productData.attributes && Array.isArray(productData.attributes)
+              ? (productData.attributes.find((attr: any) => attr.name === 'Size')?.options || [])
+              : [],
             image_url: productData.images && productData.images.length > 0 ? productData.images[0].src : '',
-            gallery_images: productData.images?.map((img: any) => img.src) || [],
+            gallery_images: productData.images && Array.isArray(productData.images)
+              ? productData.images.filter(img => img && typeof img === 'object').map((img: any) => img.src || '').filter(Boolean)
+              : [],
             slug: productData.slug || '',
             stock_status: productData.stock_status || 'outofstock',
             stock_quantity: productData.stock_quantity || 0,
