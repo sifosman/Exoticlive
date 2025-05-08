@@ -44,10 +44,63 @@ export async function GET(request: NextRequest) {
       console.log('New products sync result:', newProductsResult.message);
     }
 
+    // Now check for recent variable products
+    console.log('Checking for recent variable products...');
+
+    // Fetch recent variable products from WooCommerce
+    const wcApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || '';
+    const wcConsumerKey = process.env.WC_CONSUMER_KEY || '';
+    const wcConsumerSecret = process.env.WC_CONSUMER_SECRET || '';
+
+    if (wcApiUrl && wcConsumerKey && wcConsumerSecret) {
+      try {
+        // Create auth header
+        const auth = Buffer.from(`${wcConsumerKey}:${wcConsumerSecret}`).toString('base64');
+        const authHeader = `Basic ${auth}`;
+
+        // Get variable products updated in the last 15 minutes
+        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+        const variableProductsUrl = `${wcApiUrl}/wp-json/wc/v3/products?type=variable&orderby=modified&order=desc&modified_after=${fifteenMinutesAgo}&per_page=10`;
+
+        const variableProductsResponse = await fetch(variableProductsUrl, {
+          headers: {
+            'Authorization': authHeader
+          }
+        });
+
+        if (variableProductsResponse.ok) {
+          const variableProducts = await variableProductsResponse.json();
+          console.log(`Found ${variableProducts.length} recently updated variable products`);
+
+          // Sync each variable product
+          for (const product of variableProducts) {
+            console.log(`Syncing variable product: ${product.id} - ${product.name}`);
+
+            try {
+              const syncVariableResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin}/api/sync-variable?id=${product.id}`);
+
+              if (syncVariableResponse.ok) {
+                const syncVariableResult = await syncVariableResponse.json();
+                console.log(`Variable product sync result for ${product.id}: ${syncVariableResult.message}`);
+              } else {
+                console.error(`Failed to sync variable product ${product.id}: ${syncVariableResponse.status}`);
+              }
+            } catch (varError) {
+              console.error(`Error syncing variable product ${product.id}:`, varError);
+            }
+          }
+        } else {
+          console.error('Failed to fetch variable products from WooCommerce');
+        }
+      } catch (wcError) {
+        console.error('Error checking for variable products:', wcError);
+      }
+    }
+
     // Combine the results
     const result = {
       ...syncResult,
-      message: `${syncResult.message}. Also checked for new products.`
+      message: `${syncResult.message}. Also checked for new and variable products.`
     };
 
     return NextResponse.json({
