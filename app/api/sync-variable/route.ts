@@ -86,32 +86,48 @@ function createTypesenseDocument(product: any, variations: any[]) {
   // Extract colors and sizes from attributes
   let colors: string[] = [];
   let sizes: string[] = [];
-  
+
+  // Process product attributes for the frontend
+  let processedAttributes: any[] = [];
+
   if (product.attributes && Array.isArray(product.attributes)) {
+    // Process all attributes
+    processedAttributes = product.attributes.map((attr: any) => {
+      return {
+        id: attr.id,
+        name: attr.name,
+        position: attr.position,
+        visible: attr.visible,
+        variation: attr.variation,
+        options: Array.isArray(attr.options) ? attr.options : []
+      };
+    });
+
+    // Extract colors and sizes for specific filtering
     const colorAttr = product.attributes.find((attr: any) => attr.name === 'Color');
     const sizeAttr = product.attributes.find((attr: any) => attr.name === 'Size');
-    
+
     if (colorAttr && colorAttr.options && Array.isArray(colorAttr.options)) {
       colors = colorAttr.options;
     }
-    
+
     if (sizeAttr && sizeAttr.options && Array.isArray(sizeAttr.options)) {
       sizes = sizeAttr.options;
     }
   }
-  
+
   // Process variations
   const processedVariations = variations.map(variation => {
-    // Extract attribute values
-    const attrs: Record<string, string> = {};
-    if (variation.attributes && Array.isArray(variation.attributes)) {
-      variation.attributes.forEach((attr: any) => {
-        if (attr.name && attr.option) {
-          attrs[attr.name] = attr.option;
-        }
-      });
-    }
-    
+    // Process variation attributes
+    const variationAttributes = variation.attributes && Array.isArray(variation.attributes)
+      ? variation.attributes.map((attr: any) => {
+          return {
+            name: attr.name,
+            option: attr.option
+          };
+        })
+      : [];
+
     return {
       id: variation.id.toString(),
       price: parseFloat(variation.price || '0'),
@@ -119,13 +135,13 @@ function createTypesenseDocument(product: any, variations: any[]) {
       sale_price: variation.sale_price ? parseFloat(variation.sale_price) : null,
       stock_status: variation.stock_status || 'outofstock',
       stock_quantity: variation.stock_quantity || 0,
-      attribute_values: attrs
+      attributes: variationAttributes
     };
   });
-  
+
   // Calculate if any variations are in stock
   const anyInStock = processedVariations.some(v => v.stock_status === 'instock');
-  
+
   // Create the document
   return {
     id: product.id.toString(),
@@ -150,6 +166,8 @@ function createTypesenseDocument(product: any, variations: any[]) {
     in_stock_variations_count: processedVariations.filter(v => v.stock_status === 'instock').length,
     variations: processedVariations,
     variations_json: JSON.stringify(processedVariations),
+    attributes: processedAttributes,
+    attributes_json: JSON.stringify(processedAttributes),
     featured: product.featured || false,
     is_featured: product.featured || false,
     type: product.type || 'simple',
@@ -163,22 +181,22 @@ function createTypesenseDocument(product: any, variations: any[]) {
 export async function GET(request: NextRequest) {
   try {
     const syncStartTime = Date.now();
-    
+
     // Get the product ID from the query parameters
     const productId = request.nextUrl.searchParams.get('id');
-    
+
     if (!productId) {
       return NextResponse.json(
         { success: false, message: 'Product ID is required' },
         { status: 400 }
       );
     }
-    
+
     console.log(`=== VARIABLE PRODUCT SYNC STARTED for product ${productId} at ${new Date().toISOString()} ===`);
 
     // Fetch the product from WooCommerce
     const product = await fetchProductFromWooCommerce(productId);
-    
+
     // Check if it's a variable product
     if (product.type !== 'variable') {
       return NextResponse.json(
@@ -186,23 +204,23 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     // Fetch variations
     const variations = await fetchVariationsForVariableProduct(product.id);
-    
+
     if (variations.length === 0) {
       console.warn(`No variations found for variable product ${productId}`);
     }
-    
+
     // Create the Typesense document
     const document = createTypesenseDocument(product, variations);
-    
+
     // Update or create in Typesense
     let result;
     try {
       // Check if the product exists
       await typesenseClient.collections('products').documents(productId).retrieve();
-      
+
       // Update the product
       result = await typesenseClient.collections('products').documents(productId).update(document);
       console.log(`Updated variable product ${productId} in Typesense`);
@@ -215,12 +233,12 @@ export async function GET(request: NextRequest) {
         throw error;
       }
     }
-    
+
     const syncEndTime = Date.now();
     const syncDuration = syncEndTime - syncStartTime;
-    
+
     console.log(`=== VARIABLE PRODUCT SYNC COMPLETED in ${syncDuration}ms ===`);
-    
+
     return NextResponse.json({
       success: true,
       message: `Variable product ${product.name} (ID: ${productId}) synced to Typesense`,
@@ -235,7 +253,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error syncing variable product:', error);
-    
+
     return NextResponse.json(
       {
         success: false,

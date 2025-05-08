@@ -141,6 +141,21 @@ async function createProductInTypesense(productId: string, productData: any, var
       };
     }) : [];
 
+    // Process product attributes for the frontend
+    let processedAttributes: any[] = [];
+    if (productData.attributes && Array.isArray(productData.attributes)) {
+      processedAttributes = productData.attributes.map((attr: any) => {
+        return {
+          id: attr.id,
+          name: attr.name,
+          position: attr.position,
+          visible: attr.visible,
+          variation: attr.variation,
+          options: Array.isArray(attr.options) ? attr.options : []
+        };
+      });
+    }
+
     // Get price data
     const price = parseFloat(productData.price || '0');
     const regularPrice = parseFloat(productData.regular_price || '0');
@@ -159,6 +174,10 @@ async function createProductInTypesense(productId: string, productData: any, var
       stockStatus = processedVariations.some(v => v.stock_status === 'instock') ? 'instock' : 'outofstock';
     }
 
+    // Extract colors and sizes for specific filtering
+    const colors = productData.attributes?.find((attr: any) => attr.name === 'Color')?.options || [];
+    const sizes = productData.attributes?.find((attr: any) => attr.name === 'Size')?.options || [];
+
     // Create a new product document for Typesense
     const newProduct = {
       id: productId,
@@ -169,9 +188,8 @@ async function createProductInTypesense(productId: string, productData: any, var
       regular_price: regularPrice,
       categories: productData.categories?.map((cat: any) => cat.name) || [],
       tags: productData.tags?.map((tag: any) => tag.name) || [],
-      attributes: productData.attributes?.map((attr: any) => attr.name) || [],
-      colors: productData.attributes?.find((attr: any) => attr.name === 'Color')?.options || [],
-      sizes: productData.attributes?.find((attr: any) => attr.name === 'Size')?.options || [],
+      colors: colors,
+      sizes: sizes,
       image_url: imageUrl,
       gallery_images: productData.images?.map((img: any) => img.src) || [],
       slug: productData.slug || '',
@@ -181,6 +199,8 @@ async function createProductInTypesense(productId: string, productData: any, var
       in_stock_variations_count: processedVariations.filter(v => v.stock_status === 'instock').length,
       variations: processedVariations,
       variations_json: JSON.stringify(processedVariations),
+      attributes: processedAttributes,
+      attributes_json: JSON.stringify(processedAttributes),
       featured: isFeatured,
       is_featured: isFeatured,
       is_on_sale: isOnSale,
