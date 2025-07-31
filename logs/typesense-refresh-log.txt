@@ -1,0 +1,23 @@
+[2025-03-29T12:16:35.701Z] Starting Typesense Fast Refresh...
+[2025-03-29T12:16:35.707Z] WooCommerce API Configuration:
+[2025-03-29T12:16:35.709Z] API URL: https://wp.exoticshoes.co.za//wp-json/wc/v3
+[2025-03-29T12:16:35.710Z] Using consumer key: Yes
+[2025-03-29T12:16:35.712Z] PERFORMANCE SETTINGS: Batch size=50, Concurrent batches=3
+[2025-03-29T12:16:35.714Z] Initializing Typesense collection...
+[2025-03-29T12:16:36.017Z] Existing products collection deleted.
+[2025-03-29T12:16:36.092Z] Products collection created successfully.
+[2025-03-29T12:16:36.093Z] Fetching products from WooCommerce...
+[2025-03-29T12:16:44.765Z] Error fetching WooCommerce API: Cannot read properties of undefined (reading 'ok')
+[2025-03-29T12:16:44.768Z] Error fetching page 2: Cannot read properties of undefined (reading 'ok')
+[2025-03-29T12:16:44.770Z] Error fetching WooCommerce API: Cannot read properties of undefined (reading 'ok')
+[2025-03-29T12:16:44.773Z] Error fetching page 1: Cannot read properties of undefined (reading 'ok')
+[2025-03-29T12:16:44.890Z] Error fetching WooCommerce API: Cannot read properties of undefined (reading 'ok')
+[2025-03-29T12:16:44.892Z] Error fetching page 3: Cannot read properties of undefined (reading 'ok')
+[2025-03-29T12:16:44.893Z] No more products found. Stopping.
+[2025-03-29T12:16:44.895Z] ===== REFRESH SUMMARY =====
+[2025-03-29T12:16:44.896Z] Total products processed: 0
+[2025-03-29T12:16:44.898Z] Successfully indexed: 0
+[2025-03-29T12:16:44.901Z] Failed to index: 0
+[2025-03-29T12:16:44.902Z] ===========================
+[2025-03-29T12:16:44.903Z] Refresh completed successfully.
+[2025-03-29T12:16:44.905Z] Script execution completed.

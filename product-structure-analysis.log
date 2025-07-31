@@ -1,0 +1,825 @@
+Product Structure Analysis - 2025-03-29T13:47:11.218Z
+
+================================================================================
+Analyzing Product Attributes in Typesense
+================================================================================
+Sample JSON String Attributes (attributes_json):
+[]
+
+Sample Array Attributes (attributes):
+[
+  {
+    "id": 1,
+    "name": "Color",
+    "options": [
+      "Black",
+      "Olive",
+      "Tan"
+    ],
+    "variation": true
+  },
+  {
+    "id": 2,
+    "name": "Size",
+    "options": [
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8"
+    ],
+    "variation": true
+  }
+]
+
+
+Analyzed 50 products
+Products with attribute fields: 51
+- Products with array attributes: 1
+- Products with string attributes: 50
+- Products with JSON string attributes: 50
+- Products with object attributes: 0
+================================================================================
+All Product Fields
+================================================================================
+[
+  "attributes_json",
+  "brand",
+  "catalog_visibility",
+  "categories",
+  "colors",
+  "description",
+  "featured",
+  "id",
+  "image_alt",
+  "image_url",
+  "is_on_sale",
+  "name",
+  "on_sale",
+  "price",
+  "regular_price",
+  "short_description",
+  "sizes",
+  "slug",
+  "status",
+  "stock_quantity",
+  "stock_status",
+  "tags",
+  "type",
+  "variations_json",
+  "attributes",
+  "variations"
+]
+
+================================================================================
+Attribute-Related Fields
+================================================================================
+[
+  "attributes_json",
+  "attributes"
+]
+
+================================================================================
+Examining WooCommerce-specific Fields
+================================================================================
+[]
+
+================================================================================
+Analyzing Variations
+================================================================================
+Sample Array Variations:
+[
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Black"
+      },
+      {
+        "name": "Size",
+        "option": "3"
+      }
+    ],
+    "id": "25093-1",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 1,
+    "stock_status": "instock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Black"
+      },
+      {
+        "name": "Size",
+        "option": "4"
+      }
+    ],
+    "id": "25093-2",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Black"
+      },
+      {
+        "name": "Size",
+        "option": "5"
+      }
+    ],
+    "id": "25093-3",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Black"
+      },
+      {
+        "name": "Size",
+        "option": "6"
+      }
+    ],
+    "id": "25093-4",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Black"
+      },
+      {
+        "name": "Size",
+        "option": "7"
+      }
+    ],
+    "id": "25093-5",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Black"
+      },
+      {
+        "name": "Size",
+        "option": "8"
+      }
+    ],
+    "id": "25093-6",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Olive"
+      },
+      {
+        "name": "Size",
+        "option": "3"
+      }
+    ],
+    "id": "25093-7",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Olive"
+      },
+      {
+        "name": "Size",
+        "option": "4"
+      }
+    ],
+    "id": "25093-8",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Olive"
+      },
+      {
+        "name": "Size",
+        "option": "5"
+      }
+    ],
+    "id": "25093-9",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Olive"
+      },
+      {
+        "name": "Size",
+        "option": "6"
+      }
+    ],
+    "id": "25093-10",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Olive"
+      },
+      {
+        "name": "Size",
+        "option": "7"
+      }
+    ],
+    "id": "25093-11",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Olive"
+      },
+      {
+        "name": "Size",
+        "option": "8"
+      }
+    ],
+    "id": "25093-12",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Tan"
+      },
+      {
+        "name": "Size",
+        "option": "3"
+      }
+    ],
+    "id": "25093-13",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Tan"
+      },
+      {
+        "name": "Size",
+        "option": "4"
+      }
+    ],
+    "id": "25093-14",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Tan"
+      },
+      {
+        "name": "Size",
+        "option": "5"
+      }
+    ],
+    "id": "25093-15",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Tan"
+      },
+      {
+        "name": "Size",
+        "option": "6"
+      }
+    ],
+    "id": "25093-16",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Tan"
+      },
+      {
+        "name": "Size",
+        "option": "7"
+      }
+    ],
+    "id": "25093-17",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  },
+  {
+    "attributes": [
+      {
+        "name": "Color",
+        "option": "Tan"
+      },
+      {
+        "name": "Size",
+        "option": "8"
+      }
+    ],
+    "id": "25093-18",
+    "price": 3090,
+    "regular_price": 3090,
+    "sale_price": null,
+    "stock_quantity": 0,
+    "stock_status": "outofstock"
+  }
+]
+
+
+Products with variations: 1
+- Products with array variations: 1
+- Products with string variations: 0
+- Products with JSON string variations: 0
+================================================================================
+Detailed Product Examples
+================================================================================
+Example Product with Both Attributes and Variations:
+{
+  "attributes": [
+    {
+      "id": 1,
+      "name": "Color",
+      "options": [
+        "Black",
+        "Olive",
+        "Tan"
+      ],
+      "variation": true
+    },
+    {
+      "id": 2,
+      "name": "Size",
+      "options": [
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "variation": true
+    }
+  ],
+  "attributes_json": "[{\"id\":1,\"name\":\"Color\",\"variation\":true,\"options\":[\"Black\",\"Olive\",\"Tan\"]},{\"id\":2,\"name\":\"Size\",\"variation\":true,\"options\":[\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]}]",
+  "brand": "ALL",
+  "catalog_visibility": "visible",
+  "categories": [
+    "ALL",
+    "Boots"
+  ],
+  "colors": [
+    "Black",
+    "Olive",
+    "Tan"
+  ],
+  "description": "",
+  "featured": false,
+  "id": "25093",
+  "image_alt": "Zig Zag",
+  "image_url": "https://wp.exoticshoes.co.za/wp-content/uploads/2024/06/IMG-20240603-WA0082.jpg",
+  "is_on_sale": false,
+  "name": "Zig Zag",
+  "on_sale": false,
+  "price": 380,
+  "regular_price": 0,
+  "short_description": "",
+  "sizes": [
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
+  ],
+  "slug": "zig-zag",
+  "status": "publish",
+  "stock_quantity": 0,
+  "stock_status": "instock",
+  "tags": [],
+  "type": "VARIABLE",
+  "variations": [
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Black"
+        },
+        {
+          "name": "Size",
+          "option": "3"
+        }
+      ],
+      "id": "25093-1",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 1,
+      "stock_status": "instock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Black"
+        },
+        {
+          "name": "Size",
+          "option": "4"
+        }
+      ],
+      "id": "25093-2",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Black"
+        },
+        {
+          "name": "Size",
+          "option": "5"
+        }
+      ],
+      "id": "25093-3",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Black"
+        },
+        {
+          "name": "Size",
+          "option": "6"
+        }
+      ],
+      "id": "25093-4",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Black"
+        },
+        {
+          "name": "Size",
+          "option": "7"
+        }
+      ],
+      "id": "25093-5",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Black"
+        },
+        {
+          "name": "Size",
+          "option": "8"
+        }
+      ],
+      "id": "25093-6",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Olive"
+        },
+        {
+          "name": "Size",
+          "option": "3"
+        }
+      ],
+      "id": "25093-7",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Olive"
+        },
+        {
+          "name": "Size",
+          "option": "4"
+        }
+      ],
+      "id": "25093-8",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Olive"
+        },
+        {
+          "name": "Size",
+          "option": "5"
+        }
+      ],
+      "id": "25093-9",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Olive"
+        },
+        {
+          "name": "Size",
+          "option": "6"
+        }
+      ],
+      "id": "25093-10",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Olive"
+        },
+        {
+          "name": "Size",
+          "option": "7"
+        }
+      ],
+      "id": "25093-11",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Olive"
+        },
+        {
+          "name": "Size",
+          "option": "8"
+        }
+      ],
+      "id": "25093-12",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Tan"
+        },
+        {
+          "name": "Size",
+          "option": "3"
+        }
+      ],
+      "id": "25093-13",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Tan"
+        },
+        {
+          "name": "Size",
+          "option": "4"
+        }
+      ],
+      "id": "25093-14",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Tan"
+        },
+        {
+          "name": "Size",
+          "option": "5"
+        }
+      ],
+      "id": "25093-15",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Tan"
+        },
+        {
+          "name": "Size",
+          "option": "6"
+        }
+      ],
+      "id": "25093-16",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Tan"
+        },
+        {
+          "name": "Size",
+          "option": "7"
+        }
+      ],
+      "id": "25093-17",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    },
+    {
+      "attributes": [
+        {
+          "name": "Color",
+          "option": "Tan"
+        },
+        {
+          "name": "Size",
+          "option": "8"
+        }
+      ],
+      "id": "25093-18",
+      "price": 3090,
+      "regular_price": 3090,
+      "sale_price": null,
+      "stock_quantity": 0,
+      "stock_status": "outofstock"
+    }
+  ],
+  "variations_json": "[{\"id\":\"25093-1\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Black\"},{\"name\":\"Size\",\"option\":\"3\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"instock\",\"stock_quantity\":1},{\"id\":\"25093-2\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Black\"},{\"name\":\"Size\",\"option\":\"4\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-3\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Black\"},{\"name\":\"Size\",\"option\":\"5\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-4\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Black\"},{\"name\":\"Size\",\"option\":\"6\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-5\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Black\"},{\"name\":\"Size\",\"option\":\"7\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-6\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Black\"},{\"name\":\"Size\",\"option\":\"8\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-7\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Olive\"},{\"name\":\"Size\",\"option\":\"3\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-8\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Olive\"},{\"name\":\"Size\",\"option\":\"4\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-9\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Olive\"},{\"name\":\"Size\",\"option\":\"5\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-10\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Olive\"},{\"name\":\"Size\",\"option\":\"6\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-11\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Olive\"},{\"name\":\"Size\",\"option\":\"7\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-12\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Olive\"},{\"name\":\"Size\",\"option\":\"8\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-13\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Tan\"},{\"name\":\"Size\",\"option\":\"3\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-14\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Tan\"},{\"name\":\"Size\",\"option\":\"4\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-15\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Tan\"},{\"name\":\"Size\",\"option\":\"5\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-16\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Tan\"},{\"name\":\"Size\",\"option\":\"6\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-17\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Tan\"},{\"name\":\"Size\",\"option\":\"7\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0},{\"id\":\"25093-18\",\"attributes\":[{\"name\":\"Color\",\"option\":\"Tan\"},{\"name\":\"Size\",\"option\":\"8\"}],\"price\":3090,\"regular_price\":3090,\"sale_price\":null,\"stock_status\":\"outofstock\",\"stock_quantity\":0}]"
+}
+
+================================================================================
+WooCommerce Attribute Structure
+================================================================================
+================================================================================
+Analysis Complete
+================================================================================

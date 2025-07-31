@@ -1,0 +1,257 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import ProductCardTypesense from './ProductCardTypesense';
+import { ProductCardSkeleton } from './ui/LoadingSkeleton';
+import { searchProducts, type Product } from '../utils/typesense-search';
+// Import Swiper React components and required modules
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Autoplay } from 'swiper/modules';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+
+const FastSellingProducts = () => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isFallbackMode, setIsFallbackMode] = useState(false);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const results = await searchProducts({
+          q: '*',
+          query_by: 'name,description,brand',
+          sort_by: 'price:asc', // Sort by price as it's definitely available for sorting
+          per_page: 200, // Increase to get more potential products
+          filter_by: 'stock_status:=instock && categories:=[FastSellingProducts, fastsellingproducts, \"Fast Selling Products\", \"fast selling products\"]', // Try multiple variations of the category name
+          include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
+        });
+
+        // Filter out products without valid images
+        const productsWithValidImages = results.products.filter((product: Product) => 
+          product.image_url && 
+          !product.image_url.includes('placeholder') &&
+          !product.image_url.includes('woocommerce-placeholder')
+        );
+
+        // Process the products to ensure prices are correctly formatted
+        const processedProducts = productsWithValidImages.map(product => {
+          // Convert string prices to numbers if they're strings
+          const regular_price = typeof product.regular_price === 'string' 
+            ? parseFloat(product.regular_price) 
+            : product.regular_price || 0;
+          
+          const sale_price = product.sale_price 
+            ? (typeof product.sale_price === 'string' 
+                ? parseFloat(product.sale_price) 
+                : product.sale_price) 
+            : null;
+          
+          // Use price field as fallback if regular_price is not available
+          const finalRegularPrice = regular_price || (product.price ? (typeof product.price === 'string' ? parseFloat(product.price) : product.price) : 0);
+          
+          return {
+            ...product,
+            regular_price: finalRegularPrice,
+            sale_price: sale_price
+          };
+        });
+
+        console.log('Total products found:', processedProducts.length);
+
+        // Check if we found any products in the FastSellingProducts category
+        if (processedProducts.length === 0) {
+          console.log('No products found in FastSellingProducts category. Fetching recent products instead...');
+
+          // Fallback: Fetch recent products instead
+          try {
+            const recentResults = await searchProducts({
+              q: '*',
+              query_by: 'name,description,brand',
+              sort_by: 'price:desc', // Sort by price descending
+              per_page: 24, // Get more products to ensure we have enough
+              filter_by: 'stock_status:=instock',
+              include_fields: 'id,name,description,price,sale_price,regular_price,stock_status,image_url,slug,categories,colors,sizes'
+            });
+
+            // Process the recent products
+            const recentProcessedProducts = recentResults.products.filter((product: Product) =>
+              product.image_url &&
+              !product.image_url.includes('placeholder') &&
+              !product.image_url.includes('woocommerce-placeholder')
+            ).map(product => {
+              const regular_price = typeof product.regular_price === 'string'
+                ? parseFloat(product.regular_price)
+                : product.regular_price || 0;
+
+              const sale_price = product.sale_price
+                ? (typeof product.sale_price === 'string'
+                    ? parseFloat(product.sale_price)
+                    : product.sale_price)
+                : null;
+
+              const finalRegularPrice = regular_price || (product.price ? (typeof product.price === 'string' ? parseFloat(product.price) : product.price) : 0);
+
+              return {
+                ...product,
+                regular_price: finalRegularPrice,
+                sale_price: sale_price
+              };
+            });
+
+            console.log('Found recent products instead:', recentProcessedProducts.length);
+            
+            // Shuffle the products for more randomness
+            const shuffledProducts = [...recentProcessedProducts];
+            for (let i = shuffledProducts.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [shuffledProducts[i], shuffledProducts[j]] = [shuffledProducts[j], shuffledProducts[i]];
+            }
+            
+            setProducts(shuffledProducts.slice(0, 12));
+            setIsFallbackMode(true);
+          } catch (err) {
+            console.error('Error fetching recent products:', err);
+            setError('No products found in FastSellingProducts category');
+          }
+        } else {
+          // Use the products from the FastSellingProducts category
+          // Shuffle the products for more randomness
+          const shuffledProducts = [...processedProducts];
+          for (let i = shuffledProducts.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledProducts[i], shuffledProducts[j]] = [shuffledProducts[j], shuffledProducts[i]];
+          }
+          
+          setProducts(shuffledProducts.slice(0, 12));
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError(err instanceof Error ? err.message : 'Error loading products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
+          New Arrivals
+        </h2>
+        <ProductCardSkeleton count={4} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
+          New Arrivals
+        </h2>
+        <p className="text-red-500">Error loading products: {error}</p>
+      </div>
+    );
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
+          New Arrivals
+        </h2>
+        <div className="text-gray-500 text-center py-8">
+          <p className="mb-4">
+            No new arrivals found to display.
+          </p>
+          <p className="mb-4">
+            To display products here, please add products to the "FastSellingProducts" category in WooCommerce or add new products.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto w-full px-4 py-12 sm:px-6 sm:py-16 lg:max-w-7xl lg:px-8 font-sans">
+      <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 font-sans mb-6 md:mb-8 px-2">
+        New Arrivals
+      </h2>
+
+      <div className="relative new-arrivals-carousel">
+        {/* Custom CSS for navigation arrows */}
+        <style jsx>{`
+          .new-arrivals-carousel :global(.swiper-button-next),
+          .new-arrivals-carousel :global(.swiper-button-prev) {
+            color: #000;
+            transform: scale(0.7);
+          }
+
+          .new-arrivals-carousel :global(.swiper-button-next):after,
+          .new-arrivals-carousel :global(.swiper-button-prev):after {
+            font-size: 1.5rem;
+            font-weight: bold;
+          }
+
+          @media (max-width: 640px) {
+            .new-arrivals-carousel :global(.swiper-button-next),
+            .new-arrivals-carousel :global(.swiper-button-prev) {
+              transform: scale(0.5);
+            }
+          }
+        `}</style>
+
+        <Swiper
+          modules={[Navigation, Autoplay]}
+          spaceBetween={20}
+          slidesPerView={2}
+          navigation={true}
+          autoplay={{
+            delay: 3000,
+            disableOnInteraction: false,
+          }}
+          loop={true}
+          speed={800}
+          breakpoints={{
+            320: {
+              slidesPerView: 2,
+              spaceBetween: 10,
+            },
+            640: {
+              slidesPerView: 2,
+              spaceBetween: 15,
+            },
+            768: {
+              slidesPerView: 3,
+              spaceBetween: 20,
+            },
+            1024: {
+              slidesPerView: 4,
+              spaceBetween: 20,
+            },
+          }}
+          className="mySwiper"
+        >
+          {products.map((product: Product, index: number) => (
+            <SwiperSlide key={product.id} className="py-2">
+              <div className="transform scale-90 md:scale-100">
+                <ProductCardTypesense product={product} index={index} />
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+    </div>
+  );
+};
+
+export default FastSellingProducts;

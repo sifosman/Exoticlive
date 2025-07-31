@@ -1,0 +1,12 @@
+Product Variations Refresh - 2025-03-29T14:04:31.351Z
+
+Initialized log file at ./variations-refresh.log
+================================================================================
+Updating Product: zip-up-boots
+================================================================================
+Processing product: TC Fur Boots (ID: 9591)
+Product has 30 existing variations
+Updating product 9591 with 30 variations
+Updated product ID: 9591
+Updated product with consistent attribute and variation structure
+✅ Successfully updated product "zip-up-boots"

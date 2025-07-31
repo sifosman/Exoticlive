@@ -1,0 +1,74 @@
+Variation Debug Log - 2025-03-29T13:07:12.649Z
+
+Initialized log file at ./variation-debug.log
+================================================================================
+Starting Deep Dive Debug of Variation Stock Issues
+================================================================================
+Target product: zig-zag
+Target variation: {"color":"Black","size":"3"}
+================================================================================
+1. Fetching Product Data from Typesense
+================================================================================
+Search parameters: {"q":"zig-zag","query_by":"slug","filter_by":"slug:=zig-zag","per_page":1}
+Product found: Zig Zag
+Product ID: 25093
+================================================================================
+2. Basic Product Information
+================================================================================
+Name: Zig Zag
+Slug: zig-zag
+Stock status (base): instock
+================================================================================
+3. Parsing Variations
+================================================================================
+Found variations_json, parsing...
+Successfully parsed 0 variations
+================================================================================
+4. Parsing Attributes
+================================================================================
+Found attributes_json, parsing...
+Successfully parsed 2 attributes
+================================================================================
+5. All Variations
+================================================================================
+[ERROR] No variations to display
+================================================================================
+6. All Attributes
+================================================================================
+
+Attribute #1:
+Name: Color
+Is variation: true
+Options: Black, Olive, Tan
+
+Attribute #2:
+Name: Size
+Is variation: true
+Options: 3, 4, 5, 6, 7, 8
+================================================================================
+7. Debugging Specific Variation: {"color":"Black","size":"3"}
+================================================================================
+[ERROR] No variation found matching the specific attributes
+
+Detailed search for why no match was found:
+
+Searching variations with color = Black:
+Found 0 variations matching this attribute
+
+Searching variations with size = 3:
+Found 0 variations matching this attribute
+================================================================================
+8. Summary and Recommendations
+================================================================================
+Unable to find the specified variation combination
+Possible issues:
+1. The attribute names/values might be inconsistent between WooCommerce and Typesense
+2. The variation might not exist in the database at all
+3. There might be data format issues with the variations data
+
+Recommended actions:
+1. Check the raw data in WooCommerce admin for this product variation
+2. Verify the data synchronization process between WooCommerce and Typesense
+3. Update the frontend code to better handle the stock status evaluation
+--------------------------------------------------------------------------------
+Debug script completed. Check the log file for complete details.

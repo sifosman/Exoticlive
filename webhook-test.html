@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhook Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Webhook Test Tool</h1>
+    <div class="form-group">
+        <label for="webhook-url">Webhook URL:</label>
+        <input type="text" id="webhook-url" value="https://exoticshoes.co.za/api/webhooks/woocommerce" />
+    </div>
+    <div class="form-group">
+        <label for="webhook-secret">Webhook Secret:</label>
+        <input type="text" id="webhook-secret" value="a415388c0f3f17bffa3618600ffdcc1db6990a067a543bb80a6c4fdaec7348eb" />
+    </div>
+    <div class="form-group">
+        <label for="webhook-topic">Webhook Topic:</label>
+        <input type="text" id="webhook-topic" value="product.updated" />
+    </div>
+    <div class="form-group">
+        <label for="payload">Payload (JSON):</label>
+        <textarea id="payload" rows="15">
+{
+  "id": 12345,
+  "name": "Test Product",
+  "status": "publish",
+  "stock_status": "instock",
+  "stock_quantity": 10,
+  "type": "simple",
+  "price": "100.00",
+  "regular_price": "120.00",
+  "sale_price": "100.00",
+  "catalog_visibility": "visible",
+  "short_description": "This is a test product",
+  "sku": "TEST-123",
+  "weight": "1.0",
+  "dimensions": {
+    "length": "10",
+    "width": "10",
+    "height": "10"
+  },
+  "shipping_class": "",
+  "shipping_class_id": 0,
+  "categories": [
+    {
+      "id": 9,
+      "name": "Test Category",
+      "slug": "test-category"
+    }
+  ],
+  "images": [
+    {
+      "id": 123,
+      "src": "https://exoticshoes.co.za/wp-content/uploads/test-image.jpg"
+    }
+  ]
+}
+        </textarea>
+    </div>
+    <button id="send-webhook">Send Webhook</button>
+    <div id="response"></div>
+
+    <script>
+        document.getElementById('send-webhook').addEventListener('click', async function() {
+            const webhookUrl = document.getElementById('webhook-url').value;
+            const webhookSecret = document.getElementById('webhook-secret').value;
+            const webhookTopic = document.getElementById('webhook-topic').value;
+            const payload = document.getElementById('payload').value;
+            const responseElement = document.getElementById('response');
+
+            responseElement.textContent = 'Sending webhook...';
+
+            try {
+                // Calculate signature
+                const encoder = new TextEncoder();
+                const data = encoder.encode(payload);
+                const key = await crypto.subtle.importKey(
+                    'raw',
+                    encoder.encode(webhookSecret),
+                    { name: 'HMAC', hash: 'SHA-256' },
+                    false,
+                    ['sign']
+                );
+                const signature = await crypto.subtle.sign('HMAC', key, data);
+                const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)));
+
+                // Send webhook
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WC-Webhook-Signature': base64Signature,
+                        'X-WC-Webhook-Topic': webhookTopic,
+                        'X-WC-Webhook-Source': 'https://exoticshoes.co.za',
+                        'X-WC-Webhook-Resource': 'product',
+                        'X-WC-Webhook-Event': 'updated',
+                        'X-WC-Webhook-Delivery-ID': `test-${Date.now()}`
+                    },
+                    body: payload
+                });
+
+                const responseText = await response.text();
+
+                responseElement.textContent = `Status: ${response.status}\n\n${responseText}`;
+
+                if (response.ok) {
+                    responseElement.textContent += '\n\nWebhook test successful!';
+                } else {
+                    responseElement.textContent += '\n\nWebhook test failed!';
+                }
+            } catch (error) {
+                responseElement.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

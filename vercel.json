@@ -1,0 +1,7 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "complete-features": true
+    }
+  }
+}
