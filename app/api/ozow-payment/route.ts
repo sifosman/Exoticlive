@@ -82,13 +82,24 @@ export async function POST(request: Request) {
     console.log('Using isTestValue:', isTestValue);
 
     if (!privateKey || !siteCodeToUse || !apiKey) {
+      const missingVars = [];
+      if (!siteCodeToUse) missingVars.push('OZOW_SITE_CODE');
+      if (!privateKey) missingVars.push('OZOW_PRIVATE_KEY');
+      if (!apiKey) missingVars.push('OZOW_API_KEY');
+      
       console.error('Missing Ozow configuration:', {
         hasSiteCode: !!siteCodeToUse,
         hasPrivateKey: !!privateKey,
-        hasApiKey: !!apiKey
+        hasApiKey: !!apiKey,
+        missingVariables: missingVars
       });
+      
       return NextResponse.json(
-        { success: false, message: 'Ozow configuration missing (keys or site code).' },
+        { 
+          success: false, 
+          message: `Ozow configuration missing. Please set these environment variables in Vercel: ${missingVars.join(', ')}`,
+          missingVariables: missingVars
+        },
         { status: 500 }
       );
     }
