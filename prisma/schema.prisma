@@ -1,0 +1,98 @@
+// This is your Prisma schema file
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  wooId       Int     @unique // WooCommerce product ID
+  name        String
+  slug        String  @unique
+  description String? @db.Text
+  shortDescription String? @db.Text
+  sku         String?
+  price       Decimal @db.Decimal(10, 2)
+  regularPrice Decimal? @db.Decimal(10, 2)
+  salePrice   Decimal? @db.Decimal(10, 2)
+  status      String  // publish, draft, etc.
+  stockStatus String  // in stock, out of stock, etc.
+  stockQuantity Int?
+  categories  ProductCategory[]
+  images      ProductImage[]
+  variations  ProductVariation[]
+  attributes  ProductAttribute[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastSyncedAt DateTime @default(now())
+}
+
+model ProductVariation {
+  id          String   @id @default(uuid())
+  wooId       Int     @unique
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  sku         String?
+  price       Decimal @db.Decimal(10, 2)
+  regularPrice Decimal? @db.Decimal(10, 2)
+  salePrice   Decimal? @db.Decimal(10, 2)
+  stockStatus String
+  stockQuantity Int?
+  attributes  Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductCategory {
+  id          String   @id @default(uuid())
+  wooId       Int     @unique
+  name        String
+  slug        String  @unique
+  description String? @db.Text
+  parent      ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  parentId    String?
+  children    ProductCategory[] @relation("CategoryHierarchy")
+  products    Product[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductImage {
+  id          String   @id @default(uuid())
+  wooId       Int     @unique
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  src         String
+  alt         String?
+  position    Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductAttribute {
+  id          String   @id @default(uuid())
+  wooId       Int     @unique
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  name        String
+  options     String[]
+  position    Int     @default(0)
+  visible     Boolean @default(true)
+  variation   Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SyncLog {
+  id          String   @id @default(uuid())
+  type        String   // full, webhook, manual
+  status      String   // started, completed, failed
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  error       String?  @db.Text
+  details     Json?
+}
