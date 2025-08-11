@@ -238,8 +238,30 @@ export default function CheckoutPage() {
 
     try {
       if (paymentMethod === 'yoco') {
+        // Check if Yoco public key is configured
+        const yocoPublicKey = process.env.NEXT_PUBLIC_YOCO_PUBLIC_KEY;
+        
+        if (!yocoPublicKey) {
+          setPaymentError('Yoco payment gateway is not properly configured. Please contact support.');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Ensure SDK loaded
+        if (typeof window === 'undefined' || !window.YocoSDK) {
+          console.error('Yoco SDK not available on window');
+          setPaymentError('Payment service is not ready. Please wait a moment and try again.');
+          setIsLoading(false);
+          return;
+        }
+        
         const yoco = new window.YocoSDK({
-          publicKey: 'sk_live_9a8da319PKJ9r9Rd94e4ce7aa44d'
+          publicKey: yocoPublicKey
+        });
+
+        console.log('Opening Yoco popup', {
+          total,
+          amountInCents: Math.round(total * 100)
         });
 
         yoco.showPopup({
@@ -249,9 +271,11 @@ export default function CheckoutPage() {
           description: 'Order payment',
           callback: async function (result: any) {
             if (result.error) {
+              console.error('Yoco popup error:', result.error);
               setPaymentError(result.error.message);
               setIsLoading(false);
             } else {
+              console.log('Yoco token received:', result?.id);
               await handleYocoPayment(result);
             }
           }
@@ -314,7 +338,9 @@ export default function CheckoutPage() {
 
   const handleYocoPayment = async (result: any) => {
     try {
-      const response = await fetch('/api/payment', {
+      // NOTE: Vercel/Linux file system is case-sensitive. Our API route folder is `app/api/Payment/route.ts`.
+      // Use the matching case here to avoid 404s in production.
+      const response = await fetch('/api/Payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -324,7 +350,20 @@ export default function CheckoutPage() {
         })
       });
 
-      const data = await response.json();
+      const text = await response.text();
+      let data: any = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (e) {
+        console.error('Failed to parse payment API response as JSON. Raw:', text);
+      }
+
+      console.log('Payment API response status:', response.status, 'data:', data);
+
+      if (!response.ok) {
+        const msg = data?.message || data?.error || `Payment API error: ${response.status}`;
+        throw new Error(msg);
+      }
 
       if (data.success) {
         // Create WooCommerce order after successful payment
@@ -376,7 +415,8 @@ export default function CheckoutPage() {
         setIsLoading(false);
       }
     } catch (error) {
-      setPaymentError('An error occurred processing payment. Please try again.');
+      console.error('handleYocoPayment error:', error);
+      setPaymentError(error instanceof Error ? error.message : 'An error occurred processing payment. Please try again.');
       setIsLoading(false);
     }
   };
@@ -780,7 +820,15 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-      <Script src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js" />
+      <Script 
+        src="https://js.yoco.com/sdk/v1/yoco-sdk-web.js" 
+        onLoad={() => {
+          console.log('Yoco SDK loaded', { available: !!window.YocoSDK });
+        }}
+        onError={() => {
+          console.error('Failed to load Yoco SDK script');
+        }}
+      />
     </div>
   );
 }
