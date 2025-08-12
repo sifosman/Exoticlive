@@ -45,43 +45,127 @@ function OrderSuccessContent() {
   };
 
   useEffect(() => {
-    const getOrderData = () => {
+    const finalizeOrder = async () => {
       try {
         setLoading(true);
-        
         if (!ref) {
-          setError("Order reference not found. Please contact customer support.");
+          setError('Order reference not found. Please contact customer support.');
           setLoading(false);
           return;
         }
-        
+
         console.log('Order reference:', ref);
         console.log('Payment method:', method);
-        
-        // Determine the correct localStorage key based on payment method
+
+        if (method === 'yoco') {
+          // For Yoco hosted checkout, build order from saved draft
+          const draftKey = `yoco_draft_${ref}`;
+          const draftRaw = localStorage.getItem(draftKey);
+          if (!draftRaw) {
+            console.error('Yoco draft not found in localStorage with key:', draftKey);
+            setError('Order data not found after payment. Please contact customer support.');
+            setLoading(false);
+            return;
+          }
+
+          const draft = JSON.parse(draftRaw);
+          console.log('Yoco draft loaded:', draft);
+
+          // Map cart to WooCommerce line_items
+          const line_items = (draft.cart || []).map((item: any) => {
+            // use raw product id; server will resolve variations if needed
+            const attributes: any[] = [];
+            if (item.attributes && item.attributes.length) {
+              item.attributes.forEach((attr: any) => {
+                attributes.push({ key: attr.name, value: attr.value });
+              });
+            }
+            return {
+              product_id: item.id,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              total: String(item.price * item.quantity),
+              meta_data: attributes
+            };
+          });
+
+          const orderPayload = {
+            payment_method: 'yoco',
+            payment_method_title: 'Yoco Payment Gateway',
+            set_paid: true,
+            status: 'processing',
+            billing: draft.billing,
+            shipping: draft.shipping,
+            line_items,
+            shipping_lines: [
+              { method_id: 'flat_rate', method_title: 'Flat Rate', total: String(draft.shipping_total ?? 99) }
+            ],
+            meta_data: [
+              { key: '_reduce_stock', value: 'yes' }
+            ]
+          } as any;
+
+          console.log('Creating WooCommerce order (Yoco):', orderPayload);
+          const wpUrl = (process.env.NEXT_PUBLIC_WORDPRESS_URL?.replace(/\/+$/, '') || 'https://wp.exoticshoes.co.za');
+          const res = await fetch(`${wpUrl}/wp-json/wc/v3/orders`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Basic ' + btoa('ck_266d630c64bfc03268cb471bdd86250b7a0b13f1:cs_d9da89b71742f6404027107dcc42b52926f7cb89')
+            },
+            body: JSON.stringify(orderPayload)
+          });
+
+          if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(`WooCommerce API error: ${res.status} ${res.statusText} - ${txt}`);
+          }
+
+          const created = await res.json();
+          console.log('WooCommerce order created (Yoco):', created);
+
+          // Build a compact summary for display and optionally persist for retry-safe UI
+          const summary = {
+            id: created.id,
+            number: created.number,
+            total: created.total,
+            payment_method: 'yoco',
+            payment_method_title: 'Yoco Payment Gateway',
+            billing: created.billing,
+            shipping: created.shipping,
+            line_items: created.line_items,
+            status: created.status,
+            date_created: created.date_created
+          };
+
+          // Persist and cleanup draft
+          localStorage.setItem(`order_${ref}`, JSON.stringify(summary));
+          localStorage.removeItem(draftKey);
+
+          setOrder(summary as any);
+          setLoading(false);
+          return;
+        }
+
+        // Non-Yoco methods fall back to previously saved order data
         let orderDataKey;
         if (method === 'ozow') {
           orderDataKey = `ozow_order_${ref}`;
         } else {
-          // For bank_transfer and yoco payments
           orderDataKey = `order_${ref}`;
         }
-        
         console.log('Looking for order data with key:', orderDataKey);
         const storedOrderData = localStorage.getItem(orderDataKey);
-        
         if (!storedOrderData) {
           console.error('Order data not found in localStorage with key:', orderDataKey);
-          setError("Order data not found. Please contact customer support.");
+          setError('Order data not found. Please contact customer support.');
           setLoading(false);
           return;
         }
-        
-        // Parse the stored order data
+
         const orderData = JSON.parse(storedOrderData);
         console.log('Order data retrieved from localStorage:', orderData);
-        
-        // Set the order data directly from localStorage
         setOrder({
           id: orderData.id || 'N/A',
           number: orderData.number || orderData.id,
@@ -89,26 +173,21 @@ function OrderSuccessContent() {
           billing: orderData.billing || {},
           shipping: orderData.shipping || {},
           payment_method: orderData.payment_method || method,
-          payment_method_title: orderData.payment_method_title || 
-            (method === 'bank_transfer' ? 'Bank Transfer' : 
-             method === 'yoco' ? 'Yoco Payment Gateway' : 'Ozow'),
+          payment_method_title: orderData.payment_method_title || (method === 'bank_transfer' ? 'Bank Transfer' : method === 'yoco' ? 'Yoco Payment Gateway' : 'Ozow'),
           line_items: orderData.line_items || [],
           status: orderData.status || 'processing',
           date_created: orderData.date_created || new Date().toISOString()
         });
-        
-        // Clear the data from localStorage to prevent duplicate orders
         localStorage.removeItem(orderDataKey);
-        
         setLoading(false);
-      } catch (error) {
-        console.error('Error retrieving order data:', error);
-        setError('Failed to retrieve order data. Please contact customer support.');
+      } catch (err) {
+        console.error('Error finalizing order:', err);
+        setError('Failed to finalize order. Please contact customer support.');
         setLoading(false);
       }
     };
 
-    getOrderData();
+    finalizeOrder();
   }, [ref, method]);
 
   if (loading) {

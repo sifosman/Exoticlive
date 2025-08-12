@@ -240,7 +240,44 @@ export default function CheckoutPage() {
       if (paymentMethod === 'yoco') {
         // Hosted Checkout: Create a checkout session on the server and redirect to Yoco
         const origin = typeof window !== 'undefined' ? window.location.origin : '';
-        const successUrl = `${origin}/order-success?method=yoco`;
+        // Generate a simple client-side reference to link draft data with success page
+        const orderRef = `yoco-${Date.now()}`;
+
+        // Save a draft of order data locally so we can create the WooCommerce order on return
+        try {
+          const draft = {
+            payment_method: 'yoco',
+            payment_method_title: 'Yoco Payment Gateway',
+            billing: {
+              first_name: firstName,
+              last_name: lastName,
+              email,
+              phone,
+              address_1: address,
+              city,
+              state: province,
+              postcode: postalCode,
+              country: 'ZA'
+            },
+            shipping: {
+              first_name: firstName,
+              last_name: lastName,
+              address_1: address,
+              city,
+              state: province,
+              postcode: postalCode,
+              country: 'ZA'
+            },
+            cart: cart, // keep raw cart; success page will map to Woo line_items
+            shipping_total: 99,
+            totals: { subtotal, shipping, total }
+          };
+          localStorage.setItem(`yoco_draft_${orderRef}`, JSON.stringify(draft));
+        } catch (e) {
+          console.warn('Failed to persist yoco draft:', e);
+        }
+
+        const successUrl = `${origin}/order-success?method=yoco&ref=${encodeURIComponent(orderRef)}`;
         const cancelUrl = `${origin}/checkout?cancelled=1`;
         const failureUrl = `${origin}/checkout?failed=1`;
 
