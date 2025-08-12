@@ -53,11 +53,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await fetch('https://online.yoco.com/v1/charges/', {
+    // Call Yoco Online Payments API (no trailing slash to avoid potential 404/500 issues)
+    const response = await fetch('https://online.yoco.com/v1/charges', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${secretKey}`
+        'Authorization': `Bearer ${secretKey}`,
+        // Idempotency prevents duplicate charges if the client retries the same token
+        // Using the token is generally safe for a one-off payment attempt
+        'Idempotency-Key': token
       },
       body: JSON.stringify({
         token,
@@ -73,7 +77,16 @@ export async function POST(request: Request) {
     
     if (!response.ok) {
       console.error('Yoco API Error:', charge);
-      throw new Error(charge.message || `Yoco API error: ${response.status} ${response.statusText}`);
+      // Prefer Yoco's user-friendly displayMessage when available
+      const errMsg = charge?.displayMessage || charge?.errorMessage || charge?.message || `Yoco API error: ${response.status} ${response.statusText}`;
+      return NextResponse.json(
+        {
+          success: false,
+          message: errMsg,
+          details: charge
+        },
+        { status: response.status }
+      );
     }
 
     return NextResponse.json({ success: true, charge });

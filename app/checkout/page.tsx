@@ -335,6 +335,13 @@ export default function CheckoutPage() {
 
       const data = await response.json();
 
+      // If server returned an error (e.g., Yoco 4xx/5xx), surface its message
+      if (!response.ok) {
+        setPaymentError(data?.message || data?.error || 'Payment failed. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
       if (data.success) {
         // Create WooCommerce order after successful payment
         const order = await createWooCommerceOrder('Yoco Payment Gateway', data.charge?.id);
