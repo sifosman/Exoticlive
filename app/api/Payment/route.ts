@@ -4,8 +4,7 @@ import { NextResponse } from 'next/server';
 function validatePaymentData(data: any): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  // Check for required fields
-  if (!data.token) errors.push('Missing payment token');
+  // Hosted Checkout flow: token is NOT required. We only need amount and currency.
   if (!data.amountInCents || isNaN(parseInt(data.amountInCents))) errors.push('Invalid or missing amount');
   if (!data.currency) errors.push('Missing currency');
 
