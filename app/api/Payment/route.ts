@@ -53,8 +53,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Call Yoco Online Payments API (no trailing slash to avoid potential 404/500 issues)
-    const response = await fetch('https://online.yoco.com/v1/charges', {
+    // Call Yoco Payments API (Create Payment - tokenized card, keep popup UX)
+    // Allow overriding the API base via env var for flexibility if Yoco provides a different base for your account
+    const apiBase = process.env.YOCO_API_BASE || 'https://payments.yoco.com/api';
+    const endpoint = `${apiBase.replace(/\/$/, '')}/payments`;
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -65,9 +68,10 @@ export async function POST(request: Request) {
         'Idempotency-Key': token
       },
       body: JSON.stringify({
-        token,
-        amountInCents,
-        currency
+        // Payments API expects `amount` in cents and `currency`
+        amount: amountInCents,
+        currency,
+        token
       })
     });
 
