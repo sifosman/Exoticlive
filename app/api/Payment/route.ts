@@ -58,6 +58,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'Authorization': `Bearer ${secretKey}`,
         // Idempotency prevents duplicate charges if the client retries the same token
         // Using the token is generally safe for a one-off payment attempt
@@ -70,26 +71,59 @@ export async function POST(request: Request) {
       })
     });
 
-    const charge = await response.json();
-    
-    console.log('Yoco API Response Status:', response.status);
-    console.log('Yoco API Response:', JSON.stringify(charge, null, 2));
-    
+    // Safely parse response: attempt JSON when content-type indicates JSON; otherwise read as text
+    const contentType = response.headers.get('content-type') || '';
+    const yocoRequestId = response.headers.get('x-request-id') || response.headers.get('x-amzn-requestid') || response.headers.get('cf-ray') || '';
+    let parsedBody: any = null;
+    let rawText: string | null = null;
+
+    try {
+      if (contentType.includes('application/json')) {
+        parsedBody = await response.json();
+      } else {
+        rawText = await response.text();
+      }
+    } catch (parseErr) {
+      // As a final fallback, try reading as text if JSON parsing failed
+      try {
+        rawText = rawText ?? (await response.text());
+      } catch (_) {
+        // ignore
+      }
+      console.error('Failed to parse Yoco response body:', parseErr);
+    }
+
+    console.log('Yoco API Response Status:', response.status, response.statusText);
+    if (response.url) console.log('Yoco API Final URL:', response.url);
+    if (yocoRequestId) console.log('Yoco Request ID:', yocoRequestId);
+    if (contentType) console.log('Yoco Response Content-Type:', contentType);
+    if (parsedBody) {
+      console.log('Yoco API Response (JSON):', JSON.stringify(parsedBody, null, 2));
+    } else if (rawText) {
+      const preview = rawText.length > 500 ? rawText.slice(0, 500) + '...[truncated]' : rawText;
+      console.log('Yoco API Response (text):', preview);
+    }
+
     if (!response.ok) {
-      console.error('Yoco API Error:', charge);
+      const chargeErr = parsedBody ?? { raw: rawText };
       // Prefer Yoco's user-friendly displayMessage when available
-      const errMsg = charge?.displayMessage || charge?.errorMessage || charge?.message || `Yoco API error: ${response.status} ${response.statusText}`;
+      const errMsg = (parsedBody && (parsedBody.displayMessage || parsedBody.errorMessage || parsedBody.message))
+        || `Yoco API error: ${response.status} ${response.statusText}`;
+
       return NextResponse.json(
         {
           success: false,
           message: errMsg,
-          details: charge
+          details: chargeErr,
+          requestId: yocoRequestId || undefined
         },
         { status: response.status }
       );
     }
 
-    return NextResponse.json({ success: true, charge });
+    // Success path: return parsed JSON if available, else try to parse from text
+    const charge = parsedBody ?? (rawText ? { raw: rawText } : null);
+    return NextResponse.json({ success: true, charge, requestId: yocoRequestId || undefined });
   } catch (error) {
     console.error('Payment error:', error);
     return NextResponse.json(
