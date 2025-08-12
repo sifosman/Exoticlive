@@ -238,33 +238,45 @@ export default function CheckoutPage() {
 
     try {
       if (paymentMethod === 'yoco') {
-        // Check if Yoco public key is configured
-        const yocoPublicKey = process.env.NEXT_PUBLIC_YOCO_PUBLIC_KEY;
-        
-        if (!yocoPublicKey) {
-          setPaymentError('Yoco payment gateway is not properly configured. Please contact support.');
+        // Hosted Checkout: Create a checkout session on the server and redirect to Yoco
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const successUrl = `${origin}/order-success?method=yoco`;
+        const cancelUrl = `${origin}/checkout?cancelled=1`;
+        const failureUrl = `${origin}/checkout?failed=1`;
+
+        try {
+          const response = await fetch('/api/Payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amountInCents: Math.round(total * 100),
+              currency: 'ZAR',
+              successUrl,
+              cancelUrl,
+              failureUrl,
+              metadata: {
+                customerEmail: email,
+                customerPhone: phone
+              }
+            })
+          });
+
+          const data = await response.json();
+          if (!response.ok || !data?.redirectUrl) {
+            setPaymentError(data?.message || data?.error || 'Unable to start payment. Please try again.');
+            setIsLoading(false);
+            return;
+          }
+
+          // Redirect the customer to Yoco-hosted checkout
+          window.location.href = data.redirectUrl;
+          return;
+        } catch (err) {
+          console.error('Yoco checkout error:', err);
+          setPaymentError('Unable to start payment. Please try again.');
           setIsLoading(false);
           return;
         }
-        
-        const yoco = new window.YocoSDK({
-          publicKey: yocoPublicKey
-        });
-
-        yoco.showPopup({
-          amountInCents: Math.round(total * 100),
-          currency: 'ZAR',
-          name: 'Exotic Shoes',
-          description: 'Order payment',
-          callback: async function (result: any) {
-            if (result.error) {
-              setPaymentError(result.error.message);
-              setIsLoading(false);
-            } else {
-              await handleYocoPayment(result);
-            }
-          }
-        });
       } else if (paymentMethod === 'bank_transfer') {
         // Create order directly for bank transfer
         const order = await createWooCommerceOrder('Bank Transfer');
@@ -321,6 +333,7 @@ export default function CheckoutPage() {
     }
   };
 
+  // Legacy popup/token charge flow (no longer used with Hosted Checkout)
   const handleYocoPayment = async (result: any) => {
     try {
       const response = await fetch('/api/Payment', {

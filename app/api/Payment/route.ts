@@ -34,7 +34,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { token, amountInCents, currency } = body;
+    // Hosted Checkout flow: we only need amount/currency and optional redirect URLs/metadata
+    const { token, amountInCents, currency, successUrl, cancelUrl, failureUrl, metadata } = body;
 
     // Ensure Yoco secret key is configured
     const secretKey = process.env.YOCO_SECRET_KEY;
@@ -53,10 +54,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Call Yoco Payments API (Create Payment - tokenized card, keep popup UX)
+    // Call Yoco Payments API (Hosted Checkout - create checkout and redirect customer)
     // Allow overriding the API base via env var for flexibility if Yoco provides a different base for your account
     const apiBase = process.env.YOCO_API_BASE || 'https://payments.yoco.com/api';
-    const endpoint = `${apiBase.replace(/\/$/, '')}/payments`;
+    const endpoint = `${apiBase.replace(/\/$/, '')}/checkouts`;
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -65,13 +66,16 @@ export async function POST(request: Request) {
         'Authorization': `Bearer ${secretKey}`,
         // Idempotency prevents duplicate charges if the client retries the same token
         // Using the token is generally safe for a one-off payment attempt
-        'Idempotency-Key': token
+        'Idempotency-Key': token || `${amountInCents}-${Date.now()}`
       },
       body: JSON.stringify({
-        // Payments API expects `amount` in cents and `currency`
+        // Checkout API expects `amount` in cents and `currency`, plus optional redirect URLs
         amount: amountInCents,
         currency,
-        token
+        successUrl,
+        cancelUrl,
+        failureUrl,
+        metadata: metadata || null
       })
     });
 
@@ -126,8 +130,10 @@ export async function POST(request: Request) {
     }
 
     // Success path: return parsed JSON if available, else try to parse from text
-    const charge = parsedBody ?? (rawText ? { raw: rawText } : null);
-    return NextResponse.json({ success: true, charge, requestId: yocoRequestId || undefined });
+    const checkout = parsedBody ?? (rawText ? { raw: rawText } : null);
+    // Yoco returns a redirectUrl we should pass to the client
+    const redirectUrl = checkout?.redirectUrl || checkout?.redirect_url || null;
+    return NextResponse.json({ success: true, redirectUrl, checkout, requestId: yocoRequestId || undefined });
   } catch (error) {
     console.error('Payment error:', error);
     return NextResponse.json(
