@@ -266,18 +266,22 @@ export async function POST(request: Request) {
     console.log('Hash input ends with private key:', hashInput.endsWith(privateKey));
 
     // Generate SHA512 hash as required by Ozow
-    // IMPORTANT: The hash must be lowercase according to the documentation
-    const hash = crypto
+    // Default to LOWERCASE per Ozow docs; allow overriding to UPPERCASE via env flag
+    const rawHash = crypto
       .createHash('sha512')
       .update(lowercaseHashInput, 'utf8')
-      .digest('hex').toLowerCase();
+      .digest('hex');
+
+    const useUppercaseHash = (process.env.OZOW_HASH_UPPERCASE || '').toLowerCase() === 'true';
+    const hash = useUppercaseHash ? rawHash.toUpperCase() : rawHash.toLowerCase();
 
     // Verify the hash is 128 characters long (512 bits = 128 hex characters)
     console.log('Hash length is correct (128 chars):', hash.length === 128);
     console.log('Hash:', hash);
+    console.log('Using uppercase HashCheck:', useUppercaseHash);
 
     // Add hash to parameters
-    // IMPORTANT: The hash must be lowercase according to the documentation
+    // IMPORTANT: HashCheck casing controlled by OZOW_HASH_UPPERCASE (default lowercase)
     params.append('HashCheck', hash);
 
     // Log the final parameters
