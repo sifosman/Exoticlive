@@ -296,45 +296,62 @@ export async function POST(request: Request) {
     });
     console.log('Parameters being sent to Ozow:', JSON.stringify(finalParams, null, 2));
 
-    // Build the URL manually to ensure proper encoding and parameter order
-    // IMPORTANT: The order of parameters in the URL must match the order used for hash calculation
-    let paymentUrlParams = '';
+    // Prefer the official Ozow API to generate a payment URL to avoid any encoding/order ambiguities
+    console.log('\n===== CALLING OZOW API: PostPaymentRequest =====');
+    const apiPayload: Record<string, any> = {
+      siteCode: siteCodeToUse,
+      countryCode: 'ZA',
+      currencyCode: 'ZAR',
+      amount: amountFormatted,
+      transactionReference: reference,
+      bankReference,
+      cancelUrl,
+      errorUrl,
+      successUrl,
+      notifyUrl,
+      isTest: isTestValue === 'true',
+      hashCheck: hash
+    };
+    if (customerName) apiPayload.optional1 = customerName;
+    if (customerEmail) apiPayload.optional2 = customerEmail;
 
-    // Build the URL with parameters in the exact order required by Ozow
-    // IMPORTANT: Parameter names must match EXACTLY what Ozow expects (case-sensitive)
-    // These parameter names are from the Ozow documentation
-    const orderedKeys = [
-      'SiteCode', 'CountryCode', 'CurrencyCode', 'Amount', 'TransactionReference', 'BankReference',
-      'CancelUrl', 'ErrorUrl', 'SuccessUrl', 'NotifyUrl', 'IsTest', 'HashCheck'
-    ];
+    console.log('Ozow API payload (sanitized):', JSON.stringify({ ...apiPayload, hashCheck: '[HASH REDACTED]' }, null, 2));
 
-    // Add optional parameters after the required ones
-    const optionalKeys = ['optional1', 'optional2', 'optional3', 'optional4', 'optional5'];
-
-    // Build URL with parameters in the correct order
-    [...orderedKeys, ...optionalKeys].forEach(key => {
-      const value = params.get(key);
-      if (value) {
-        if (paymentUrlParams) paymentUrlParams += '&';
-        paymentUrlParams += `${key}=${encodeURIComponent(value)}`;
-      }
+    const apiResp = await fetch('https://api.ozow.com/postpaymentrequest', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        ApiKey: apiKey!,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(apiPayload)
     });
 
-    const paymentUrl = `${baseUrl}?${paymentUrlParams}`;
+    const apiJson = await apiResp.json().catch(() => ({} as any));
+    console.log('Ozow API response:', apiJson);
 
-    // Log the final URL for debugging
-    console.log('===== FINAL PAYMENT URL =====');
-    console.log(paymentUrl);
-
-    // Check if URL is too long (over 2000 characters)
-    if (paymentUrl.length > 2000) {
-      console.warn('Warning: Payment URL is very long (' + paymentUrl.length + ' chars)');
+    if (!apiResp.ok || apiJson?.errorMessage) {
+      console.error('Ozow API error:', { status: apiResp.status, errorMessage: apiJson?.errorMessage });
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Ozow payment request failed: ${apiJson?.errorMessage || 'HTTP ' + apiResp.status}`,
+          details: apiJson
+        },
+        { status: 502 }
+      );
     }
+
+    const paymentUrl = apiJson.url as string;
+    const paymentRequestId = apiJson.paymentRequestId as string;
+    console.log('===== RECEIVED PAYMENT URL FROM API =====');
+    console.log(paymentUrl);
 
     // Return the payment URL to the client
     return NextResponse.json({
       success: true,
-      paymentUrl: paymentUrl,
+      paymentUrl,
+      paymentRequestId,
       payload: {
         parameters: paramsObj,
         hashInput: redactedHashInput
