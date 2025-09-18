@@ -78,6 +78,29 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
       // Set the processed product to state
       setProduct(processedProduct);
 
+      // If this is a simple product (no variations), initialize stock state from the product itself
+      const hasVariations = Array.isArray(processedProduct.variations) && processedProduct.variations.length > 0;
+      if (!hasVariations) {
+        const stockStatus = (processedProduct.stock_status || '').toLowerCase();
+        const qty = typeof processedProduct.stock_quantity === 'number' ? processedProduct.stock_quantity : null;
+        const manage = !!processedProduct.manage_stock;
+
+        if (stockStatus === STOCK_STATUS_IN_STOCK) {
+          setCurrentStockStatus(STOCK_STATUS_IN_STOCK);
+          setCurrentStockQuantity(qty);
+          if (manage && typeof qty === 'number' && qty > 0) {
+            setMaxQuantity(qty);
+            if (quantity > qty) setQuantity(qty);
+          } else {
+            setMaxQuantity(99);
+          }
+        } else {
+          setCurrentStockStatus(STOCK_STATUS_OUT_OF_STOCK);
+          setCurrentStockQuantity(qty);
+          setMaxQuantity(0);
+        }
+      }
+
       // Log debugging info
       if (DEBUG_MODE) {
         console.log('SIMPLIFIED: Product data processed:');
@@ -467,8 +490,9 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
   const handleAddToCart = async () => {
     if (!product) return;
 
-    // Check if all required attributes are selected
-    if (!areAllAttributesSelected()) {
+    // Check if all required attributes are selected (for variable products only)
+    const hasVariations = Array.isArray(product.variations) && product.variations.length > 0;
+    if (hasVariations && !areAllAttributesSelected()) {
       toast({
         title: "Please select all options",
         description: "You need to select all product options before adding to cart",
@@ -487,10 +511,10 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
       return;
     }
 
-    // Find the matching variation to add to cart
-    const variation = findMatchingVariation(product.variations, selectedAttributes);
+    // For variable products, require a matching variation; for simple, skip
+    const variation = hasVariations ? findMatchingVariation(product.variations, selectedAttributes) : null;
 
-    if (!variation) {
+    if (hasVariations && !variation) {
       toast({
         title: "Selection not available",
         description: "The selected combination is not available",
@@ -505,22 +529,35 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
       .join(', ');
 
     // Create cart item
-    const cartItem = {
-      id: variation.id || product.id,
-      variationId: variation.id || '',
+    const cartItem = hasVariations ? {
+      id: variation!.id || product.id,
+      variationId: variation!.id || '',
       name: product.name,
-      price: variation.price || product.price,
+      price: variation!.price || product.price,
       quantity: quantity,
       image: product.image_url,
       variationName: attributeDisplay,
-      stockQuantity: variation.stock_quantity || null,
-      stockStatus: variation.stock_status || 'instock',
+      stockQuantity: variation!.stock_quantity || null,
+      stockStatus: variation!.stock_status || 'instock',
       attributes: Object.entries(selectedAttributes).map(([name, value]) => ({
         name: formatAttributeName(name),
         value: value
       })),
       product_id: product.id,
-      variation_id: variation.id
+      variation_id: variation!.id
+    } : {
+      id: product.id,
+      variationId: '',
+      name: product.name,
+      price: product.price,
+      quantity: quantity,
+      image: product.image_url,
+      variationName: '',
+      stockQuantity: typeof product.stock_quantity === 'number' ? product.stock_quantity : null,
+      stockStatus: (product.stock_status || 'instock'),
+      attributes: [],
+      product_id: product.id,
+      variation_id: undefined as any
     };
 
     // Add to cart locally
@@ -533,7 +570,7 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           product_id: product.id,
-          variation_id: variation.id,
+          variation_id: hasVariations ? variation!.id : undefined,
           quantity,
           attributes: cartItem.attributes,
         })

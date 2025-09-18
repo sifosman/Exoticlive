@@ -8,9 +8,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { product_id, variation_id, quantity, attributes } = body || {};
 
-    if (!product_id || !variation_id || !quantity) {
+    if (!product_id || !quantity) {
       return NextResponse.json(
-        { success: false, message: 'product_id, variation_id and quantity are required' },
+        { success: false, message: 'product_id and quantity are required' },
         { status: 400 }
       );
     }
