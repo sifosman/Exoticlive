@@ -1,0 +1,140 @@
+Get started with our step-by-step guide.
+Before you begin
+Overview
+Integrating Ozow as a payment option into your website can be achieved in three easy steps:
+Post payment information to Ozow.
+Process response received from Ozow.
+Verify transaction status using Ozow's API (optional but recommended).
+Before you start
+Please make sure to use your Staging API Key and Private Key after testing, and once you are ready to go live please make sure you use your Production API Key and Private Key.
+Account Details
+Test Account Details
+Code InputDetails
+SiteCode
+Retrieve from Merchant Dashboard
+CountryCode
+ZA
+CurrencyCode
+ZAR
+Private Key
+Retrieve from Merchant Dashboard
+API Key
+Retrieve from Merchant Dashboard
+API URL: https://stagingapi.ozow.com/PostPaymentRequest
+Live Account Details
+Code InputDetails
+SiteCode
+Retrieve from Merchant Dashboard
+CountryCode
+ZA
+CurrencyCode
+ZAR
+Private Key
+Retrieve from Merchant Dashboard
+API Key
+Retrieve from Merchant Dashboard
+API URL: https://api.ozow.com/PostPaymentRequest
+With these account details you can now start implementing the Ozow integration through your framework.
+Be advised
+A basic understanding of HTML and CSS to is necessary to implement many of the following steps into your source.
+
+Step 1: Post from merchant website
+After the user confirms his purchase and has chosen Ozow as his preferred payment method, you will need to post the following variables to https://pay.ozow.com/.
+
+Please note
+
+Fields 18 (SelectedBankId) - 27 (VariableAmountMax) are not commonly used and can be ignored unless you specifically require that functionality.
+
+PaymentRequest
+Request for creating a payment request.
+
+siteCode
+string
+required
+A unique code for the site currently in use. A site code is generated when adding a site in the Ozow merchant admin section.
+
+<= 50 characters
+countryCode
+string
+required
+The ISO 3166-1 alpha-2 code for the user's country. The country code will determine which banks will be displayed to the customer. Please note only South African (ZA) banks are currently supported by Ozow.
+
+<= 2 characters
+Example:
+ZA
+Match pattern:
+^[A-Z]+
+currencyCode
+string
+required
+The ISO 4217 three-letter code for the transaction currency. Please note only the South African Rand (ZAR) is currently supported by Ozow, so any currency conversion must take place before posting to the Ozow site.
+
+<= 3 characters
+Example:
+ZAR
+Match pattern:
+^[A-Z]+
+amount
+number<double>
+required
+The transaction amount. The amount is in the currency specified by the currency code posted.
+
+Example:
+150.2
+transactionReference
+string
+required
+The merchant's reference for the transaction. This reference can be used to look up the transaction with the GetTransactionByReference operation.
+
+<= 50 characters
+bankReference
+string
+required
+The reference that will be pre-populated in the "their reference" field in the customers online banking site. This is the payment reference that appears on the merchant’s bank statement and can be used for recon purposes. Only alphanumeric characters, spaces, and dashes are allowed.
+
+<= 20 characters
+optional1
+string
+Optional field the merchant can post for additional information they would need passed back in the response. These are also stored with the transaction details by Ozow, and can be useful for filtering transactions in the merchant admin section.
+
+<= 50 characters
+optional2
+string
+Optional field the merchant can post for additional information they would need passed back in the response. These are also stored with the transaction details by Ozow, and can be useful for filtering transactions in the merchant admin section.
+
+<= 50 characters
+optional3
+string
+Optional field the merchant can post for additional information they would need passed back in the response. These are also stored with the transaction details by Ozow, and can be useful for filtering transactions in the merchant admin section.
+
+<= 50 characters
+optional4
+string
+Optional field the merchant can post for additional information they would need passed back in the response. These are also stored with the transaction details by Ozow, and can be useful for filtering transactions in the merchant admin section.
+
+<= 50 characters
+optional5
+string
+Optional field the merchant can post for additional information they would need passed back in the response. These are also stored with the transaction details by Ozow, and can be useful for filtering transactions in the merchant admin section.
+
+<= 50 characters
+customer
+string
+The customer’s name or identifier.
+
+<= 100 characters
+cancelUrl
+string<uri>
+The URL to which the redirect result should be posted to if the customer cancels the payment. This is also the page the customer will be redirected to. This URL can also be set for the applicable merchant site in the merchant admin section. If a value is set in the merchant admin and sent in the post, the posted value will be redirected to if the payment is cancelled.
+
+<= 150 characters
+errorUrl
+string<uri>
+The URL to which the redirect result should be posted if an error occurs while trying to process the payment. This is also the page the customer will be redirected to. This URL can also be set for the applicable merchant site in the merchant admin section. If a value is set in the merchant admin and sent in the post, the posted value will be redirected to if an error occurred while processing the payment.
+
+<= 150 characters
+successUrl
+string<uri>
+The URL to which the redirect result should be posted to if the payment is successful. This is also be the page the customer gets redirected to. This URL can also be set for the applicable merchant site in the merchant admin section. If a value is set in the merchant admin and sent in the post, the posted value will be redirected to if the payment was successful.
+
+Please note that it is not sufficient to assume that the payment

@@ -1,0 +1,8 @@
+[2025-03-29T12:17:46.209Z] Starting Typesense field fix...
+[2025-03-29T12:17:46.217Z] Checking existing collection...
+[2025-03-29T12:17:46.547Z] Error retrieving existing products: Request failed with HTTP code 422 | Server said: Only upto 250 hits can be fetched per page.
+[2025-03-29T12:17:46.599Z] Existing products collection deleted.
+[2025-03-29T12:17:46.646Z] New collection created with updated schema.
+[2025-03-29T12:17:46.648Z] No existing products to migrate.
+[2025-03-29T12:17:46.649Z] Successfully fixed Typesense schema and added required fields for shop page
+[2025-03-29T12:17:46.650Z] Fix completed successfully.

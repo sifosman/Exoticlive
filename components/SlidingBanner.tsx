@@ -60,24 +60,35 @@ const SlidingBanner: React.FC = () => {
   }, []);
 
   return (
-    <Box 
+    <Box
       sx={{
         position: 'relative',
         width: '100%',
-        maxWidth: { 
-          xs: '100%',
-          md: '85%',
-          lg: '75%'
-        },
-        height: { 
+        height: {
           xs: 'calc(100vh - 60px)',
+          sm: '250px',
           md: '500px',
           lg: '600px'
         },
+        maxWidth: {
+          xs: '100%',
+          md: '90%',
+          lg: '1200px'
+        },
         overflow: 'hidden',
-        marginTop: { 
-          xs: '0',
-          md: '70px',
+        mb: {
+          xs: 2,
+          md: 3,
+          lg: 4
+        },
+        mt: {
+          xs: -2.5, // Move up by 20px on mobile (previously -1.25, now -2.5)
+          md: 0,
+          lg: 0
+        },
+        paddingBottom: {
+          xs: '0px',
+          md: '72px',
           lg: '72px' 
         },
         marginX: 'auto',
@@ -116,7 +127,7 @@ const SlidingBanner: React.FC = () => {
             />
           )}
           <div className="absolute inset-0 flex items-end justify-center pb-4 md:pb-8">
-            <Link href="/products" className="group relative">
+            <Link href="/shop" className="group relative">
               <motion.div
                 className="absolute inset-0 bg-white opacity-0 filter blur-md group-hover:opacity-30 transition-opacity duration-300"
                 animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}

@@ -1,11 +1,12 @@
-import dynamic from 'next/dynamic';
+"use client";
+
 import FeaturedProducts from '@/components/FeaturedProducts';
+import NewArrivalsCarousel from '@/components/NewArrivalsCarousel';
 import SlidingBanner from '@/components/SlidingBanner';
 import CategorySection from '@/components/CategorySection';
 import BodyBanner from '@/components/BodyBanner';
 import NewsletterSignup from '@/components/NewsletterSignup';
-
-const FastSellingProducts = dynamic(() => import('@/components/FastSellingProducts'), { ssr: false });
+import ResellBanner from '@/components/ResellBanner';
 
 export default function Home() {
   return (
@@ -14,8 +15,9 @@ export default function Home() {
       <CategorySection />
       <FeaturedProducts />
       <BodyBanner />
-      <FastSellingProducts />
+      <NewArrivalsCarousel />
       <NewsletterSignup />
+      <ResellBanner />
     </main>
   );
 }

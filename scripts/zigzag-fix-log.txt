@@ -1,0 +1,56 @@
+Zig Zag Fix Log - 2025-03-28T21:59:24.267Z
+
+Starting complete reset of Zig Zag product...
+Checking if Zig Zag product exists...
+Found existing Zig Zag product (ID: 25093), deleting it...
+Successfully deleted existing Zig Zag product
+Creating new Zig Zag product with verified data...
+Successfully created new Zig Zag product (ID: 25093)
+Verifying created product...
+Verification successful. Available fields:
+[
+  "attributes_json",
+  "categories",
+  "colors",
+  "description",
+  "id",
+  "image_alt",
+  "image_url",
+  "name",
+  "price",
+  "regular_price",
+  "sale_price",
+  "short_description",
+  "sizes",
+  "slug",
+  "stock_quantity",
+  "stock_status",
+  "tags",
+  "variations_json"
+]
+Verified variations_json: Found 6 variations
+Verified Black/Size 3 variation:
+{
+  "id": "25094",
+  "attributes": [
+    {
+      "name": "color",
+      "option": "Black"
+    },
+    {
+      "name": "size",
+      "option": "3"
+    }
+  ],
+  "stock_quantity": 1,
+  "stock_status": "instock",
+  "price": 59.99,
+  "sale_price": 49.99,
+  "regular_price": 59.99
+}
+Verified attributes_json: Found 2 attributes with these options:
+- color: Black, Red
+- size: 3, 4, 5
+Reset and verification complete!
+
+Product reset successful - please refresh your product page to see changes

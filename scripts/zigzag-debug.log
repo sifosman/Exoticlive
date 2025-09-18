@@ -1,0 +1,239 @@
+[2025-03-28T21:57:16.929Z] Starting Zig Zag comprehensive debugging
+[2025-03-28T21:57:16.934Z] PHASE 1: Simulating current product page behavior
+[2025-03-28T21:57:16.936Z] Starting product page simulation for slug: zig-zag
+[2025-03-28T21:57:16.938Z] STEP 1: Retrieve raw data from Typesense via search API
+[2025-03-28T21:57:17.235Z] Found product in Typesense: Zig Zag (ID: 25093)
+[2025-03-28T21:57:17.237Z] STEP 2: Examine raw data structure
+[2025-03-28T21:57:17.238Z] Available fields in raw product data:: [
+  "attributes_json",
+  "categories",
+  "colors",
+  "description",
+  "id",
+  "image_alt",
+  "image_url",
+  "name",
+  "price",
+  "regular_price",
+  "sale_price",
+  "short_description",
+  "sizes",
+  "slug",
+  "stock_quantity",
+  "stock_status",
+  "tags",
+  "variations_json"
+]
+[2025-03-28T21:57:17.252Z] Found variations_json field (new format): {
+  "dataType": "string",
+  "length": 2485
+}
+[2025-03-28T21:57:17.254Z] Successfully parsed variations_json - found 18 variations
+[2025-03-28T21:57:17.255Z] Variations Table:
+[2025-03-28T21:57:17.258Z] Found Black/Size 3 variation:: {
+  "id": "25094",
+  "attributes": [
+    {
+      "name": "color",
+      "option": "Black"
+    },
+    {
+      "name": "size",
+      "option": "3"
+    }
+  ],
+  "stock_quantity": 1,
+  "stock_status": "instock"
+}
+[2025-03-28T21:57:17.260Z] Found attributes_json field (new format): {
+  "dataType": "string",
+  "length": 153
+}
+[2025-03-28T21:57:17.261Z] Successfully parsed attributes_json - found 2 attributes
+[2025-03-28T21:57:17.262Z] Available attributes:: [
+  {
+    "name": "color",
+    "options": [
+      "Black",
+      "Nude",
+      "Red",
+      "White",
+      "Silver",
+      "Gold"
+    ],
+    "variation": true
+  },
+  {
+    "name": "size",
+    "options": [
+      "3",
+      "4",
+      "5",
+      "6"
+    ],
+    "variation": true
+  }
+]
+[2025-03-28T21:57:17.263Z] STEP 3: Simulating frontend component processing
+[2025-03-28T21:57:17.264Z] Frontend: Parsed variations_json, found 18 variations
+[2025-03-28T21:57:17.266Z] Frontend: Parsed attributes_json, found 2 attributes
+[2025-03-28T21:57:17.267Z] Frontend: Sees 18 variations
+[2025-03-28T21:57:17.268Z] Frontend: Sees 2 attributes
+[2025-03-28T21:57:17.270Z] Frontend: Color attribute detected: {
+  "name": "color",
+  "options": [
+    "Black",
+    "Nude",
+    "Red",
+    "White",
+    "Silver",
+    "Gold"
+  ],
+  "variation": true
+}
+[2025-03-28T21:57:17.271Z] STEP 4: Direct database verification using admin API
+[2025-03-28T21:57:17.313Z] Retrieved product directly by ID: 25093
+[2025-03-28T21:57:17.314Z] Available fields in direct document:: [
+  "attributes_json",
+  "categories",
+  "colors",
+  "description",
+  "id",
+  "image_alt",
+  "image_url",
+  "name",
+  "price",
+  "regular_price",
+  "sale_price",
+  "short_description",
+  "sizes",
+  "slug",
+  "stock_quantity",
+  "stock_status",
+  "tags",
+  "variations_json"
+]
+[2025-03-28T21:57:17.316Z] Direct Document: Found variations_json field
+[2025-03-28T21:57:17.317Z] Direct Document: Successfully parsed variations_json with 18 variations
+[2025-03-28T21:57:17.317Z] Direct Document: Sample variation structure:
+[2025-03-28T21:57:17.320Z] PHASE 2: Applying verified fix to product
+[2025-03-28T21:57:17.322Z] Starting fix of Zig Zag product with verified correct data
+[2025-03-28T21:57:17.323Z] Looking for Zig Zag product...
+[2025-03-28T21:57:17.365Z] Found existing Zig Zag product (ID: 25093)
+[2025-03-28T21:57:17.410Z] Updated Zig Zag product with verified data: {
+  "id": "25093",
+  "hasVariationsJson": true,
+  "hasAttributesJson": true
+}
+[2025-03-28T21:57:17.415Z] Starting product page simulation for slug: zig-zag
+[2025-03-28T21:57:17.417Z] STEP 1: Retrieve raw data from Typesense via search API
+[2025-03-28T21:57:17.456Z] Found product in Typesense: Zig Zag (ID: 25093)
+[2025-03-28T21:57:17.457Z] STEP 2: Examine raw data structure
+[2025-03-28T21:57:17.458Z] Available fields in raw product data:: [
+  "attributes_json",
+  "categories",
+  "colors",
+  "description",
+  "id",
+  "image_alt",
+  "image_url",
+  "name",
+  "price",
+  "regular_price",
+  "sale_price",
+  "short_description",
+  "sizes",
+  "slug",
+  "stock_quantity",
+  "stock_status",
+  "tags",
+  "variations_json"
+]
+[2025-03-28T21:57:17.459Z] Found variations_json field (new format): {
+  "dataType": "string",
+  "length": 1153
+}
+[2025-03-28T21:57:17.460Z] Successfully parsed variations_json - found 6 variations
+[2025-03-28T21:57:17.461Z] Variations Table:
+[2025-03-28T21:57:17.463Z] Found Black/Size 3 variation:: {
+  "id": "25094",
+  "attributes": [
+    {
+      "name": "color",
+      "option": "Black"
+    },
+    {
+      "name": "size",
+      "option": "3"
+    }
+  ],
+  "stock_quantity": 1,
+  "stock_status": "instock",
+  "price": 59.99,
+  "sale_price": 49.99,
+  "regular_price": 59.99
+}
+[2025-03-28T21:57:17.464Z] Found attributes_json field (new format): {
+  "dataType": "string",
+  "length": 118
+}
+[2025-03-28T21:57:17.465Z] Successfully parsed attributes_json - found 2 attributes
+[2025-03-28T21:57:17.465Z] Available attributes:: [
+  {
+    "name": "color",
+    "options": [
+      "Black",
+      "Red"
+    ],
+    "variation": true
+  },
+  {
+    "name": "size",
+    "options": [
+      "3",
+      "4",
+      "5"
+    ],
+    "variation": true
+  }
+]
+[2025-03-28T21:57:17.467Z] STEP 3: Simulating frontend component processing
+[2025-03-28T21:57:17.468Z] Frontend: Parsed variations_json, found 6 variations
+[2025-03-28T21:57:17.469Z] Frontend: Parsed attributes_json, found 2 attributes
+[2025-03-28T21:57:17.470Z] Frontend: Sees 6 variations
+[2025-03-28T21:57:17.471Z] Frontend: Sees 2 attributes
+[2025-03-28T21:57:17.472Z] Frontend: Color attribute detected: {
+  "name": "color",
+  "options": [
+    "Black",
+    "Red"
+  ],
+  "variation": true
+}
+[2025-03-28T21:57:17.473Z] STEP 4: Direct database verification using admin API
+[2025-03-28T21:57:17.513Z] Retrieved product directly by ID: 25093
+[2025-03-28T21:57:17.514Z] Available fields in direct document:: [
+  "attributes_json",
+  "categories",
+  "colors",
+  "description",
+  "id",
+  "image_alt",
+  "image_url",
+  "name",
+  "price",
+  "regular_price",
+  "sale_price",
+  "short_description",
+  "sizes",
+  "slug",
+  "stock_quantity",
+  "stock_status",
+  "tags",
+  "variations_json"
+]
+[2025-03-28T21:57:17.516Z] Direct Document: Found variations_json field
+[2025-03-28T21:57:17.516Z] Direct Document: Successfully parsed variations_json with 6 variations
+[2025-03-28T21:57:17.517Z] Direct Document: Sample variation structure:
+[2025-03-28T21:57:17.519Z] Zig Zag product fix complete
+[2025-03-28T21:57:17.520Z] Debugging and fixing complete

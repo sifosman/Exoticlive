@@ -5,7 +5,6 @@ import { useQuery } from '@apollo/client';
 import { useSearchParams } from 'next/navigation';
 import { ProductsOrderByEnum, OrderEnum } from '../../@types/graphql';
 import { Button } from '../ui/button';
-import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { Filter } from "lucide-react";
 import { Drawer } from '@mui/material';
 import { ProductCardSkeleton } from '../ui/LoadingSkeleton';

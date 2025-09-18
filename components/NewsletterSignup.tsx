@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Container, 
@@ -8,11 +8,11 @@ import {
   TextField, 
   Button, 
   Alert,
-  Snackbar,
   Grid 
 } from '@mui/material';
 import Image from 'next/image';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import * as emailjs from '@emailjs/browser';
 
 const NewsletterSignup = () => {
   const [email, setEmail] = useState('');
@@ -20,28 +20,56 @@ const NewsletterSignup = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Initialize EmailJS
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_EMAILJS_USER_ID) {
+      emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_USER_ID);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // Replace with your actual API endpoint
-      const response = await fetch('/api/newsletter-signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to subscribe');
+      // Make sure required env vars are available
+      if (!process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || 
+          !process.env.NEXT_PUBLIC_EMAILJS_USER_ID ||
+          !process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID) {
+        throw new Error('EmailJS configuration is missing');
       }
 
+      // Send email directly using EmailJS - using the contact form template
+      // The admin will receive an email with the subscriber's email address
+      await emailjs.send(
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID,
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID,
+        {
+          from_name: 'Newsletter Subscriber',
+          from_email: email,
+          message: `New newsletter signup: ${email} at ${new Date().toLocaleString()}`,
+        },
+        process.env.NEXT_PUBLIC_EMAILJS_USER_ID
+      );
+
+      // Show success message
       setShowSuccess(true);
       setEmail('');
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 5000);
     } catch (err) {
+      console.error('EmailJS error:', err);
       setError('Failed to subscribe. Please try again later.');
     } finally {
       setIsSubmitting(false);
@@ -99,121 +127,72 @@ const NewsletterSignup = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
-                gap: { xs: 2, md: 4 },
-                pl: { md: 8 },
-                width: '100%',
-                maxWidth: '1000px'
+                gap: 3
               }}
             >
-              <Typography 
-                variant="h3"
-                component="h2"
-                sx={{ 
-                  fontFamily: 'Montserrat, sans-serif',
-                  fontWeight: 600,
-                  mb: { xs: 1, md: 2 },
-                  fontSize: { xs: '1.75rem', sm: '2rem', md: '3rem' }
-                }}
-              >
+              <Typography variant="h4" component="h2" fontWeight="bold">
                 Subscribe to Our Newsletter
               </Typography>
               
-              <Typography 
-                variant="h6"
-                color="text.secondary"
-                sx={{ 
-                  fontFamily: 'Montserrat, sans-serif',
-                  mb: { xs: 1, md: 2 },
-                  maxWidth: '800px',
-                  fontSize: { xs: '0.9rem', sm: '1rem', md: '1.25rem' }
-                }}
-              >
-                Stay updated with our latest products, exclusive offers, and fashion trends!
+              <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '600px' }}>
+                Stay updated with our latest products, releases, and exclusive offers. 
+                
               </Typography>
-
+              
               <Box 
                 sx={{ 
-                  display: 'flex',
+                  display: 'flex', 
                   flexDirection: { xs: 'column', sm: 'row' },
-                  gap: 2,
+                  alignItems: { xs: 'stretch', sm: 'center' },
                   width: '100%',
-                  maxWidth: '1000px'
+                  maxWidth: '500px',
+                  gap: 2
                 }}
               >
                 <TextField
-                  fullWidth
-                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email address"
-                  required
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      bgcolor: 'white',
-                      height: { xs: '48px', md: '56px' },
-                      '&:hover fieldset': {
-                        borderColor: '#007600',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#007600',
-                      },
-                    },
+                  placeholder="Your email address"
+                  variant="outlined"
+                  fullWidth
+                  InputProps={{
+                    startAdornment: <MailOutlineIcon sx={{ mr: 1, color: 'text.secondary' }} />,
                   }}
                 />
-                <Button
+                <Button 
                   type="submit"
                   variant="contained"
                   disabled={isSubmitting}
-                  startIcon={<MailOutlineIcon />}
-                  sx={{
-                    bgcolor: '#007600',
+                  sx={{ 
+                    bgcolor: '#1a1a1a', 
+                    color: 'white',
                     '&:hover': {
-                      bgcolor: '#006000',
+                      bgcolor: '#333'
                     },
-                    fontFamily: 'Montserrat, sans-serif',
-                    px: { xs: 4, md: 6 },
-                    height: { xs: '48px', md: '56px' },
-                    whiteSpace: 'nowrap',
-                    fontSize: { xs: '0.875rem', md: '1rem' }
+                    px: 4,
+                    py: 1.5,
+                    fontWeight: 'bold',
+                    minWidth: { xs: '100%', sm: 'auto' }
                   }}
                 >
                   {isSubmitting ? 'Subscribing...' : 'Subscribe'}
                 </Button>
               </Box>
+              
+              {error && (
+                <Alert severity="error" sx={{ width: '100%', maxWidth: '500px' }}>
+                  {error}
+                </Alert>
+              )}
+              
+              {showSuccess && (
+                <Alert severity="success" sx={{ width: '100%', maxWidth: '500px' }}>
+                  Thank you for subscribing to our newsletter!
+                </Alert>
+              )}
             </Box>
           </Grid>
         </Grid>
-
-        {/* Snackbar notifications remain the same */}
-        <Snackbar 
-          open={showSuccess} 
-          autoHideDuration={6000} 
-          onClose={() => setShowSuccess(false)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert 
-            onClose={() => setShowSuccess(false)} 
-            severity="success"
-            sx={{ width: '100%' }}
-          >
-            Successfully subscribed to newsletter!
-          </Alert>
-        </Snackbar>
-
-        <Snackbar 
-          open={!!error} 
-          autoHideDuration={6000} 
-          onClose={() => setError(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert 
-            onClose={() => setError(null)} 
-            severity="error"
-            sx={{ width: '100%' }}
-          >
-            {error}
-          </Alert>
-        </Snackbar>
       </Container>
     </Box>
   );

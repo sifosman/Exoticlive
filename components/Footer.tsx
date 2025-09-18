@@ -6,6 +6,7 @@ import Image from 'next/image';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import { Lato } from 'next/font/google';
 import * as emailjs from '@emailjs/browser';
+import YocoLogo from '@/components/ui/YocoLogo';
 
 // Import the Lato font
 const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
@@ -44,6 +45,33 @@ const Footer = () => {
     setSubmitStatus({ loading: true, error: null, success: false });
 
     try {
+      // Create an HTML template with a reply button
+      const emailTemplate = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">New Contact Form Submission</h2>
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>From:</strong> ${formData.name}</p>
+            <p><strong>Email:</strong> ${formData.email}</p>
+            <p><strong>Message:</strong></p>
+            <p style="white-space: pre-wrap;">${formData.message}</p>
+          </div>
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="mailto:${formData.email}?subject=Re: Your message to Exotic Shoes" 
+               style="background-color: #829D46; 
+                      color: white; 
+                      padding: 12px 25px; 
+                      text-decoration: none; 
+                      border-radius: 5px; 
+                      display: inline-block;">
+              Reply to ${formData.name}
+            </a>
+          </div>
+          <p style="color: #666; font-size: 12px; margin-top: 20px;">
+            This message was sent from the Exotic Shoes contact form.
+          </p>
+        </div>
+      `;
+
       await emailjs.send(
         process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
         process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
@@ -51,6 +79,9 @@ const Footer = () => {
           from_name: formData.name,
           from_email: formData.email,
           message: formData.message,
+          html_message: emailTemplate,
+          subject: `New Contact Form Message from ${formData.name}`,
+          reply_to: formData.email
         },
         process.env.NEXT_PUBLIC_EMAILJS_USER_ID
       );
@@ -73,9 +104,9 @@ const Footer = () => {
   };
 
   return (
-    <Box 
-      component="footer" 
-      sx={{ 
+    <Box
+      component="footer"
+      sx={{
         position: 'relative',
         mt: 12,
         py: 8,
@@ -102,9 +133,9 @@ const Footer = () => {
             <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(8px)', p: 4, borderRadius: 2, height: '100%' }}>
               <Grid container spacing={8}>
                 <Grid item xs={12} md={4}>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
+                  <Typography
+                    variant="h6"
+                    sx={{
                       mb: 3,
                       fontFamily: lato.style.fontFamily,
                       fontWeight: 600,
@@ -115,22 +146,22 @@ const Footer = () => {
                   >
                     About Us
                   </Typography>
-                  <Typography 
-                    sx={{ 
+                  <Typography
+                    sx={{
                       color: 'white',
                       fontFamily: lato.style.fontFamily,
                       letterSpacing: '0.02em',
                       fontSize: { xs: '0.875rem', md: '1rem' }
                     }}
                   >
-                    We are a leading wholesale supplier of ladies shoes, providing quality footwear to businesses worldwide.
+                  At Exotic Shoes, we supply individual customers and wholesale buyers seeking to resell our products.
                   </Typography>
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
+                  <Typography
+                    variant="h6"
+                    sx={{
                       mb: 3,
                       fontFamily: lato.style.fontFamily,
                       fontWeight: 600,
@@ -164,9 +195,9 @@ const Footer = () => {
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
+                  <Typography
+                    variant="h6"
+                    sx={{
                       mb: 3,
                       fontFamily: lato.style.fontFamily,
                       fontWeight: 600,
@@ -177,9 +208,9 @@ const Footer = () => {
                   >
                     Contact Us
                   </Typography>
-                  <Stack 
+                  <Stack
                     spacing={1}
-                    sx={{ 
+                    sx={{
                       color: 'white',
                       fontFamily: lato.style.fontFamily,
                       letterSpacing: '0.02em',
@@ -202,9 +233,9 @@ const Footer = () => {
           {/* Right side - Contact form */}
           <Grid item xs={12} lg={4}>
             <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(8px)', p: 4, borderRadius: 2 }}>
-              <Typography 
-                variant="h6" 
-                sx={{ 
+              <Typography
+                variant="h6"
+                sx={{
                   mb: 3,
                   fontFamily: lato.style.fontFamily,
                   fontWeight: 600,
@@ -230,7 +261,7 @@ const Footer = () => {
                         '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
                         '&.Mui-focused fieldset': { borderColor: 'white' }
                       },
-                      '& .MuiInputLabel-root': { 
+                      '& .MuiInputLabel-root': {
                         color: 'rgba(255, 255, 255, 0.7)',
                         '&.Mui-focused': { color: 'white' }
                       }
@@ -250,7 +281,7 @@ const Footer = () => {
                         '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
                         '&.Mui-focused fieldset': { borderColor: 'white' }
                       },
-                      '& .MuiInputLabel-root': { 
+                      '& .MuiInputLabel-root': {
                         color: 'rgba(255, 255, 255, 0.7)',
                         '&.Mui-focused': { color: 'white' }
                       }
@@ -271,13 +302,13 @@ const Footer = () => {
                         '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
                         '&.Mui-focused fieldset': { borderColor: 'white' }
                       },
-                      '& .MuiInputLabel-root': { 
+                      '& .MuiInputLabel-root': {
                         color: 'rgba(255, 255, 255, 0.7)',
                         '&.Mui-focused': { color: 'white' }
                       }
                     }}
                   />
-                  <Button 
+                  <Button
                     type="submit"
                     variant="outlined"
                     disabled={submitStatus.loading}
@@ -309,11 +340,11 @@ const Footer = () => {
         </Grid>
 
         {/* Copyright, Social Media, and Payment Badges Section */}
-        <Box 
-          sx={{ 
-            mt: 4, 
-            pt: 3, 
-            borderTop: 1, 
+        <Box
+          sx={{
+            mt: 4,
+            pt: 3,
+            borderTop: 1,
             borderColor: 'rgba(255, 255, 255, 0.2)',
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
@@ -323,8 +354,8 @@ const Footer = () => {
           }}
         >
           {/* Copyright Text */}
-          <Typography 
-            sx={{ 
+          <Typography
+            sx={{
               color: 'white',
               fontFamily: lato.style.fontFamily,
               letterSpacing: '0.02em',
@@ -335,23 +366,23 @@ const Footer = () => {
           </Typography>
 
           {/* Social Media and Payment Badges */}
-          <Box 
-            sx={{ 
+          <Box
+            sx={{
               display: 'flex',
               gap: 2,
               alignItems: 'center'
             }}
           >
             {/* Social Media Icons */}
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 display: 'flex',
                 gap: 1,
                 mr: 2
               }}
             >
-              <MuiLink 
-                href="https://www.instagram.com/exotic_shoes_wholesale/?hl=en" 
+              <MuiLink
+                href="https://www.instagram.com/exotic_shoes_wholesale/?hl=en"
                 target="_blank"
                 underline="none"
                 sx={{
@@ -385,32 +416,29 @@ const Footer = () => {
             </Box>
 
             {/* Payment Badges */}
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 display: 'flex',
                 gap: 2,
                 alignItems: 'center'
               }}
             >
-              <Box 
-                sx={{ 
-                  position: 'relative',
-                  width: 80,
-                  height: 40,
+              <Box
+                sx={{
                   bgcolor: 'white',
                   borderRadius: 1,
-                  overflow: 'hidden'
+                  padding: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 80,
+                  height: 40
                 }}
               >
-                <Image
-                  src="/yoco-logo.png"
-                  alt="Payment Gateway"
-                  fill
-                  style={{ objectFit: 'contain', padding: '5px' }}
-                />
+                <YocoLogo height={24} />
               </Box>
-              <Box 
-                sx={{ 
+              <Box
+                sx={{
                   position: 'relative',
                   width: 80,
                   height: 40,
@@ -435,3 +463,4 @@ const Footer = () => {
 };
 
 export default Footer;
+

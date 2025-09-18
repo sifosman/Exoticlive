@@ -1,0 +1,397 @@
+[
+  {
+    "name": "attributes",
+    "type": "ProductVariationToVariationAttributeConnection",
+    "description": "Connection between the ProductVariation type and the VariationAttribute type"
+  },
+  {
+    "name": "averageRating",
+    "type": "Float",
+    "description": "Product average count"
+  },
+  {
+    "name": "backorders",
+    "type": "BackordersEnum",
+    "description": "Product variation backorders"
+  },
+  {
+    "name": "backordersAllowed",
+    "type": "Boolean",
+    "description": "Can product be backordered?"
+  },
+  {
+    "name": "catalogVisibility",
+    "type": "CatalogVisibilityEnum",
+    "description": "Product variation catalog visibility"
+  },
+  {
+    "name": "contentType",
+    "type": "ContentNodeToContentTypeConnectionEdge",
+    "description": "Connection between the ContentNode type and the ContentType type"
+  },
+  {
+    "name": "contentTypeName",
+    "type": "String",
+    "description": "The name of the Content Type the node belongs to"
+  },
+  {
+    "name": "databaseId",
+    "type": "Int",
+    "description": "Product or variation ID"
+  },
+  {
+    "name": "date",
+    "type": "String",
+    "description": "Date variation created"
+  },
+  {
+    "name": "dateGmt",
+    "type": "String",
+    "description": "The publishing date set in GMT."
+  },
+  {
+    "name": "dateOnSaleFrom",
+    "type": "String",
+    "description": "Date on sale from"
+  },
+  {
+    "name": "dateOnSaleTo",
+    "type": "String",
+    "description": "Date on sale to"
+  },
+  {
+    "name": "description",
+    "type": "String",
+    "description": "Product description"
+  },
+  {
+    "name": "desiredSlug",
+    "type": "String",
+    "description": "The desired slug of the post"
+  },
+  {
+    "name": "downloadExpiry",
+    "type": "Int",
+    "description": "Download expiry"
+  },
+  {
+    "name": "downloadLimit",
+    "type": "Int",
+    "description": "Download limit"
+  },
+  {
+    "name": "downloadable",
+    "type": "Boolean",
+    "description": "Is downloadable?"
+  },
+  {
+    "name": "downloads",
+    "type": "ProductDownload",
+    "description": "Product downloads"
+  },
+  {
+    "name": "editingLockedBy",
+    "type": "ContentNodeToEditLockConnectionEdge",
+    "description": "If a user has edited the node within the past 15 seconds, this will return the user that last edited. Null if the edit lock doesn&#039;t exist or is greater than 15 seconds"
+  },
+  {
+    "name": "enclosure",
+    "type": "String",
+    "description": "The RSS enclosure for the object"
+  },
+  {
+    "name": "enqueuedScripts",
+    "type": "ContentNodeToEnqueuedScriptConnection",
+    "description": "Connection between the ContentNode type and the EnqueuedScript type"
+  },
+  {
+    "name": "enqueuedStylesheets",
+    "type": "ContentNodeToEnqueuedStylesheetConnection",
+    "description": "Connection between the ContentNode type and the EnqueuedStylesheet type"
+  },
+  {
+    "name": "featured",
+    "type": "Boolean",
+    "description": "If the product is featured"
+  },
+  {
+    "name": "featuredImage",
+    "type": "NodeWithFeaturedImageToMediaItemConnectionEdge",
+    "description": "Connection between the NodeWithFeaturedImage type and the MediaItem type"
+  },
+  {
+    "name": "featuredImageDatabaseId",
+    "type": "Int",
+    "description": "The database identifier for the featured image node assigned to the content node"
+  },
+  {
+    "name": "featuredImageId",
+    "type": "ID",
+    "description": "Globally unique ID of the featured image assigned to the node"
+  },
+  {
+    "name": "guid",
+    "type": "String",
+    "description": "The global unique identifier for this post. This currently matches the value stored in WP_Post-&gt;guid and the guid column in the &quot;post_objects&quot; database table."
+  },
+  {
+    "name": "hasAttributes",
+    "type": "Boolean",
+    "description": "Does product variation have any visible attributes"
+  },
+  {
+    "name": "height",
+    "type": "String",
+    "description": "Product variation height"
+  },
+  {
+    "name": "id",
+    "type": "ID",
+    "description": "Product or variation global ID"
+  },
+  {
+    "name": "image",
+    "type": "MediaItem",
+    "description": "Product variation main image"
+  },
+  {
+    "name": "isComment",
+    "type": "Boolean",
+    "description": "Whether the node is a Comment"
+  },
+  {
+    "name": "isContentNode",
+    "type": "Boolean",
+    "description": "Whether the node is a Content Node"
+  },
+  {
+    "name": "isFrontPage",
+    "type": "Boolean",
+    "description": "Whether the node represents the front page."
+  },
+  {
+    "name": "isPostsPage",
+    "type": "Boolean",
+    "description": "Whether  the node represents the blog page."
+  },
+  {
+    "name": "isPreview",
+    "type": "Boolean",
+    "description": "Whether the object is a node in the preview state"
+  },
+  {
+    "name": "isRestricted",
+    "type": "Boolean",
+    "description": "Whether the object is restricted from the current viewer"
+  },
+  {
+    "name": "isTermNode",
+    "type": "Boolean",
+    "description": "Whether the node is a Term"
+  },
+  {
+    "name": "lastEditedBy",
+    "type": "ContentNodeToEditLastConnectionEdge",
+    "description": "The user that most recently edited the node"
+  },
+  {
+    "name": "length",
+    "type": "String",
+    "description": "Product variation length"
+  },
+  {
+    "name": "link",
+    "type": "String",
+    "description": "The permalink of the post"
+  },
+  {
+    "name": "lowStockAmount",
+    "type": "Int",
+    "description": "Low stock amount"
+  },
+  {
+    "name": "manageStock",
+    "type": "ManageStockEnum",
+    "description": "if/how product variation stock is managed"
+  },
+  {
+    "name": "menuOrder",
+    "type": "Int",
+    "description": "Menu order"
+  },
+  {
+    "name": "metaData",
+    "type": "MetaData",
+    "description": "Object meta data"
+  },
+  {
+    "name": "modified",
+    "type": "String",
+    "description": "Date variation last updated"
+  },
+  {
+    "name": "modifiedGmt",
+    "type": "String",
+    "description": "The GMT modified time for a post. If a post was recently updated the modified field will change to match the corresponding time in GMT."
+  },
+  {
+    "name": "name",
+    "type": "String",
+    "description": "Product name"
+  },
+  {
+    "name": "onSale",
+    "type": "Boolean",
+    "description": "Is variation on sale?"
+  },
+  {
+    "name": "parent",
+    "type": "ProductVariationToVariableProductConnectionEdge",
+    "description": "The parent of the node. The parent object can be of various types"
+  },
+  {
+    "name": "previewRevisionDatabaseId",
+    "type": "Int",
+    "description": "The database id of the preview node"
+  },
+  {
+    "name": "previewRevisionId",
+    "type": "ID",
+    "description": "Whether the object is a node in the preview state"
+  },
+  {
+    "name": "price",
+    "type": "String",
+    "description": "Product variation&#039;s active price"
+  },
+  {
+    "name": "purchasable",
+    "type": "Boolean",
+    "description": "If product variation can be bought"
+  },
+  {
+    "name": "purchaseNote",
+    "type": "String",
+    "description": "Product variation purchase_note"
+  },
+  {
+    "name": "regularPrice",
+    "type": "String",
+    "description": "Product variation&#039;s regular price"
+  },
+  {
+    "name": "reviewCount",
+    "type": "Int",
+    "description": "Product review count"
+  },
+  {
+    "name": "reviewsAllowed",
+    "type": "Boolean",
+    "description": "If reviews are allowed"
+  },
+  {
+    "name": "salePrice",
+    "type": "String",
+    "description": "Product variation&#039;s sale price"
+  },
+  {
+    "name": "shippingClass",
+    "type": "String",
+    "description": "Product variation shipping class"
+  },
+  {
+    "name": "shippingClassId",
+    "type": "Int",
+    "description": "shipping class ID"
+  },
+  {
+    "name": "shippingRequired",
+    "type": "Boolean",
+    "description": "Does product need to be shipped?"
+  },
+  {
+    "name": "shippingTaxable",
+    "type": "Boolean",
+    "description": "Is product shipping taxable?"
+  },
+  {
+    "name": "shortDescription",
+    "type": "String",
+    "description": "Product short description"
+  },
+  {
+    "name": "sku",
+    "type": "String",
+    "description": "Product variation SKU (Stock-keeping unit)"
+  },
+  {
+    "name": "slug",
+    "type": "String",
+    "description": "Product slug"
+  },
+  {
+    "name": "soldIndividually",
+    "type": "Boolean",
+    "description": "If should be sold individually"
+  },
+  {
+    "name": "status",
+    "type": "String",
+    "description": "Variation status"
+  },
+  {
+    "name": "stockQuantity",
+    "type": "Int",
+    "description": "Product variation stock quantity"
+  },
+  {
+    "name": "stockStatus",
+    "type": "StockStatusEnum",
+    "description": "Product stock status"
+  },
+  {
+    "name": "taxClass",
+    "type": "TaxClassEnum",
+    "description": "Product variation tax class"
+  },
+  {
+    "name": "taxStatus",
+    "type": "TaxStatusEnum",
+    "description": "Tax status"
+  },
+  {
+    "name": "template",
+    "type": "ContentTemplate",
+    "description": "The template assigned to a node of content"
+  },
+  {
+    "name": "totalSales",
+    "type": "Int",
+    "description": "Number total of sales"
+  },
+  {
+    "name": "type",
+    "type": "ProductTypesEnum",
+    "description": "Product type"
+  },
+  {
+    "name": "uri",
+    "type": "String",
+    "description": "The unique resource identifier path"
+  },
+  {
+    "name": "virtual",
+    "type": "Boolean",
+    "description": "Is product virtual?"
+  },
+  {
+    "name": "weight",
+    "type": "String",
+    "description": "Product variation weight"
+  },
+  {
+    "name": "width",
+    "type": "String",
+    "description": "Product variation width"
+  }
+]

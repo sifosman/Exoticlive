@@ -28,7 +28,7 @@ import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import SearchIcon from '@mui/icons-material/Search';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
-import ProductSearch from './ProductSearch';
+import ProductSearchTypesense from './ProductSearchTypesense';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import HomeIcon from '@mui/icons-material/Home';
@@ -50,9 +50,11 @@ const categories: Category[] = [
   { id: "dGVybToxNDU=", name: "Sandals", slug: "sandals" },
   { id: "dGVybToxNDc=", name: "Takkies", slug: "takkies" },
   { id: "dGVybToxNDk=", name: "Bargain Box", slug: "bargain-box" },
+  { id: "dGVybToyOTA=", name: "Safety Boots", slug: "safety-boots" },
 ];
 
 const Header = () => {
+  const [imageLoaded, setImageLoaded] = useState(false);
   const { cart } = useCart();
   const router = useRouter();
   const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -87,7 +89,7 @@ const Header = () => {
   };
 
   const handleCategorySelect = (slug: string) => {
-    router.push(`/products?category=${slug}`);
+    router.push(`/shop?category=${slug}`);
     handleCategoryClose();
   };
 
@@ -123,7 +125,7 @@ const Header = () => {
         />
         <BottomNavigationAction
           label="Categories"
-          icon={<CategoryIcon />}
+          icon={<MenuIcon />}
           onClick={handleCategoryClick}
         />
         <BottomNavigationAction
@@ -439,11 +441,20 @@ const Header = () => {
                         }
                       }}
                     >
+                      <MenuItem 
+                        onClick={() => {
+                          router.push('/shop');
+                          handleShopMenuClose();
+                        }}
+                      >
+                        All Products
+                      </MenuItem>
+                      <Box sx={{ height: 1, bgcolor: 'rgba(0, 0, 0, 0.1)', my: 1 }} />
                       {categories.map((category) => (
                         <MenuItem 
                           key={category.id}
                           onClick={() => {
-                            router.push(`/products?category=${category.slug}`);
+                            router.push(`/shop?category=${category.slug}`);
                             handleShopMenuClose();
                           }}
                         >
@@ -530,7 +541,7 @@ const Header = () => {
                 else if (item === 'Shop Now') {
                   // Handle shop menu differently in mobile
                   setMobileMenuOpen(false);
-                  router.push('/products');
+                  router.push('/shop');
                 }
                 setMobileMenuOpen(false);
               }}
@@ -553,7 +564,7 @@ const Header = () => {
               <MenuItem
                 key={category.id}
                 onClick={() => {
-                  router.push(`/products?category=${category.slug}`);
+                  router.push(`/shop?category=${category.slug}`);
                   setMobileMenuOpen(false);
                 }}
                 sx={{ py: 1.5 }}
@@ -570,7 +581,7 @@ const Header = () => {
       {/* Adjust spacing to account for bottom navigation on mobile */}
       <Box sx={{ height: { xs: 115, lg: 50 } }} />
 
-      <ProductSearch 
+      <ProductSearchTypesense 
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
       />

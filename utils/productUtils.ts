@@ -1,4 +1,4 @@
-import { Product } from '../types/product';
+import { Product } from './typesense-search';
 
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
@@ -18,124 +18,114 @@ export const filterProducts = (
   currentPriceRange: { min: number; max: number },
   selectedColors: string[],
   selectedSizes: string[]
-) => {
+): Product[] => {
   if (!products) return [];
   
-  return products.filter((product: Product) => {
-    // Check stock status for simple products
-    if (product.__typename === 'SimpleProduct') {
-      if (product.stockStatus === 'OUT_OF_STOCK') {
-        return false;
-      }
-    }
-
-    // Check stock status for variable products
-    if (product.__typename === 'VariableProduct' && product.variations?.nodes) {
-      const hasAvailableVariation = product.variations.nodes.some(
-        variation => variation.stockStatus === 'IN_STOCK' || variation.stockStatus === 'ON_BACKORDER'
-      );
-      
-      if (!hasAvailableVariation) {
-        return false;
-      }
+  return products.filter((product) => {
+    // Check stock status
+    if (product.stock_status === 'outofstock') {
+      return false;
     }
 
     // Category filter
     const categoryMatch = selectedCategories.length === 0 || 
-      (product.productCategories?.nodes?.some(category => {
-        return selectedCategories.includes(category.slug?.toLowerCase() || '');
-      }) ?? false);
+      product.categories.some(category => 
+        selectedCategories.includes(category.toLowerCase())
+      );
 
     if (!categoryMatch) {
       return false;
     }
 
     // Price filter
-    const price = product.price ? parseFloat(product.price.replace(/[^\d.]/g, '')) / 100 : 0;
+    const price = product.sale_price || product.price;
     const priceMatch = price >= currentPriceRange.min && price <= currentPriceRange.max;
+
     if (!priceMatch) {
       return false;
     }
 
-    // Color and size filters
-    let attributeMatch = true;
-    if (selectedColors.length > 0 || selectedSizes.length > 0) {
-      if (product.__typename === 'VariableProduct' && product.variations?.nodes) {
-        const availableVariations = product.variations.nodes.filter(
-          variation => variation.stockStatus === 'IN_STOCK' || variation.stockStatus === 'ON_BACKORDER'
-        );
-        
-        attributeMatch = availableVariations.some(variation => {
-          const colorAttr = variation.attributes.nodes.find(
-            attr => attr.name.toLowerCase() === 'pa_color'
-          );
-          const sizeAttr = variation.attributes.nodes.find(
-            attr => attr.name.toLowerCase() === 'pa_size'
-          );
+    // Color filter
+    if (selectedColors.length > 0) {
+      const productColors = product.attributes
+        .find(attr => attr.name.toLowerCase() === 'color')
+        ?.options || [];
+      
+      const colorMatch = productColors.some(color => 
+        selectedColors.includes(color.toLowerCase())
+      );
 
-          const matchesColor = selectedColors.length === 0 || 
-            (colorAttr && selectedColors.includes(colorAttr.value));
-          const matchesSize = selectedSizes.length === 0 || 
-            (sizeAttr && selectedSizes.includes(sizeAttr.value));
-
-          return matchesColor && matchesSize;
-        });
-      } else {
-        const attributes = product.attributes?.nodes || [];
-        const colorAttr = attributes.find(attr => attr.name.toLowerCase() === 'pa_color');
-        const sizeAttr = attributes.find(attr => attr.name.toLowerCase() === 'pa_size');
-
-        const matchesColor = selectedColors.length === 0 || 
-          (colorAttr && colorAttr.options.some(option => selectedColors.includes(option)) || false);
-        const matchesSize = selectedSizes.length === 0 || 
-          (sizeAttr && sizeAttr.options.some(option => selectedSizes.includes(option)) || false);
-
-        attributeMatch = matchesColor && matchesSize;
+      if (!colorMatch) {
+        return false;
       }
     }
 
-    return attributeMatch;
+    // Size filter
+    if (selectedSizes.length > 0) {
+      const productSizes = product.attributes
+        .find(attr => attr.name.toLowerCase() === 'size')
+        ?.options || [];
+      
+      const sizeMatch = productSizes.some(size => 
+        selectedSizes.includes(size.toLowerCase())
+      );
+
+      if (!sizeMatch) {
+        return false;
+      }
+    }
+
+    return true;
   });
 };
 
 export const getAvailableAttributes = (products: Product[]) => {
-  const colors = new Set<string>();
-  const sizes = new Set<string>();
+  const attributes = {
+    colors: new Set<string>(),
+    sizes: new Set<string>(),
+    brands: new Set<string>(),
+    categories: new Set<string>(),
+    minPrice: Infinity,
+    maxPrice: -Infinity
+  };
 
-  products?.forEach((product: Product) => {
-    const attributes = product.attributes?.nodes || [];
-    const variations = product.variations?.nodes || [];
-
-    // Check direct attributes
-    attributes.forEach((attr) => {
-      if (attr.name.toLowerCase() === 'pa_color') {
-        attr.options.forEach((color: string) => colors.add(color));
-      }
-      if (attr.name.toLowerCase() === 'pa_size') {
-        attr.options.forEach((size: string) => sizes.add(size));
-      }
+  products.forEach(product => {
+    // Categories
+    product.categories.forEach(category => {
+      attributes.categories.add(category);
     });
 
-    // Check variation attributes
-    variations.forEach((variation) => {
-      variation.attributes.nodes.forEach((attr) => {
-        if (attr.name.toLowerCase() === 'pa_color') {
-          colors.add(attr.value);
-        }
-        if (attr.name.toLowerCase() === 'pa_size') {
-          sizes.add(attr.value);
-        }
-      });
-    });
+    // Brand
+    if (product.brand) {
+      attributes.brands.add(product.brand);
+    }
+
+    // Colors
+    const colorAttr = product.attributes.find(attr => attr.name.toLowerCase() === 'color');
+    if (colorAttr) {
+      colorAttr.options.forEach(color => attributes.colors.add(color));
+    }
+
+    // Sizes
+    const sizeAttr = product.attributes.find(attr => attr.name.toLowerCase() === 'size');
+    if (sizeAttr) {
+      sizeAttr.options.forEach(size => attributes.sizes.add(size));
+    }
+
+    // Price range
+    const price = product.sale_price || product.price;
+    if (price < attributes.minPrice) attributes.minPrice = price;
+    if (price > attributes.maxPrice) attributes.maxPrice = price;
   });
 
   return {
-    availableColors: Array.from(colors).sort(),
-    availableSizes: Array.from(sizes).sort((a, b) => {
-      const numA = parseFloat(a);
-      const numB = parseFloat(b);
-      if (isNaN(numA) || isNaN(numB)) return a.localeCompare(b);
-      return numA - numB;
-    })
+    colors: Array.from(attributes.colors),
+    sizes: Array.from(attributes.sizes),
+    brands: Array.from(attributes.brands),
+    categories: Array.from(attributes.categories),
+    priceRange: {
+      min: attributes.minPrice === Infinity ? 0 : attributes.minPrice,
+      max: attributes.maxPrice === -Infinity ? 1000 : attributes.maxPrice
+    }
   };
 };

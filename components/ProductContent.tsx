@@ -2,10 +2,8 @@
 
 import { useState, memo } from 'react';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
 import { useCart } from '@/lib/cartContext';
 import { useToast } from '@/components/ui/use-toast';
-import Link from 'next/link';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'; // For gallery navigation
 import { motion, AnimatePresence } from 'framer-motion'; // For animations
 import RelatedProducts from './RelatedProducts'; // Changed to default import
@@ -72,7 +70,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
   const { addToCart } = useCart();
   const { toast } = useToast();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
   const [hoveredImageIndex, setHoveredImageIndex] = useState<number | null>(null);
@@ -85,14 +83,14 @@ const ProductContent = ({ product }: ProductContentProps) => {
     if (!image || !isValidImageUrl(image.sourceUrl)) {
       return 'https://exoticlive.co.za/wp-content/uploads/woocommerce-placeholder.png';
     }
-    return imageErrors[`${index}-${image.sourceUrl}`] 
+    return imageErrors[`${index}-${image.sourceUrl}`]
       ? 'https://exoticlive.co.za/wp-content/uploads/woocommerce-placeholder.png'
       : image.sourceUrl;
   };
 
   const validImages = (product.galleryImages?.nodes || [])
     .filter(img => img && isValidImageUrl(img.sourceUrl));
-  
+
   const allImages = [
     ...(product.image && isValidImageUrl(product.image.sourceUrl) ? [product.image] : []),
     ...validImages
@@ -116,12 +114,12 @@ const ProductContent = ({ product }: ProductContentProps) => {
 
     // Get all variations that have this attribute
     const variations = product.variations.nodes;
-    
+
     // Get unique options from variations
     const options = Array.from(new Set(variations.flatMap((variation) =>
       variation.attributes.nodes
-        .filter((attr) => attr.name === attrName)
-        .map((attr) => attr.value)
+        .filter((attr: { name: string; value: string }) => attr.name === attrName)
+        .map((attr: { name: string; value: string }) => attr.value)
     )));
 
     // For sizes, replace hyphens with dots
@@ -145,10 +143,10 @@ const ProductContent = ({ product }: ProductContentProps) => {
     // Find variations that match this attribute value
     const matchingVariations = product.variations.nodes.filter(variation => {
       const attrs = variation.attributes?.nodes || [];
-      
+
       // Match current attribute
-      const matchesCurrentAttr = attrs.some(attr => 
-        attr.name.toLowerCase() === normalizedAttrName && 
+      const matchesCurrentAttr = attrs.some((attr: { name: string; value: string }) =>
+        attr.name.toLowerCase() === normalizedAttrName &&
         attr.value.toLowerCase() === normalizedAttrValue
       );
 
@@ -158,8 +156,8 @@ const ProductContent = ({ product }: ProductContentProps) => {
       }
 
       // If other attribute is selected, check both
-      const matchesOtherAttr = attrs.some(attr => 
-        attr.name.toLowerCase() === otherAttrName && 
+      const matchesOtherAttr = attrs.some((attr: { name: string; value: string }) =>
+        attr.name.toLowerCase() === otherAttrName &&
         attr.value.toLowerCase() === otherAttrValue
       );
 
@@ -167,8 +165,8 @@ const ProductContent = ({ product }: ProductContentProps) => {
     });
 
     // Check if any matching variation is in stock
-    return matchingVariations.some(variation => 
-      variation.stockStatus === 'IN_STOCK' && 
+    return matchingVariations.some(variation =>
+      variation.stockStatus === 'IN_STOCK' &&
       (typeof variation.stockQuantity === 'undefined' || variation.stockQuantity === null || variation.stockQuantity > 0)
     );
   };
@@ -191,18 +189,18 @@ const ProductContent = ({ product }: ProductContentProps) => {
   const handleAttributeChange = (attributeName: string, value: string) => {
     setSelectedAttributes(prevAttributes => {
       const newAttributes = { ...prevAttributes, [attributeName]: value };
-      
+
       // Check if this combination exists in variations
       if (product.__typename === 'VariableProduct') {
         const matchingVariation = product.variations.nodes.find((variation: ProductVariation) => {
-          return variation.attributes.nodes.every((attr: { name: string; value: string }) => 
+          return variation.attributes.nodes.every((attr: { name: string; value: string }) =>
             newAttributes[attr.name]?.toLowerCase() === attr.value.toLowerCase()
           );
         });
-        
+
         console.log('Matching variation:', matchingVariation);
       }
-      
+
       return newAttributes;
     });
   };
@@ -211,7 +209,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
     if (!isVariableProduct) return null;
 
     return getVariations(product)?.nodes.find(variation =>
-      variation.attributes.nodes.every(attr =>
+      variation.attributes.nodes.every((attr: { name: string; value: string }) =>
         selectedAttributes[attr.name] === attr.value
       )
     );
@@ -225,8 +223,8 @@ const ProductContent = ({ product }: ProductContentProps) => {
 
     const matchingVariations = product.variations.nodes.filter(variation => {
       const attrs = variation.attributes.nodes;
-      const matchesCurrentAttr = attrs.some(attr => 
-        attr.name === attrName && 
+      const matchesCurrentAttr = attrs.some((attr: { name: string; value: string }) =>
+        attr.name === attrName &&
         attr.value === value
       );
 
@@ -234,8 +232,8 @@ const ProductContent = ({ product }: ProductContentProps) => {
       const otherAttrName = attrName === 'pa_color' ? 'pa_size' : 'pa_color';
       const otherAttrValue = selectedAttributes[otherAttrName];
       if (otherAttrValue) {
-        const matchesOtherAttr = attrs.some(attr => 
-          attr.name === otherAttrName && 
+        const matchesOtherAttr = attrs.some((attr: { name: string; value: string }) =>
+          attr.name === otherAttrName &&
           attr.value === otherAttrValue
         );
         return matchesCurrentAttr && matchesOtherAttr;
@@ -280,10 +278,10 @@ const ProductContent = ({ product }: ProductContentProps) => {
       return;
     }
 
-    const priceToUse = selectedVariation 
+    const priceToUse = selectedVariation
       ? selectedVariation.salePrice || selectedVariation.regularPrice
       : product.price;
-      
+
     if (!priceToUse) {
       toast({
         title: "Error",
@@ -308,6 +306,18 @@ const ProductContent = ({ product }: ProductContentProps) => {
     }
 
     try {
+      // Format variation attributes for display
+      let variationName = '';
+
+      if (selectedVariation && selectedVariation.attributes && selectedVariation.attributes.nodes) {
+        variationName = selectedVariation.attributes.nodes
+          .map(attr => {
+            const attrName = displayAttributeName(attr.name);
+            return `${attrName}: ${attr.value}`;
+          })
+          .join(', ');
+      }
+
       addToCart({
         id: product.id,
         name: product.name,
@@ -315,13 +325,15 @@ const ProductContent = ({ product }: ProductContentProps) => {
         quantity: quantity,
         image: product.image?.sourceUrl || '/placeholder.jpg',
         variationId: selectedVariation?.id ?? '',
-        variationName: selectedVariation?.name ?? '',
+        variationName: variationName,
+        stockQuantity: selectedVariation?.stockQuantity || null,
+        stockStatus: selectedVariation?.stockStatus || 'IN_STOCK',
       });
 
       // Show both notifications
       toast({
         title: "✓ Added to Cart",
-        description: `${product.name}`,
+        description: `${product.name}${variationName ? ` (${variationName})` : ''}`,
         duration: 1500,
         style: {
           backgroundColor: '#4CAF50',
@@ -375,7 +387,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
                 <CheckCircle className="w-4 h-4 text-green-600" />
                 <span className="text-green-600 font-medium">
                   In Stock
-                  {(!product.stockQuantity || product.stockQuantity > 0) && 
+                  {(!product.stockQuantity || product.stockQuantity > 0) &&
                     ` (${product.stockQuantity} available)`
                   }
                 </span>
@@ -399,7 +411,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
             <CheckCircle className="w-4 h-4 text-green-600" />
             <span className="text-green-600 font-medium">
               In Stock
-              {(!selectedVariation.stockQuantity || selectedVariation.stockQuantity > 0) && 
+              {(!selectedVariation.stockQuantity || selectedVariation.stockQuantity > 0) &&
                 ` (${selectedVariation.stockQuantity} available)`
               }
             </span>
@@ -415,7 +427,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
   };
 
   const isVariationInStock = (variation: ProductVariation) => {
-    return variation.stockStatus === 'IN_STOCK' && 
+    return variation.stockStatus === 'IN_STOCK' &&
            (!variation.stockQuantity || variation.stockQuantity > 0);
   };
 
@@ -432,7 +444,7 @@ const ProductContent = ({ product }: ProductContentProps) => {
 
       const matchesOtherAttr = Object.keys(selectedAttrs).every(selectedAttrName => {
         return variation.attributes.nodes.some(
-          attr => normalizeAttributeName(attr.name) === selectedAttrName
+          (attr: { name: string; value: string }) => normalizeAttributeName(attr.name) === selectedAttrName
         );
       });
 
@@ -459,10 +471,10 @@ const ProductContent = ({ product }: ProductContentProps) => {
 
   const isValidSelection = () => {
     if (!isVariableProduct) return true;
-    
+
     // Get available attributes from the product
     const availableAttributes = product.attributes?.nodes || [];
-    
+
     // Check if all required attributes are selected
     return availableAttributes.every(attribute => {
       // If the attribute has options, it needs to be selected
@@ -478,106 +490,180 @@ const ProductContent = ({ product }: ProductContentProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
         {/* Left Column - Product Image */}
         <div>
-          <div className="relative w-full h-[600px] mb-8">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentImageIndex}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="relative w-full h-full"
-              >
-                <Image
-                  src={getSafeImageUrl(allImages[currentImageIndex], currentImageIndex)}
-                  alt={product.name}
-                  fill
-                  style={{
-                    objectFit: 'contain',
-                    padding: '16px',
-                    backgroundColor: 'white',
-                  }}
-                  quality={95}
-                  priority={true}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-                  className="rounded-lg shadow-sm"
-                />
-              </motion.div>
-            </AnimatePresence>
+          {/* Mobile Gallery Layout (stack thumbnails under main image) */}
+          <div className="flex flex-col md:hidden gap-4">
+            {/* Main Image for Mobile */}
+            <div className="relative w-full h-[350px]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentImageIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="relative w-full h-full"
+                >
+                  <Image
+                    src={getSafeImageUrl(allImages[currentImageIndex], currentImageIndex)}
+                    alt={product.name}
+                    fill
+                    style={{
+                      objectFit: 'contain',
+                      padding: '8px',
+                      backgroundColor: 'white',
+                    }}
+                    quality={90}
+                    priority={true}
+                    sizes="100vw"
+                    className="rounded-lg shadow-sm"
+                  />
+                </motion.div>
+              </AnimatePresence>
 
+              {totalImages > 1 && (
+                <div className="absolute inset-0 flex items-center justify-between p-2">
+                  <button
+                    onClick={prevImage}
+                    className="p-1 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeftIcon className="w-5 h-5 text-gray-800" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="p-1 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
+                    aria-label="Next image"
+                  >
+                    <ChevronRightIcon className="w-5 h-5 text-gray-800" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Horizontal Thumbnails for Mobile */}
             {totalImages > 1 && (
-              <div className="absolute inset-0 flex items-center justify-between p-4">
-                <button
-                  onClick={prevImage}
-                  className="p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
-                  aria-label="Next image"
-                >
-                  <ChevronRightIcon className="w-6 h-6 text-gray-800" />
-                </button>
+              <div className="flex gap-2 overflow-x-auto pb-2 px-1">
+                {allImages.map((image, index) => (
+                  <button
+                    key={index}
+                    className={`relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden border-2 transition-all ${
+                      currentImageIndex === index ? 'border-primary' : 'border-transparent'
+                    }`}
+                    onClick={() => setCurrentImageIndex(index)}
+                  >
+                    <Image
+                      src={getSafeImageUrl(image, index)}
+                      alt={`Product thumbnail ${index + 1}`}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      className="transition-transform duration-300 hover:scale-110"
+                    />
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Thumbnail Gallery */}
-          {totalImages > 1 && (
-            <div className="flex gap-4 overflow-x-auto pb-4">
-              {allImages.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={`relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
-                    currentImageIndex === index ? 'border-primary' : 'border-transparent'
-                  }`}
-                  onMouseEnter={() => setHoveredImageIndex(index)}
-                  onMouseLeave={() => setHoveredImageIndex(null)}
+          {/* Desktop Gallery Layout (thumbnails on left of main image) */}
+          <div className="hidden md:flex flex-row gap-4">
+            {/* Thumbnail Gallery - Now on the left */}
+            {totalImages > 1 && (
+              <div className="flex flex-col gap-3 h-[600px] overflow-y-auto pr-2">
+                {allImages.map((image, index) => (
+                  <button
+                    key={index}
+                    className={`relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
+                      currentImageIndex === index ? 'border-primary' : 'border-transparent'
+                    }`}
+                    onMouseEnter={() => setCurrentImageIndex(index)}
+                    onClick={() => setCurrentImageIndex(index)}
+                  >
+                    <Image
+                      src={getSafeImageUrl(image, index)}
+                      alt={`Product thumbnail ${index + 1}`}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      className="transition-transform duration-300 hover:scale-110"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Main Product Image - Now on the right */}
+            <div className="relative flex-grow h-[600px]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentImageIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="relative w-full h-full"
                 >
                   <Image
-                    src={getSafeImageUrl(image, index)}
-                    alt={`Product thumbnail ${index + 1}`}
+                    src={getSafeImageUrl(allImages[currentImageIndex], currentImageIndex)}
+                    alt={product.name}
                     fill
-                    style={{ objectFit: 'cover' }}
-                    className={`transition-transform duration-300 ${
-                      hoveredImageIndex === index ? 'scale-110' : 'scale-100'
-                    }`}
+                    style={{
+                      objectFit: 'contain',
+                      padding: '16px',
+                      backgroundColor: 'white',
+                    }}
+                    quality={95}
+                    priority={true}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                    className="rounded-lg shadow-sm"
                   />
-                </button>
-              ))}
+                </motion.div>
+              </AnimatePresence>
+
+              {totalImages > 1 && (
+                <div className="absolute inset-0 flex items-center justify-between p-4">
+                  <button
+                    onClick={prevImage}
+                    className="p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
+                    aria-label="Next image"
+                  >
+                    <ChevronRightIcon className="w-6 h-6 text-gray-800" />
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Right Column - Product Details */}
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6 px-1 md:px-0">
           <div>
-            <h1 className="text-2xl md:text-3xl font-lato font-bold text-gray-800 mb-4">{product.name}</h1>
-            <p className="text-xl md:text-2xl font-lato font-bold text-primary mb-6">
+            <h1 className="text-xl md:text-3xl font-lato font-bold text-gray-800 mb-2 md:mb-4">{product.name}</h1>
+            <p className="text-lg md:text-2xl font-lato font-bold text-primary mb-4 md:mb-6">
               {formatPrice(
                 isVariableProduct
                   ? selectedVariation?.salePrice || selectedVariation?.regularPrice
                   : product.salePrice || product.regularPrice || product.price
               )}
             </p>
-            
-            <div className="prose prose-sm md:prose-base max-w-none mb-8" 
-              dangerouslySetInnerHTML={{ __html: product.description || '' }} 
+
+            <div className="prose prose-sm md:prose-base max-w-none mb-4 md:mb-8"
+              dangerouslySetInnerHTML={{ __html: product.description || '' }}
             />
           </div>
 
           {/* Variation Selection */}
           {isVariableProduct && product.attributes?.nodes && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {product.attributes.nodes.map((attribute) => (
-                <div key={attribute.name}>
-                  <label className="block text-base font-lato font-medium text-gray-700 mb-2">
+                <div key={attribute.name} className="mb-2">
+                  <label className="block text-sm font-lato font-medium text-gray-700 mb-1">
                     {displayAttributeName(attribute.name)}:
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1 md:gap-2">
                     {attribute.options?.map((option) => {
                       const isAvailable = isOptionAvailable(attribute.name, option);
                       return (
@@ -585,14 +671,14 @@ const ProductContent = ({ product }: ProductContentProps) => {
                           key={option}
                           onClick={() => handleAttributeChange(attribute.name, option)}
                           className={`
-                            min-w-[40px] h-[40px] flex items-center justify-center
-                            px-3 border rounded
-                            font-lato text-base font-medium transition-all
+                            min-w-[28px] h-[28px] md:min-w-[32px] md:h-[32px] flex items-center justify-center
+                            px-2 border rounded
+                            font-lato text-xs md:text-sm font-medium transition-all
                             ${
                               selectedAttributes[attribute.name] === option
                                 ? 'border-black bg-black text-white'
                                 : isAvailable
-                                  ? 'border-gray-300 hover:border-black text-gray-700'
+                                  ? 'border-gray-300 hover:border-black hover:bg-gray-50 text-gray-700'
                                   : 'border-red-300 bg-red-50 text-red-400 cursor-not-allowed'
                             }
                           `}
@@ -605,23 +691,23 @@ const ProductContent = ({ product }: ProductContentProps) => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
 
-              {/* Stock Quantity Display */}
-              {selectedVariation && (
-                <div className="font-lato text-green-600 text-base">
-                  {selectedVariation.stockQuantity} in stock
-                </div>
-              )}
+          {/* Stock Quantity Display */}
+          {selectedVariation && (
+            <div className="font-lato text-sm md:text-base text-green-600">
+              {selectedVariation.stockQuantity} in stock
             </div>
           )}
 
           {/* Quantity Selector */}
-          <div className="flex items-center space-x-4 mt-6">
-            <span className="text-base font-lato font-medium text-gray-700">Quantity:</span>
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 mt-4 md:mt-6">
+            <span className="text-sm md:text-base font-lato font-medium text-gray-700">Quantity:</span>
             <div className="flex items-center">
               <button
                 onClick={() => handleQuantityChange(Math.max(1, quantity - 1))}
-                className="w-8 h-8 flex items-center justify-center border border-gray-300 text-gray-600 hover:border-black"
+                className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center border border-gray-300 text-gray-600 hover:border-black"
                 disabled={quantity <= 1}
               >
                 -
@@ -635,11 +721,11 @@ const ProductContent = ({ product }: ProductContentProps) => {
                     handleQuantityChange(val);
                   }
                 }}
-                className="w-12 h-8 text-center border-t border-b border-gray-300 font-lato"
+                className="w-10 md:w-12 h-7 md:h-8 text-center border-t border-b border-gray-300 font-lato text-sm md:text-base"
               />
               <button
                 onClick={() => handleQuantityChange(quantity + 1)}
-                className="w-8 h-8 flex items-center justify-center border border-gray-300 text-gray-600 hover:border-black"
+                className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center border border-gray-300 text-gray-600 hover:border-black"
                 disabled={selectedVariation ? quantity >= (selectedVariation.stockQuantity || 0) : true}
               >
                 +
@@ -652,8 +738,8 @@ const ProductContent = ({ product }: ProductContentProps) => {
             onClick={handleAddToCart}
             disabled={isVariableProduct && !isValidSelection()}
             className={`
-              w-full py-3 text-base font-lato font-medium transition-colors mt-4
-              ${isVariableProduct && !isValidSelection() 
+              w-full py-2 md:py-3 text-sm md:text-base font-lato font-medium transition-colors mt-3 md:mt-4 rounded
+              ${isVariableProduct && !isValidSelection()
                 ? 'bg-gray-600 text-white cursor-not-allowed'
                 : 'bg-black text-white hover:bg-gray-900'
               }
@@ -663,20 +749,20 @@ const ProductContent = ({ product }: ProductContentProps) => {
           </button>
 
           {/* Trusted Supplier Banner */}
-          <div 
-            className="mt-6 text-white py-4 px-6 rounded flex items-center justify-center space-x-2 bg-cover bg-center"
+          <div
+            className="mt-4 md:mt-6 text-white py-3 md:py-4 px-4 md:px-6 rounded flex items-center justify-center gap-1 md:gap-2 bg-cover bg-center"
             style={{ backgroundImage: 'url("/notification-bg.webp")' }}
           >
-            <Lock className="w-5 h-5" />
-            <span className="font-lato font-medium">Trusted Supplier for over 10 Years</span>
-            <CheckCircle className="w-5 h-5" />
+            <Lock className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="font-lato font-medium text-sm md:text-base">Trusted Supplier for over 10 Years</span>
+            <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
           </div>
 
           {/* Additional Information */}
           {product.additionalInformation && (
             <div className="mt-8">
-              <div 
-                dangerouslySetInnerHTML={{ __html: product.additionalInformation }} 
+              <div
+                dangerouslySetInnerHTML={{ __html: product.additionalInformation }}
                 className="prose prose-sm max-w-none"
               />
             </div>
@@ -684,12 +770,15 @@ const ProductContent = ({ product }: ProductContentProps) => {
         </div>
       </div>
 
-      {/* Related Products */}
-      <div className="mt-12">
+      {/* Related Products Section */}
+      <div className="mt-10 md:mt-16 border-t border-gray-200 pt-6 md:pt-10 px-2 md:px-0">
+        <h2 className="text-lg md:text-2xl font-lato font-bold mb-6 text-center text-gray-800">
+          You Might Also Like
+        </h2>
         <RelatedProducts />
       </div>
 
-      {/* Add Snackbar at the end of the component */}
+      {/* Snackbar for add to cart notification */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={2000}

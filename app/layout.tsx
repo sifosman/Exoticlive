@@ -4,19 +4,19 @@ import { Inter, Playfair_Display, Lato } from 'next/font/google';
 import ThemeRegistry from './ThemeRegistry';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import ApolloWrapper from '@/components/ApolloWrapper';
-import { CartProvider } from '@/lib/cartContext';
-import { Toaster } from '@/components/ui/toaster';
+import ClientProviders from './ClientProviders';
+// StockListenerWrapper removed - we now use a cron job for stock updates
 
 const inter = Inter({ subsets: ['latin'] });
-const playfairDisplay = Playfair_Display({ 
+const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-playfair',
 });
-const lato = Lato({ 
+const lato = Lato({
   subsets: ['latin'],
-  weight: '400',
+  weight: ['100', '300', '400', '700', '900'],
   display: 'swap',
+  variable: '--font-lato',
 });
 
 export const metadata: Metadata = {
@@ -30,19 +30,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${playfairDisplay.variable}`}>
-          <body className={`${inter.className} font-sans ${lato.className} bg-white`}>
+    <html lang="en" className={`${playfairDisplay.variable} ${lato.variable}`}>
+      <body className={`bg-white`}>
         <ThemeRegistry>
-          <ApolloWrapper>
-            <CartProvider>
+          <ClientProviders>
+              {/* Stock listener removed - we now use a cron job for stock updates */}
+
               <Header />
               <main className="min-h-screen pt-[36px]">
-                <div className={playfairDisplay.className}>{children}</div>
+                {children}
               </main>
               <Footer />
-              <Toaster />
-            </CartProvider>
-          </ApolloWrapper>
+            </ClientProviders>
         </ThemeRegistry>
       </body>
     </html>
