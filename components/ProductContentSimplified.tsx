@@ -709,7 +709,7 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                                     ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                                     : isInStockOption
                                       ? 'bg-white text-gray-800 border-gray-300 hover:border-black'
-                                      : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                      : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300 opacity-60'
                                 }
                               `}
                               onClick={async () => {
@@ -718,22 +718,18 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                                 }
                               }}
                               disabled={!isPossible}
+                              title={isPossible && !isInStockOption ? 'Out of stock' : undefined}
                             >
                               {/* Optional color swatch thumbnail */}
                               {isColor && swatchUrl && (
                                 <span className="inline-flex items-center justify-center mr-2">
-                                  <span className="w-5 h-5 rounded-full border border-gray-200 overflow-hidden inline-block">
+                                  <span className={`w-5 h-5 rounded-full border border-gray-200 overflow-hidden inline-block ${isPossible && !isInStockOption ? 'grayscale' : ''}`}>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={getSafeImageUrl(swatchUrl, optIndex)} alt={String(option)} className="w-full h-full object-cover" />
                                   </span>
                                 </span>
                               )}
-                              <span className="inline-flex items-center gap-1">
-                                <span>{option}</span>
-                                {isPossible && !isInStockOption && (
-                                  <span className="text-[10px] uppercase tracking-wide text-red-500">OOS</span>
-                                )}
-                              </span>
+                              <span className="inline-flex items-center gap-1">{option}</span>
                             </button>
                           );
                         })}
