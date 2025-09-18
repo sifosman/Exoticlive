@@ -35,6 +35,7 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
   const [currentStockStatus, setCurrentStockStatus] = useState(STOCK_STATUS_IN_STOCK);
   const [currentStockQuantity, setCurrentStockQuantity] = useState<number | null>(null);
   const [showAddToCartSuccess, setShowAddToCartSuccess] = useState(false);
+  const [selectedVariation, setSelectedVariation] = useState<any | null>(null);
 
   // UI state
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -153,7 +154,13 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
   const getProductImages = () => {
     if (!product) return [];
 
+    // If a variation is selected and has image, show it first
+    const variationImages = selectedVariation?.image?.url
+      ? [{ url: selectedVariation.image.url, alt: selectedVariation.image.alt || product.name }]
+      : [];
+
     const images = [
+      ...variationImages,
       { url: product.image_url, alt: product.image_alt || product.name },
       ...(product.gallery_images || [])
     ].filter(img => isValidImageUrl(img.url));
@@ -329,6 +336,7 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
     const matchingVariation = findMatchingVariation(product?.variations, newSelectedAttrs);
 
     if (matchingVariation) {
+      setSelectedVariation(matchingVariation);
       // Fetch fresh variation data to get the latest stock information
       let variationToUse = matchingVariation;
       let freshData = null;
@@ -366,6 +374,7 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
       }
     } else {
       // No matching variation, set to default values
+      setSelectedVariation(null);
       setCurrentStockStatus(STOCK_STATUS_OUT_OF_STOCK);
       setCurrentStockQuantity(null);
       setMaxQuantity(0);
@@ -454,7 +463,7 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
   };
 
   // Add to cart function
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) return;
 
     // Check if all required attributes are selected
@@ -513,8 +522,24 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
       variation_id: variation.id
     };
 
-    // Add to cart
+    // Add to cart locally
     addToCart(cartItem);
+
+    // Also notify server cart endpoint with variation_id and quantity
+    try {
+      await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_id: product.id,
+          variation_id: variation.id,
+          quantity,
+          attributes: cartItem.attributes,
+        })
+      });
+    } catch (e) {
+      console.error('Failed to call cart API', e);
+    }
 
     // Show success message
     setShowAddToCartSuccess(true);
@@ -523,6 +548,11 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
       console.log('SIMPLIFIED: Added to cart:', cartItem);
     }
   };
+
+  // Compute display prices based on selected variation if present
+  const displaySale = selectedVariation?.sale_price ?? product?.sale_price;
+  const displayRegular = selectedVariation?.regular_price ?? product?.regular_price ?? product?.price;
+  const displayPrice = selectedVariation?.price ?? product?.price;
 
   // Render loading state
   if (!product) {
@@ -602,13 +632,13 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
 
             {/* Price */}
             <div className="mb-4 flex items-center">
-              {product.sale_price && product.sale_price < product.regular_price ? (
+              {displaySale && displayRegular && displaySale < displayRegular ? (
                 <>
-                  <span className="text-xl md:text-2xl font-bold text-gray-900 mr-2">R{product.sale_price}</span>
-                  <span className="text-md md:text-xl text-gray-500 line-through">R{product.regular_price}</span>
+                  <span className="text-xl md:text-2xl font-bold text-gray-900 mr-2">R{displaySale}</span>
+                  <span className="text-md md:text-xl text-gray-500 line-through">R{displayRegular}</span>
                 </>
               ) : (
-                <span className="text-xl md:text-2xl font-bold text-gray-900">R{product.price}</span>
+                <span className="text-xl md:text-2xl font-bold text-gray-900">R{displayPrice}</span>
               )}
             </div>
 
@@ -644,6 +674,21 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                         {attribute.options.map((option, optIndex) => {
                           const isSelected = selectedAttributes[attribute.name] === option;
                           const isAvailable = isAttributeOptionAvailable(attribute.name, option);
+                          const isColor = formatAttributeName(attribute.name).toLowerCase() === 'color';
+
+                          // Try to find a variation image for this color option
+                          let swatchUrl: string | null = null;
+                          if (isColor && product.variations && Array.isArray(product.variations)) {
+                            const colorMatch = product.variations.find(v =>
+                              Array.isArray(v.attributes) &&
+                              v.attributes.some(a =>
+                                normalizeAttributeName(a.name) === normalizeAttributeName(attribute.name) &&
+                                normalizeAttributeValue(a.option) === normalizeAttributeValue(option)
+                              ) &&
+                              v.image?.url
+                            );
+                            swatchUrl = colorMatch?.image?.url || null;
+                          }
 
                           return (
                             <button
@@ -670,6 +715,15 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                               }}
                               disabled={!isAvailable}
                             >
+                              {/* Optional color swatch thumbnail */}
+                              {isColor && swatchUrl && (
+                                <span className="inline-flex items-center justify-center mr-2">
+                                  <span className="w-5 h-5 rounded-full border border-gray-200 overflow-hidden inline-block">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={getSafeImageUrl(swatchUrl, optIndex)} alt={String(option)} className="w-full h-full object-cover" />
+                                  </span>
+                                </span>
+                              )}
                               {option}
                             </button>
                           );

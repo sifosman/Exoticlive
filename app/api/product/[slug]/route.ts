@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Typesense from 'typesense';
+import { fetchWooProductBySlug } from '@/lib/woo';
 
 // Initialize Typesense client
 const typesenseClient = new Typesense.Client({
@@ -58,7 +59,7 @@ export async function GET(
     
     console.log(`Fetching product with slug "${slug}" from Typesense...`);
     
-    // Only fetch from Typesense
+    // Fetch from Typesense for base product data
     let typesenseProduct = null;
     
     try {
@@ -76,13 +77,47 @@ export async function GET(
         { status: 404 }
       );
     }
-    
-    // Return the Typesense product data
+
+    // Attempt to fetch WooCommerce product + variations by slug (server-side, keeps secrets safe)
+    let wooData: Awaited<ReturnType<typeof fetchWooProductBySlug>> | null = null;
+    try {
+      wooData = await fetchWooProductBySlug(slug);
+    } catch (e) {
+      console.warn('WooCommerce fetch by slug failed, proceeding with Typesense-only data');
+    }
+
+    // Merge logic: prefer Woo variations (authoritative for stock/pricing), fall back to Typesense fields for UI
+    const merged = { ...typesenseProduct } as any;
+
+    if (wooData && wooData.product) {
+      const wp = wooData.product as any;
+      // Ensure primary price fields present on parent
+      merged.price = Number(wp.price ?? merged.price ?? 0);
+      merged.regular_price = Number(wp.regular_price ?? merged.regular_price ?? merged.price ?? 0);
+      merged.sale_price = wp.sale_price ? Number(wp.sale_price) : (merged.sale_price ?? null);
+    }
+
+    if (wooData && Array.isArray(wooData.variations)) {
+      // Map Woo variations to a consistent shape used by the UI
+      merged.variations = wooData.variations.map(v => ({
+        id: v.id,
+        price: v.price ? Number(v.price) : undefined,
+        regular_price: v.regular_price ? Number(v.regular_price) : undefined,
+        sale_price: v.sale_price ? Number(v.sale_price) : null,
+        stock_status: v.stock_status ?? 'outofstock',
+        manage_stock: v.manage_stock ?? false,
+        stock_quantity: typeof v.stock_quantity === 'number' ? v.stock_quantity : (v.stock_quantity == null ? null : Number(v.stock_quantity)),
+        image: v.image?.src ? { url: v.image.src, alt: v.image.alt ?? '' } : null,
+        attributes: Array.isArray(v.attributes) ? v.attributes.map(a => ({ name: a.name, option: a.option })) : []
+      }));
+      merged._dataSource = { ...(merged._dataSource || {}), stock: 'woocommerce', realTimeStock: true };
+    }
+
     return NextResponse.json({
       success: true,
-      product: typesenseProduct,
+      product: merged,
       sources: {
-        wooCommerce: false,
+        wooCommerce: !!wooData,
         typesense: true
       }
     });

@@ -4,7 +4,7 @@ import ProductContentSimplified from '@/components/ProductContentSimplified';
 import { SITE_NAME } from '@/lib/constants';
 
 // Add revalidation time (in seconds) - set to a shorter time to get fresher data
-export const revalidate = 0; // Set to 0 for on-demand revalidation instead of cache
+export const revalidate = 60; // Default ISR for fresher data without hammering APIs
 
 // Generate dynamic metadata for the page
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -30,7 +30,7 @@ async function getProduct(slug: string) {
   try {
     // Use our API endpoint to get product data from both WooCommerce and Typesense
     const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/product/${slug}`, {
-      next: { revalidate: 0 } // Don't cache the response
+      next: { revalidate: 60 }
     });
 
     if (!response.ok) {
