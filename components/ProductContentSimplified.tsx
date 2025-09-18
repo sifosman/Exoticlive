@@ -381,41 +381,42 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
     }
   };
 
-  // Check if attribute option is available (in stock)
-  const isAttributeOptionAvailable = (attrName: string, option: string): boolean => {
-    // If no variations, all options are available
-    if (!product?.variations || !Array.isArray(product.variations) || product.variations.length === 0) {
-      return true;
-    }
-
-    // Create a copy of current selections with this option
-    const testSelections = {
-      ...selectedAttributes,
-      [attrName]: option
-    };
-
-    // Check if any variation matches these selections
-    const hasMatchingVariation = product.variations.some(variation => {
-      if (!variation.attributes || !Array.isArray(variation.attributes)) {
-        return false;
-      }
-
-      // For each attribute in our test selection, check if variation matches
+  // Two-tier availability helpers
+  // 1) Possible: at least one variation exists that matches selections (ignores stock)
+  const isAttributeOptionPossible = (attrName: string, option: string): boolean => {
+    if (!product?.variations || !Array.isArray(product.variations) || product.variations.length === 0) return true;
+    const testSelections = { ...selectedAttributes, [attrName]: option } as Record<string, string>;
+    return product.variations.some((variation) => {
+      if (!Array.isArray(variation.attributes)) return false;
       return Object.entries(testSelections).every(([name, value]) => {
         const normalizedName = normalizeAttributeName(name);
-        const normalizedValue = normalizeAttributeValue(value as string);
-
-        // Find matching attribute in variation
-        return variation.attributes.some(attr => {
-          const varAttrName = normalizeAttributeName(attr.name || attr.option_name);
-          const varAttrValue = normalizeAttributeValue(attr.option || attr.value);
-
+        const normalizedValue = normalizeAttributeValue(value);
+        return variation.attributes.some((attr) => {
+          const varAttrName = normalizeAttributeName(attr.name || (attr as any).option_name);
+          const varAttrValue = normalizeAttributeValue(attr.option || (attr as any).value);
           return varAttrName === normalizedName && varAttrValue === normalizedValue;
         });
       });
     });
+  };
 
-    return hasMatchingVariation;
+  // 2) In-stock: at least one matching variation that is in stock
+  const isAttributeOptionInStock = (attrName: string, option: string): boolean => {
+    if (!product?.variations || !Array.isArray(product.variations) || product.variations.length === 0) return true;
+    const testSelections = { ...selectedAttributes, [attrName]: option } as Record<string, string>;
+    return product.variations.some((variation) => {
+      if (!Array.isArray(variation.attributes)) return false;
+      const matchesAll = Object.entries(testSelections).every(([name, value]) => {
+        const normalizedName = normalizeAttributeName(name);
+        const normalizedValue = normalizeAttributeValue(value);
+        return variation.attributes.some((attr) => {
+          const varAttrName = normalizeAttributeName(attr.name || (attr as any).option_name);
+          const varAttrValue = normalizeAttributeValue(attr.option || (attr as any).value);
+          return varAttrName === normalizedName && varAttrValue === normalizedValue;
+        });
+      });
+      return matchesAll && isVariationInStock(variation);
+    });
   };
 
   // Check if all required attributes are selected
@@ -673,7 +674,8 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                       <div className="flex flex-wrap gap-2 md:gap-2">
                         {attribute.options.map((option, optIndex) => {
                           const isSelected = selectedAttributes[attribute.name] === option;
-                          const isAvailable = isAttributeOptionAvailable(attribute.name, option);
+                          const isPossible = isAttributeOptionPossible(attribute.name, option);
+                          const isInStockOption = isAttributeOptionInStock(attribute.name, option);
                           const isColor = formatAttributeName(attribute.name).toLowerCase() === 'color';
 
                           // Try to find a variation image for this color option
@@ -703,17 +705,19 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                                 mb-2 md:mb-1
                                 ${isSelected
                                   ? 'bg-black text-white border-black'
-                                  : isAvailable
-                                    ? 'bg-white text-gray-800 border-gray-300 hover:border-black'
-                                    : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                  : !isPossible
+                                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                    : isInStockOption
+                                      ? 'bg-white text-gray-800 border-gray-300 hover:border-black'
+                                      : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
                                 }
                               `}
                               onClick={async () => {
-                                if (isAvailable) {
+                                if (isPossible) {
                                   await handleAttributeChange(attribute.name, option);
                                 }
                               }}
-                              disabled={!isAvailable}
+                              disabled={!isPossible}
                             >
                               {/* Optional color swatch thumbnail */}
                               {isColor && swatchUrl && (
@@ -724,7 +728,12 @@ const ProductContentSimplified = ({ product: initialProduct }: ProductContentSim
                                   </span>
                                 </span>
                               )}
-                              {option}
+                              <span className="inline-flex items-center gap-1">
+                                <span>{option}</span>
+                                {isPossible && !isInStockOption && (
+                                  <span className="text-[10px] uppercase tracking-wide text-red-500">OOS</span>
+                                )}
+                              </span>
                             </button>
                           );
                         })}
